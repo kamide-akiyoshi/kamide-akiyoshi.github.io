@@ -257,10 +257,8 @@ const PianoKeyboard = class {
       navigator.requestMIDIAccess({
         sysex: true,
         software: false,
-      }).then(({ inputs, outputs }) => {
-        midiIcon.removeEventListener("click", openMidi);
-        midiInSelect.removeEventListener("click", openMidi);
-        midiOutSelect.removeEventListener("click", openMidi);
+      }).then(access => {
+        const { inputs, outputs } = access;
         if( inputs?.size ) {
           inputs.forEach((input, key) => {
             const {
@@ -299,9 +297,7 @@ const PianoKeyboard = class {
         alert(msg);
       });
     };
-    midiIcon.addEventListener("click", openMidi);
-    midiInSelect.addEventListener("click", openMidi);
-    midiOutSelect.addEventListener("click", openMidi);
+    openMidi();
   };
   constructor() {
     this.synth = new SimpleSynthesizer();
