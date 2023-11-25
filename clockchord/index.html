@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+<meta charset="Shift_JIS">
+<meta name="keywords" content="ClockChord,JavaScript,CircleOfFifths,五度圏,コード進行,時計,楽器">
+<link rel="shortcut icon" href="../chordhelper/midichordhelper.ico">
+<TITLE>ClockChord - Musical chord instrument on the circle-of-fifths clock</TITLE>
+<script src="./circle_of_5ths_clock_chord.js"></script>
+<script>new CircleOfFifthsClock(true);</script>
+<style type="text/css">
+	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
+	.clock {
+		position: relative;
+		width: 400px; height: 400px;
+		margin: 16px 10px 0px 10px;
+	}
+	.clock > * { position: absolute; }
+	#keyselect_label {
+		top: 1px;
+		left: 2px;
+	}
+	#keyselect {
+		z-index: 1;
+		top: 18px;
+	}
+	#setkey {
+		z-index: 1;
+		top: 1px;
+		left: 50px;
+		width: 36px;
+		padding-inline: 0;
+	}
+	#enharmonic {
+		z-index: 1;
+		top: 50px;
+	}
+	.chord-tap {
+		touch-action: none; /* no gesture */
+		user-select: none; /* standard syntax */
+		-webkit-user-select: none; /* webkit (safari, chrome) browsers */
+		-moz-user-select: none; /* mozilla browsers */
+		-khtml-user-select: none; /* webkit (konqueror) browsers */
+		-ms-user-select: none; /* IE10+ */
+	}
+	.circle {
+		border-radius: 50%;
+	}
+	#center_chord {
+		z-index: 1;
+		font-size: 170%;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: radial-gradient(#FFFFFFD0 50%, #FFFFFF00);
+		padding: 10px;
+	}
+	button {
+		width: 32px;
+		height: 32px;
+	}
+	#volume {
+		width: 320px;
+		height: 32px;
+	}
+	#chordbar {
+		width: 424px;
+		height: 36px;
+		background-color: #E0E0E0;
+		border-style: inset;
+		border-width: 1px;
+		border-color: #D0D0D0;
+		margin-top: 16px;
+		padding: 8px 0px;
+		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	#chord {
+		font-size: 170%;
+		margin-left: 20px; 
+		margin-right: 20px; 
+	}
+	#pianokeyboard {
+		width: calc(30px * 7 * 2);
+		min-width: calc(30px * 7 * 2);
+		max-width: calc(30px * (7 * 10 + 5));
+		height: 160px;
+		min-height: 120px;
+		max-height: 200px;
+		background-color: #808080; color: white;
+		border-style: solid;
+		border-color: #C0C0C0;
+		overflow-x: auto;
+		resize: both;
+		position: relative;
+		scroll-snap-type: x mandatory;
+		touch-action: manipulation; /* disable double-tap zoom */
+	}
+	.whitekey,.blackkey {
+		position: absolute;
+		top: 1px;
+		display: flex;
+		justify-content: center;
+		align-items: flex-end;
+		color: #F08080;
+	}
+	.whitekey {
+		width: 28px;
+		height: calc(100% - 30px);
+		background-color: #F0F0F0;
+		border-style: groove;
+		border-width: 0 1px 1px 1px;
+		border-color: #C0C0C0;
+		border-radius: 0 0 4px 4px;
+		scroll-snap-align: start;
+	}
+	.pressed.whitekey {
+		border-style: inset;
+		background: radial-gradient(ellipse 50% 15% at 50% 85%, currentColor 8% 20%, #F0F0F0);
+	}
+	:not(.pressed).chord.whitekey {
+		background: radial-gradient(ellipse 40% 12% at 50% 85%, currentColor 8% 20%, #F0F0F0);
+	}
+	.blackkey {
+		width: 15px;
+		height: calc((100% - 30px) * 0.65 - 12px);
+		z-index: 1;
+		background-color: #282828;
+		border-style: outset;
+		border-left-style: inset;
+		border-width: 0 3px 12px 3px;
+		border-color: #282828;
+		border-radius: 0 0 3px 3px;
+	}
+	.pressed.blackkey {
+		border-style: solid;
+		background: radial-gradient(ellipse 70% 25% at 50% 75%, currentColor 20% 20%, #282828);
+	}
+	:not(.pressed).chord.blackkey {
+		background: radial-gradient(ellipse 50% 20% at 50% 75%, currentColor 20% 20%, #282828);
+	}
+	.chord.root { color: #FF2020; }
+	.frequency {
+		position: absolute;
+		top: calc(100% - 30px);
+	}
+	#button_container {
+		width: 300px;
+	}
+	.shift_button_line {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-around;
+	}
+	.shift_button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 64px;
+		height: 64px;
+		border: 1px solid;
+		border-radius: 50%;
+		touch-action: none;
+	}
+	.shift_button.pressed {
+		background: yellow;
+	}
+	#enable_microphone {
+		background: url('mic.svg') no-repeat center;
+		padding-left: 20px;
+	}
+	#enable_microphone:disabled {background: red;}
+</style>
+</HEAD>
+<BODY BGCOLOR=white>
+<h1>五度圏時計楽器 ClockChord</h1>
+<a href="#how_to_use">使い方/How to use</a>
+<hr/>
+<div>
+ <label for="volume" title="Volume">
+  <img src="volume.png" alt="Volume"/>
+  <input id="volume" type="range"/>
+ </label>
+ <label for="enable_microphone" title="Enable microphone with echo">
+  <button id="enable_microphone"></button>
+ </label>
+ <div">
+  <div class="clock">
+    <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation of chord symbols">Key</label>
+    <select id="keyselect" style="height: 32px;"></select>
+    <button id="enharmonic" title="Enharmonic key"></button>
+    <button id="setkey" title="Set the chord as key signature"></button>
+    <span id="center_chord" class="disable_selection chord-tap"></span>
+    <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
+    <canvas id="circleOfFifthsClockCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
+  </div>
+  <div id="button_container">
+    <div class="shift_button_line">
+      <div id="button_major7th" class="shift_button">M7</div>
+    </div>
+    <div class="shift_button_line">
+      <div id="button_add9" class="shift_button">add9</div>
+      <div id="button_7th" class="shift_button">7th</div>
+    </div>
+    <div class="shift_button_line">
+      <div id="button_flat5" class="shift_button">-5/aug</div>
+    </div>
+  </div>
+  <div id="chordbar">
+    <span id="chord" title="Chord"></span>
+  </div>
+  <div id="pianokeyboard" tabindex="0">
+    <div class="whitekey"></div>
+    <div class="blackkey"></div>
+    <div class="frequency">Hz</div>
+  </div>
+  <a href="../notes.html">Frequency table</a>
+ </div>
+ <div style="margin: 4px 0">
+  <label for="waveselect" title="wave">
+   <img id="wave" alt="wave" height="32" align="center"/>
+   <select id="waveselect" style="height: 32px;">
+   </select>
+  </label>
+  <img id="envelope" alt="envelope" title="envelope" src="envelope.svg" height="32" align="center"/>
+  <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
+  <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
+  <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
+  <label for="release" title="Release time">R<input id="release" type="range"/></label>
+ </div>
+ <img id="midi" alt="MIDI" title="MIDI" src="midi.svg" height="32" align="center"/>
+ <label for="midi_input" title="MIDI IN">
+   <select id="midi_input">
+     <option value="">MIDI IN: OFF</option>
+   </select>
+ </label>
+ <label for="midi_output" title="MIDI OUT">
+   <select id="midi_output">
+     <option value="">MIDI OUT: OFF</option>
+   </select>
+ </label>
+</div>
+<hr/>
+<a name="how_to_use"></a>
+<h2>操作方法（Operation）</h2>
+<p>和音の出る<a href="../theory/#CircleOf5ths">五度圏</a>時計です。文字盤のコード名をクリックまたはタッチしてみてください。</p>
+<p>Chord-soundable circle-of-fifths clock - Click or touch the chord symbol on dial</p>
+<h3>For PC</h3>
+<p>時計の文字盤を左クリックすると、そこに書かれているコードが鳴ります。一番外側の調号の部分をクリックするとsus4を鳴らせます。</p>
+<p>右クリックで7thも鳴らせます（メジャー、マイナー、sus4のどこで右クリックしても7がつきます）。</p>
+<p>Shift、Ctrl、Altキーを組み合わせると、さらに多くの種類のコード(M7、6、-5、aug、dim7、9、add9など)を鳴らすことができます。キー割り当ては<a href="../chordhelper/" target="_blank">MIDI Chord Helper</a>と同じです。詳しくは<a href="../chordhelper/manual.html#chord_play" target="_blank">MIDI Chord Helper マニュアル：マウスでコードを鳴らす</a>を参照してください。</p>
+<p>文字盤にフォーカスを入れると、PCキーボードの上3列でコードを弾けます（中央は6YHの列）。矢印キーでの移調も可能です（↑半音UP、↓半音DOWN、←1時間戻る、→1時間進む）。PCキーボードの場合は右クリックできないので、MIDI Chord Helper と同様にShiftキーで代用できるようにしています。なお、マウスの場合のShiftキーの機能はMetaキー（Windowsキー）に割り当ててみましたが、OSによってはMetaキーをうまく検知できずに本来の機能として動作してしまう場合があるので注意してください。</p>
+<p>鍵盤部分をマウスで押してメロディを弾くこともできます。鍵盤部分にフォーカスを入れると、PCキーボードのQWERTYの行も効きます。</p>
+<h3>For smartphone, tablet PC</h3>
+<p>スマホやタブレットのようなタッチデバイスの場合、普通にタップすることはできますが、右クリックやShiftキーなどが使えないため、代わりに<a href="../chordhelper/hardware/" target="_blank">電子楽器CAmiDion</a>と同様のシフトボタン（Maj7、add9、7th、-5/aug）が文字盤の下に現れます。
+<a href="../chordhelper/hardware/button_operation_table.html" target="_blank">CAmiDionボタン操作表</a>と同じ割当なので、そのままマルチタッチで同時押しを組み合わせ、色々なコードを鳴らすことができます。</p>
+<p>鍵盤部分を押してメロディを弾くこともできます（スマホだとちょっと狭いので、できればタブレットがおすすめ）。</p>
+<h3>調号選択</h3>
+<p>Keyプルダウンで調号の♯、♭の数を指定すると、コードの♯、♭がその調によりふさわしい表記に変わります。</p>
+<p>例えば、調号が4時の位置＝4♯＝E/C♯mの場合、8時の位置にあるA♭の表記がG♯に変わります。
+調号の♯、♭の数が多くなると&#x1D12A;(ダブルシャープ)、&#x1D12B;(ダブルフラット)が出現することがあります。</p>
+<p>その右側にも、異名同音の調、表示中のコードと同名の調に切り替えるボタンが出ることがあり、それをクリックして簡単に調を切り替えることができます。</p>
+<h2>動作環境（Tested Environment）</h2>
+<p>下記の環境で動作を確認できています。</p>
+<ul>
+<li>[Web Browser] Google Chrome / Firefox</li>
+<li>[OS] Ubuntu Linux / Windows / Android / iOS</li>
+</ul>
+<hr/>
+<p>他にも、こんな時計のページを作りました：<a href="../../resistor_color_code_clock.html">抵抗カラーコード時計</a></p>
+<hr/>
+<p>
+[<a href="./circle_of_5ths_clock_chord.js" target="_blank">JavaScript source code</a>]
+[<a href="https://twitter.com/akiyoshi_kamide/status/1297353400309301248" target="_blank">Twitter thread</a>]
+[<a href="../../">Home</a>]
+</p>
+</BODY>
+</HTML>
