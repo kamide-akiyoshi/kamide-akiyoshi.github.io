@@ -12,27 +12,6 @@ const SimpleSynthesizer = class {
     }
     return SimpleSynthesizer._audioContext;
   };
-  setupMicrophone = () => {
-    const enableButton = document.getElementById('enable_microphone');
-    if( ! enableButton ) return;
-    if( ! window.isSecureContext ) {
-      console.warn("Microphone not available: Not in secure context");
-      enableButton.remove();
-      return;
-    }
-    enableButton.addEventListener('click', () => {
-      navigator.mediaDevices.getUserMedia({audio: true}).then(inputStream => {
-        const context = SimpleSynthesizer.audioContext;
-        const input = context.createMediaStreamSource(inputStream);
-        const delay = context.createDelay(5); delay.delayTime.value = 0.05;
-        const feedback = context.createGain(); feedback.gain.value = 0.5;
-        input.connect(context.destination);
-        input.connect(delay); delay.connect(context.destination);
-        delay.connect(feedback); feedback.connect(delay);
-        enableButton.disabled = true;
-      }).catch(err => alert(err));
-    });
-  };
   constructor() {
     const setupSlider = (id, value, min, max, step) => {
       const slider = document.getElementById(id);
@@ -140,7 +119,6 @@ const SimpleSynthesizer = class {
         }
       };
     };
-    this.setupMicrophone();
   }
 };
 

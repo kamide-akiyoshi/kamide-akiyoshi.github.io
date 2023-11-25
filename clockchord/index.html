@@ -166,11 +166,6 @@
 	.shift_button.pressed {
 		background: yellow;
 	}
-	#enable_microphone {
-		background: url('mic.svg') no-repeat center;
-		padding-left: 20px;
-	}
-	#enable_microphone:disabled {background: red;}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -182,10 +177,7 @@
   <img src="volume.png" alt="Volume"/>
   <input id="volume" type="range"/>
  </label>
- <label for="enable_microphone" title="Enable microphone with echo">
-  <button id="enable_microphone"></button>
- </label>
- <div">
+ <div>
   <div class="clock">
     <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation of chord symbols">Key</label>
     <select id="keyselect" style="height: 32px;"></select>
