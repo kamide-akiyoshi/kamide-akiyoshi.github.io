@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <HTML>
 <HEAD>
-<meta charset="Shift_JIS">
-<meta name="keywords" content="ClockChord,JavaScript,CircleOfFifths,�ܓx��,�R�[�h�i�s,���v,�y��">
+<meta charset="UTF-8
+">
+<meta name="keywords" content="ClockChord,JavaScript,CircleOfFifths,五度圏,コード進行,時計,楽器">
 <link rel="shortcut icon" href="../chordhelper/midichordhelper.ico">
 <TITLE>ClockChord - Musical chord instrument on the circle-of-fifths clock</TITLE>
 <script src="./circle_of_5ths_clock_chord.js"></script>
@@ -174,8 +175,8 @@
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
-<h1>�ܓx�����v�y�� ClockChord</h1>
-<a href="#how_to_use">�g����/How to use</a>
+<h1>五度圏時計楽器 ClockChord</h1>
+<a href="#how_to_use">使い方/How to use</a>
 <hr/>
 <div>
  <label for="volume" title="Volume">
@@ -187,7 +188,7 @@
  </label>
  <div">
   <div class="clock">
-    <label id="keyselect_label" for="keyselect" title="Select key signature to match ��/�� notation of chord symbols">Key</label>
+    <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation of chord symbols">Key</label>
     <select id="keyselect" style="height: 32px;"></select>
     <button id="enharmonic" title="Enharmonic key"></button>
     <button id="setkey" title="Set the chord as key signature"></button>
@@ -243,32 +244,32 @@
 </div>
 <hr/>
 <a name="how_to_use"></a>
-<h2>������@�iOperation�j</h2>
-<p>�a���̏o��<a href="../theory/#CircleOf5ths">�ܓx��</a>���v�ł��B�����Ղ̃R�[�h�����N���b�N�܂��̓^�b�`���Ă݂Ă��������B</p>
+<h2>操作方法（Operation）</h2>
+<p>和音の出る<a href="../theory/#CircleOf5ths">五度圏</a>時計です。文字盤のコード名をクリックまたはタッチしてみてください。</p>
 <p>Chord-soundable circle-of-fifths clock - Click or touch the chord symbol on dial</p>
 <h3>For PC</h3>
-<p>���v�̕����Ղ����N���b�N����ƁA�����ɏ�����Ă���R�[�h����܂��B��ԊO���̒����̕������N���b�N�����sus4��点�܂��B</p>
-<p>�E�N���b�N��7th���点�܂��i���W���[�A�}�C�i�[�Asus4�̂ǂ��ŉE�N���b�N���Ă�7�����܂��j�B</p>
-<p>Shift�ACtrl�AAlt�L�[��g�ݍ��킹��ƁA����ɑ����̎�ނ̃R�[�h(M7�A6�A-5�Aaug�Adim7�A9�Aadd9�Ȃ�)��炷���Ƃ��ł��܂��B�L�[���蓖�Ă�<a href="../chordhelper/" target="_blank">MIDI Chord Helper</a>�Ɠ����ł��B�ڂ�����<a href="../chordhelper/manual.html#chord_play" target="_blank">MIDI Chord Helper �}�j���A���F�}�E�X�ŃR�[�h��炷</a>���Q�Ƃ��Ă��������B</p>
-<p>�����ՂɃt�H�[�J�X������ƁAPC�L�[�{�[�h�̏�3��ŃR�[�h��e���܂��i������6YH�̗�j�B���L�[�ł̈ڒ����\�ł��i������UP�A������DOWN�A��1���Ԗ߂�A��1���Ԑi�ށj�BPC�L�[�{�[�h�̏ꍇ�͉E�N���b�N�ł��Ȃ��̂ŁAMIDI Chord Helper �Ɠ��l��Shift�L�[�ő�p�ł���悤�ɂ��Ă��܂��B�Ȃ��A�}�E�X�̏ꍇ��Shift�L�[�̋@�\��Meta�L�[�iWindows�L�[�j�Ɋ��蓖�ĂĂ݂܂������AOS�ɂ���Ă�Meta�L�[�����܂����m�ł����ɖ{���̋@�\�Ƃ��ē��삵�Ă��܂��ꍇ������̂Œ��ӂ��Ă��������B</p>
-<p>���Օ������}�E�X�ŉ����ă����f�B��e�����Ƃ��ł��܂��B���Օ����Ƀt�H�[�J�X������ƁAPC�L�[�{�[�h��QWERTY�̍s�������܂��B</p>
+<p>時計の文字盤を左クリックすると、そこに書かれているコードが鳴ります。一番外側の調号の部分をクリックするとsus4を鳴らせます。</p>
+<p>右クリックで7thも鳴らせます（メジャー、マイナー、sus4のどこで右クリックしても7がつきます）。</p>
+<p>Shift、Ctrl、Altキーを組み合わせると、さらに多くの種類のコード(M7、6、-5、aug、dim7、9、add9など)を鳴らすことができます。キー割り当ては<a href="../chordhelper/" target="_blank">MIDI Chord Helper</a>と同じです。詳しくは<a href="../chordhelper/manual.html#chord_play" target="_blank">MIDI Chord Helper マニュアル：マウスでコードを鳴らす</a>を参照してください。</p>
+<p>文字盤にフォーカスを入れると、PCキーボードの上3列でコードを弾けます（中央は6YHの列）。矢印キーでの移調も可能です（↑半音UP、↓半音DOWN、←1時間戻る、→1時間進む）。PCキーボードの場合は右クリックできないので、MIDI Chord Helper と同様にShiftキーで代用できるようにしています。なお、マウスの場合のShiftキーの機能はMetaキー（Windowsキー）に割り当ててみましたが、OSによってはMetaキーをうまく検知できずに本来の機能として動作してしまう場合があるので注意してください。</p>
+<p>鍵盤部分をマウスで押してメロディを弾くこともできます。鍵盤部分にフォーカスを入れると、PCキーボードのQWERTYの行も効きます。</p>
 <h3>For smartphone, tablet PC</h3>
-<p>�X�}�z��^�u���b�g�̂悤�ȃ^�b�`�f�o�C�X�̏ꍇ�A���ʂɃ^�b�v���邱�Ƃ͂ł��܂����A�E�N���b�N��Shift�L�[�Ȃǂ��g���Ȃ����߁A�����<a href="../chordhelper/hardware/" target="_blank">�d�q�y��CAmiDion</a>�Ɠ��l�̃V�t�g�{�^���iMaj7�Aadd9�A7th�A-5/aug�j�������Ղ̉��Ɍ���܂��B
-<a href="../chordhelper/hardware/button_operation_table.html" target="_blank">CAmiDion�{�^������\</a>�Ɠ��������Ȃ̂ŁA���̂܂܃}���`�^�b�`�œ���������g�ݍ��킹�A�F�X�ȃR�[�h��炷���Ƃ��ł��܂��B</p>
-<p>���Օ����������ă����f�B��e�����Ƃ��ł��܂��i�X�}�z���Ƃ�����Ƌ����̂ŁA�ł���΃^�u���b�g���������߁j�B</p>
-<h3>�����I��</h3>
-<p>Key�v���_�E���Œ����́�A��̐����w�肷��ƁA�R�[�h�́�A�󂪂��̒��ɂ��ӂ��킵���\�L�ɕς��܂��B</p>
-<p>�Ⴆ�΁A������4���̈ʒu��4��E/C��m�̏ꍇ�A8���̈ʒu�ɂ���A��̕\�L��G��ɕς��܂��B
-�����́�A��̐��������Ȃ��&#x1D12A;(�_�u���V���[�v)�A&#x1D12B;(�_�u���t���b�g)���o�����邱�Ƃ�����܂��B</p>
-<p>���̉E���ɂ��A�ٖ������̒��A�\�����̃R�[�h�Ɠ����̒��ɐ؂�ւ���{�^�����o�邱�Ƃ�����A������N���b�N���ĊȒP�ɒ���؂�ւ��邱�Ƃ��ł��܂��B</p>
-<h2>������iTested Environment�j</h2>
-<p>���L�̊��œ�����m�F�ł��Ă��܂��B</p>
+<p>スマホやタブレットのようなタッチデバイスの場合、普通にタップすることはできますが、右クリックやShiftキーなどが使えないため、代わりに<a href="../chordhelper/hardware/" target="_blank">電子楽器CAmiDion</a>と同様のシフトボタン（Maj7、add9、7th、-5/aug）が文字盤の下に現れます。
+<a href="../chordhelper/hardware/button_operation_table.html" target="_blank">CAmiDionボタン操作表</a>と同じ割当なので、そのままマルチタッチで同時押しを組み合わせ、色々なコードを鳴らすことができます。</p>
+<p>鍵盤部分を押してメロディを弾くこともできます（スマホだとちょっと狭いので、できればタブレットがおすすめ）。</p>
+<h3>調号選択</h3>
+<p>Keyプルダウンで調号の♯、♭の数を指定すると、コードの♯、♭がその調によりふさわしい表記に変わります。</p>
+<p>例えば、調号が4時の位置＝4♯＝E/C♯mの場合、8時の位置にあるA♭の表記がG♯に変わります。
+調号の♯、♭の数が多くなると&#x1D12A;(ダブルシャープ)、&#x1D12B;(ダブルフラット)が出現することがあります。</p>
+<p>その右側にも、異名同音の調、表示中のコードと同名の調に切り替えるボタンが出ることがあり、それをクリックして簡単に調を切り替えることができます。</p>
+<h2>動作環境（Tested Environment）</h2>
+<p>下記の環境で動作を確認できています。</p>
 <ul>
 <li>[Web Browser] Google Chrome / Firefox</li>
 <li>[OS] Ubuntu Linux / Windows / Android / iOS</li>
 </ul>
 <hr/>
-<p>���ɂ��A����Ȏ��v�̃y�[�W�����܂����F<a href="../../resistor_color_code_clock.html">��R�J���[�R�[�h���v</a></p>
+<p>他にも、こんな時計のページを作りました：<a href="../../resistor_color_code_clock.html">抵抗カラーコード時計</a></p>
 <hr/>
 <p>
 [<a href="./circle_of_5ths_clock_chord.js" target="_blank">JavaScript source code</a>]
