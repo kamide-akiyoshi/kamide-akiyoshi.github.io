@@ -242,15 +242,17 @@ const PianoKeyboard = class {
     },
   };
   setupMidi = (msgListener) => {
-    const midiIcon = document.getElementById('midi');
-    const midiInSelect = document.getElementById('midi_input');
-    const midiOutSelect = document.getElementById('midi_output');
-    if( ! midiInSelect && ! midiOutSelect ) return;
+    const icon = document.getElementById('midi');
+    const select = {
+      input: document.getElementById('midi_input'),
+      output: document.getElementById('midi_output'),
+    }
+    if( ! select.input && ! select.output ) return;
     if( ! window.isSecureContext ) {
       console.warn("MIDI access not available: Not in secure context");
-      midiIcon?.remove();
-      midiInSelect?.remove();
-      midiOutSelect?.remove();
+      icon?.remove();
+      select.input?.remove();
+      select.output?.remove();
       return;
     }
     const openMidi = () => {
@@ -258,41 +260,28 @@ const PianoKeyboard = class {
         sysex: true,
         software: false,
       }).then(access => {
-        const { inputs, outputs } = access;
-        if( inputs?.size ) {
-          inputs.forEach((input, key) => {
-            const {
-              name,
-            } = input;
-            const option = document.createElement("option");
-            option.value = key;
-            option.innerText = `MIDI IN: ${name}`;
-            midiInSelect.appendChild(option);
-          });
-          msgListener && midiInSelect.addEventListener("change", event => {
-            const eventName = "midimessage";
-            this.midiInput?.removeEventListener(eventName, msgListener);
-            (this.midiInput = inputs.get(event.target.value))?.addEventListener(eventName, msgListener);
-          });
-        } else {
-          midiInSelect?.remove();
+        const createOption = (key, name) => {
+          const option = document.createElement("option");
+          option.value = key;
+          option.innerText = name;
+          return option;
         }
-        if( outputs?.size ) {
-          outputs.forEach((output, key) => {
-            const {
-              name,
-            } = output;
-            const option = document.createElement("option");
-            option.value = key;
-            option.innerText = `MIDI OUT: ${name}`;
-            midiOutSelect.appendChild(option);
-          });
-          midiOutSelect.addEventListener("change", event => {
-            this.midiOutput = outputs.get(event.target.value);
-          });
-        } else {
-          midiOutSelect?.remove();
-        }
+        access.inputs.forEach((input, key) => select.input.appendChild(createOption(key, input.name)));
+        msgListener && select.input.addEventListener("change", event => {
+          const eventName = "midimessage";
+          this.midiInput?.removeEventListener(eventName, msgListener);
+          (this.midiInput = access.inputs.get(event.target.value))?.addEventListener(eventName, msgListener);
+        });
+        access.outputs.forEach((output, key) => select.output.appendChild(createOption(key, output.name)));
+        select.output.addEventListener("change", event => {
+          this.midiOutput = access.outputs.get(event.target.value);
+        });
+        access.addEventListener("statechange", ({ port }) => {
+          if( select[port.type].querySelector(`option[value="${port.id}"]`) ) {
+            return;
+          }
+          select[port.type].appendChild(createOption(port.id, port.name));
+        });
       }).catch(msg => {
         alert(msg);
       });
