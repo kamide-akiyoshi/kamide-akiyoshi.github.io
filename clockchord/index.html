@@ -166,6 +166,20 @@
 	.shift_button.pressed {
 		background: yellow;
 	}
+	#midi {
+		display: flex;
+	}
+	#midi > * {
+		display: flex;
+		flex-direction: column;
+		margin-left: 10px;
+	}
+	#midi > *:first-of-type {
+		margin-left: 0;
+	}
+	#midi * {
+		font-size: small;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -221,17 +235,20 @@
   <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
   <label for="release" title="Release time">R<input id="release" type="range"/></label>
  </div>
- <img id="midi" alt="MIDI" title="MIDI" src="midi.svg" height="32" align="center"/>
- <label for="midi_input">IN 
-   <select id="midi_input">
-     <option value="">OFF</option>
-   </select>
- </label>
- <label for="midi_output">OUT
-   <select id="midi_output">
-     <option value="">OFF</option>
-   </select>
- </label>
+ <div id="midi">
+   <div>
+     <span>
+       <img alt="MIDI IN" title="MIDI IN" src="midi.svg" height="32" align="center"/>
+       MIDI IN
+     </span>
+   </div>
+   <div>
+     <span>
+       <img alt="MIDI OUT" title="MIDI OUT" src="midi.svg" height="32" align="center"/>
+       MIDI OUT
+     </span>
+   </div>
+ </div>
 </div>
 <hr/>
 <a name="how_to_use"></a>

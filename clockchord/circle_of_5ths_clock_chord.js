@@ -139,7 +139,11 @@ const PianoKeyboard = class {
     }
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      this.midiOutput?.send([0x90, noteNumber, 64]);
+      const selectedOutputs = this.selectedMidiOutputPorts;
+      if( selectedOutputs?.length ) {
+        const midiMessage = [0x90, noteNumber, 64];
+        selectedOutputs.forEach(port => port.send(midiMessage));
+      }
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
       const p = this.pressedPianoKeys;
       p.includes(key) || p.push(key);
@@ -159,7 +163,11 @@ const PianoKeyboard = class {
   noteOff = noteNumber => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      this.midiOutput?.send([0x90, noteNumber, 0]);
+      const selectedOutputs = this.selectedMidiOutputPorts;
+      if( selectedOutputs?.length ) {
+        const midiMessage = [0x90, noteNumber, 0];
+        selectedOutputs.forEach(port => port.send(midiMessage));
+      }
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
       const p = this.pressedPianoKeys;
@@ -242,51 +250,78 @@ const PianoKeyboard = class {
     },
   };
   setupMidi = (msgListener) => {
-    const icon = document.getElementById('midi');
-    const select = {
-      input: document.getElementById('midi_input'),
-      output: document.getElementById('midi_output'),
-    }
-    if( ! select.input && ! select.output ) return;
+    const selectedOutputs = [];
+    const midiElement = document.getElementById('midi');
+    if( ! midiElement ) return selectedOutputs;
     if( ! window.isSecureContext ) {
       console.warn("MIDI access not available: Not in secure context");
-      icon?.remove();
-      select.input?.remove();
-      select.output?.remove();
-      return;
+      midiElement.remove();
+      return selectedOutputs;
     }
-    const openMidi = () => {
-      navigator.requestMIDIAccess({
-        sysex: true,
-        software: false,
-      }).then(access => {
-        const createOption = (key, name) => {
-          const option = document.createElement("option");
-          option.value = key;
-          option.innerText = name;
-          return option;
-        }
-        access.inputs.forEach((input, key) => select.input.appendChild(createOption(key, input.name)));
-        msgListener && select.input.addEventListener("change", event => {
-          const eventName = "midimessage";
-          this.midiInput?.removeEventListener(eventName, msgListener);
-          (this.midiInput = access.inputs.get(event.target.value))?.addEventListener(eventName, msgListener);
-        });
-        access.outputs.forEach((output, key) => select.output.appendChild(createOption(key, output.name)));
-        select.output.addEventListener("change", event => {
-          this.midiOutput = access.outputs.get(event.target.value);
-        });
-        access.addEventListener("statechange", ({ port }) => {
-          if( select[port.type].querySelector(`option[value="${port.id}"]`) ) {
-            return;
-          }
-          select[port.type].appendChild(createOption(port.id, port.name));
-        });
-      }).catch(msg => {
-        alert(msg);
-      });
+    const unselectOutput = port => {
+      const i = selectedOutputs.findIndex(p => p.id === port.id);
+      i < 0 || selectedOutputs.splice(i, 1);
     };
-    openMidi();
+    const midiInOutElements = midiElement.getElementsByTagName("div");
+    const getCheckboxOf = port => midiElement.querySelector(`input[value="${port.id}"]`);
+    const addCheckboxOf = port => {
+      if( getCheckboxOf(port) ) {
+        return;
+      }
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = port.id;
+      const label = document.createElement("label");
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(port.name));
+      switch(port.type) {
+        case "input":
+          cb.name = "midi_input";
+          msgListener && cb.addEventListener("change", event => {
+            event.target.checked
+              ? port.addEventListener("midimessage", msgListener)
+              : port.removeEventListener("midimessage", msgListener);
+          });
+          midiInOutElements[0].appendChild(label);
+          break;
+        case "output":
+          cb.name = "midi_output";
+          cb.addEventListener("change", event => {
+            event.target.checked ? selectedOutputs.push(port) : unselectOutput(port)
+          });
+          midiInOutElements[1].appendChild(label);
+          break;
+      };
+    };
+    const removeCheckboxOf = port => {
+      const cb = getCheckboxOf(port);
+      if( !cb ) return;
+      switch(port.type) {
+        case "input":
+          msgListener && port.removeEventListener("midimessage", msgListener);
+          break;
+        case "output":
+          unselectOutput(port);
+          break;
+      };
+      cb.closest("label").remove();
+    };
+    navigator.requestMIDIAccess({
+      sysex: true,
+      software: false,
+    }).then(access => {
+      access.inputs.forEach(addCheckboxOf);
+      access.outputs.forEach(addCheckboxOf);
+      access.addEventListener("statechange", ({ port }) => {
+        switch(port.state) {
+          case "connected": addCheckboxOf(port); break;
+          case "disconnected": removeCheckboxOf(port); break;
+        }
+      });
+    }).catch(msg => {
+      alert(msg);
+    });
+    return selectedOutputs;
   };
   constructor() {
     this.synth = new SimpleSynthesizer();
@@ -310,7 +345,7 @@ const PianoKeyboard = class {
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
       const { pianoKeys, noteOn, noteOff, setupMidi } = this;
-      setupMidi(msg => {
+      this.selectedMidiOutputPorts = setupMidi(msg => {
         const [statusWithCh, ...data] = msg.data;
         const status = statusWithCh & 0xF0;
         switch(status) {
