@@ -166,6 +166,9 @@
 	.shift_button.pressed {
 		background: yellow;
 	}
+	.envelope {
+		font-size: small;
+	}
 	#midi {
 		display: flex;
 	}
@@ -221,7 +224,7 @@
     <div class="blackkey"></div>
     <div class="frequency">Hz</div>
   </div>
-  <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html">Frequency table</a>
+  <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
  </div>
  <div style="margin: 4px 0">
   <label for="waveselect" title="wave">
@@ -230,10 +233,10 @@
    </select>
   </label>
   <img id="envelope" alt="envelope" title="envelope" src="envelope.svg" height="32" align="center"/>
-  <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
-  <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
-  <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
-  <label for="release" title="Release time">R<input id="release" type="range"/></label>
+  <label for="attack" title="Attack time" class="envelope">A<input id="attack" type="range"/></label>
+  <label for="decay" title="Decay time" class="envelope">D<input id="decay" type="range"/></label>
+  <label for="sustain" title="Sustain level" class="envelope">S<input id="sustain" type="range"/></label>
+  <label for="release" title="Release time" class="envelope">R<input id="release" type="range"/></label>
  </div>
  <div id="midi">
    <div>
