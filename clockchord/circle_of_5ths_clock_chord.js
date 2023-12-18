@@ -273,7 +273,8 @@ const PianoKeyboard = class {
       cb.value = port.id;
       const label = document.createElement("label");
       label.appendChild(cb);
-      label.appendChild(document.createTextNode(port.name));
+      const manufacturerText = port.manufacturer ? ` (${port.manufacturer})` : "";
+      label.appendChild(document.createTextNode(`${port.name}${manufacturerText}`));
       switch(port.type) {
         case "input":
           cb.name = "midi_input";
