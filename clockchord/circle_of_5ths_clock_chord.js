@@ -340,8 +340,13 @@ const PianoKeyboard = class {
     chord.label = document.getElementById('chord');
     chord.dialCenterLabel = document.getElementById('center_chord');
     if( chord.dialCenterLabel ) {
-      chord.dialCenterLabel.addEventListener(pointerdown, e => chord.start());
-      chord.dialCenterLabel.addEventListener(pointerup, e => chord.stop());
+      chord.dialCenterLabel.addEventListener(pointerdown, e => {
+        chord.start();
+      });
+      chord.dialCenterLabel.addEventListener(pointerup, e => {
+        chord.canvas.focus();
+        chord.stop();
+      });
     }
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
@@ -740,6 +745,8 @@ const CircleOfFifthsClock = class {
       return;
     }
     const { chord } = this.pianokeyboard = new PianoKeyboard();
+    chord.canvas = canvas;
+    canvas.focus();
     const { keySignature, dial } = this;
     chord.keySignature = keySignature;
     keySignature.chord = chord;
@@ -818,6 +825,8 @@ const CircleOfFifthsClock = class {
             } else {
               switch(event.code) {
                 case 'Space':
+                  event.preventDefault(); // To avoid unexpected page down
+                  break;
                 case 'Enter':
                   break;
                 case 'Tab':
