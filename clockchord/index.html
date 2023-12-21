@@ -166,7 +166,7 @@
 	.shift_button.pressed {
 		background: yellow;
 	}
-	.envelope {
+	label {
 		font-size: small;
 	}
 	#midi {
@@ -187,7 +187,7 @@
 </HEAD>
 <BODY BGCOLOR=white>
 <h1>五度圏時計楽器 ClockChord</h1>
-<a href="#how_to_use">使い方/How to use</a>
+<a href="#how_to_use" style="font-size: small;">使い方/How to use</a>
 <hr/>
 <div>
  <label for="volume" title="Volume">
@@ -224,6 +224,7 @@
     <div class="blackkey"></div>
     <div class="frequency">Hz</div>
   </div>
+  <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
   <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
  </div>
  <div style="margin: 4px 0">
@@ -233,10 +234,10 @@
    </select>
   </label>
   <img id="envelope" alt="envelope" title="envelope" src="envelope.svg" height="32" align="center"/>
-  <label for="attack" title="Attack time" class="envelope">A<input id="attack" type="range"/></label>
-  <label for="decay" title="Decay time" class="envelope">D<input id="decay" type="range"/></label>
-  <label for="sustain" title="Sustain level" class="envelope">S<input id="sustain" type="range"/></label>
-  <label for="release" title="Release time" class="envelope">R<input id="release" type="range"/></label>
+  <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
+  <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
+  <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
+  <label for="release" title="Release time">R<input id="release" type="range"/></label>
  </div>
  <div id="midi">
    <div>

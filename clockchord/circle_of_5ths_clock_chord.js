@@ -1,4 +1,14 @@
 
+const setupSlider = (id, value, min, max, step) => {
+  const slider = document.getElementById(id);
+  if( ! slider ) return {value: value};
+  slider.min = min;
+  slider.max = max;
+  slider.step = step;
+  slider.value = value;
+  return slider;
+};
+
 const SimpleSynthesizer = class {
   static get audioContext() {
     if( ! SimpleSynthesizer._audioContext ) {
@@ -13,15 +23,6 @@ const SimpleSynthesizer = class {
     return SimpleSynthesizer._audioContext;
   };
   constructor() {
-    const setupSlider = (id, value, min, max, step) => {
-      const slider = document.getElementById(id);
-      if( ! slider ) return {value: value};
-      slider.min = min;
-      slider.max = max;
-      slider.step = step;
-      slider.value = value;
-      return slider;
-    };
     const sliders = {
       volume:       setupSlider('volume' , 0.2, 0, 1, 0.01),
       attackTime:   setupSlider('attack' , 0.01, 0, 0.3, 0.001),
@@ -139,11 +140,9 @@ const PianoKeyboard = class {
     }
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      const selectedOutputs = this.selectedMidiOutputPorts;
-      if( selectedOutputs?.length ) {
-        const midiMessage = [0x90, noteNumber, 64];
-        selectedOutputs.forEach(port => port.send(midiMessage));
-      }
+      this.selectedMidiOutputPorts?.forEach(port => port.send(
+        [0x90, noteNumber, this.sliders.velocity.value ?? 64]
+      ));
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
       const p = this.pressedPianoKeys;
       p.includes(key) || p.push(key);
@@ -163,11 +162,9 @@ const PianoKeyboard = class {
   noteOff = noteNumber => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      const selectedOutputs = this.selectedMidiOutputPorts;
-      if( selectedOutputs?.length ) {
-        const midiMessage = [0x90, noteNumber, 0];
-        selectedOutputs.forEach(port => port.send(midiMessage));
-      }
+      this.selectedMidiOutputPorts?.forEach(port => port.send(
+        [0x90, noteNumber, 0]
+      ));
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
       const p = this.pressedPianoKeys;
@@ -250,6 +247,9 @@ const PianoKeyboard = class {
     },
   };
   setupMidi = (msgListener) => {
+    this.sliders = {
+      velocity: setupSlider('velocity', 64, 0, 127, 1),
+    };
     const selectedOutputs = [];
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return selectedOutputs;
