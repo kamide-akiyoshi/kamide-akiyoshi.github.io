@@ -33,12 +33,12 @@ const SimpleSynthesizer = class {
     const waves = {
       ...(["sawtooth", "square", "triangle", "sine"].reduce(
         (basicWaves, key) => {
-          basicWaves[key] = {iconFile: `${key}.svg`};
+          basicWaves[key] = {iconFile: `image/${key}.svg`};
           return basicWaves;
         },{}
       )),
       custom_test: {
-        iconFile: "wave.svg",
+        iconFile: "image/wave.svg",
         real: [0, 0, 0, 0, 0, 0, 0, 0],
         imag: [0, 1, 1, 1, 0, 1, 1, 0],
       },
