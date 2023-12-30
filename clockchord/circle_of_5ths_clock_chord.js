@@ -1,7 +1,10 @@
 
 const setupSlider = (id, value, min, max, step) => {
   const slider = document.getElementById(id);
-  if( ! slider ) return {value: value};
+  if( ! slider ) {
+    console.warn(`No slider found: ID=${id}`);
+    return { value };
+  }
   slider.min = min;
   slider.max = max;
   slider.step = step;
