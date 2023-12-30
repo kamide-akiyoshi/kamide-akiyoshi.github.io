@@ -190,9 +190,15 @@ const PianoKeyboard = class {
   chord = {
     pianoKeyElements: [],
     clear() {
-      this.label.style.visibility =
-      this.dialCenterLabel.style.visibility =
-      this.keySignatureSetButton.style.visibility = 'hidden';
+      const {
+        label,
+        labelParent,
+        dialCenterLabel,
+        dialCenterLabelParent,
+        keySignatureSetButton: kssb,
+      } = this;
+      labelParent.contains(label) && labelParent.removeChild(label);
+      dialCenterLabelParent.contains(dialCenterLabel) && dialCenterLabelParent.removeChild(dialCenterLabel);
       this.hour =
       this.rootPitchName =
       this.rootPitchNumber =
@@ -200,6 +206,7 @@ const PianoKeyboard = class {
       this.offset5th =
       this.offset7th =
       this.add9th = undefined;
+      kssb.style.visibility = 'hidden';
     },
     stop: () => {
       while(this.noteOff(
@@ -212,9 +219,13 @@ const PianoKeyboard = class {
         hour,
         rootPitchName,
         rootPitchNumber,
-        label, dialCenterLabel,
+        label,
+        labelParent,
+        dialCenterLabel,
+        dialCenterLabelParent,
         button,
-        keySignature, keySignatureSetButton,
+        keySignature,
+        keySignatureSetButton,
         offset3rd,
         offset5th,
         offset7th,
@@ -246,7 +257,8 @@ const PianoKeyboard = class {
       sub && (text += `<sub>${sub}</sub>`);
       sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
       dialCenterLabel.innerHTML = label.innerHTML = text;
-      dialCenterLabel.style.visibility = label.style.visibility = 'visible';
+      labelParent.contains(label) || labelParent.appendChild(label);
+      dialCenterLabelParent.contains(dialCenterLabel) || dialCenterLabelParent.appendChild(dialCenterLabel);
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
     },
@@ -343,8 +355,12 @@ const PianoKeyboard = class {
     }
     chord.keySignatureSetButton = document.getElementById('setkey');
     chord.label = document.getElementById('chord');
+    if( chord.label ) {
+      chord.labelParent = chord.label.parentNode;
+    }
     chord.dialCenterLabel = document.getElementById('center_chord');
     if( chord.dialCenterLabel ) {
+      chord.dialCenterLabelParent = chord.dialCenterLabel.parentNode;
       chord.dialCenterLabel.addEventListener(pointerdown, e => {
         chord.start();
       });
@@ -709,7 +725,7 @@ const CircleOfFifthsClock = class {
       }
       const ksb = chord?.keySignatureSetButton;
       if( ksb ) {
-        ksb.style.visibility = Music.enharmonicallyEquals(hour, chord.hour) ? 'hidden' : chord.label.style.visibility;
+        ksb.style.visibility = Music.enharmonicallyEquals(hour, chord.hour) ? 'hidden' : 'visible';
       }
       dial.draw();
     },
