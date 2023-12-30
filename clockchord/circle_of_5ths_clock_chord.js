@@ -242,8 +242,10 @@ const PianoKeyboard = class {
       }
       let text = rootPitchName[0];
       const fs = rootPitchName[1];
-      fs && (text += '<sup>'+fs+'</sup>');
-      dialCenterLabel.innerHTML = label.innerHTML = text+'<sub>'+sub+'</sub><sup style="font-size: 70%;">'+sup+'</sup>';
+      fs && (text += `<sup>${fs}</sup>`);
+      sub && (text += `<sub>${sub}</sub>`);
+      sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
+      dialCenterLabel.innerHTML = label.innerHTML = text;
       dialCenterLabel.style.visibility = label.style.visibility = 'visible';
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
