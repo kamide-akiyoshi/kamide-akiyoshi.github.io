@@ -60,7 +60,6 @@
 	}
 	#volume {
 		width: 360px;
-		height: 32px;
 	}
 	#chordbar {
 		width: 424px;
@@ -190,11 +189,10 @@
 <a href="#how_to_use" style="font-size: small;">使い方/How to use</a>
 <hr/>
 <div>
- <label for="volume" title="Volume">
-  <img src="image/speaker.svg" alt="Volume"/>
-  <input id="volume" type="range"/>
- </label>
- <div>
+  <label for="volume" title="Volume" style="display: flex;">
+    <img src="image/speaker.svg" alt="Volume"/>
+    <input id="volume" type="range"/>
+  </label>
   <div class="clock">
     <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
     <select id="keyselect" style="height: 32px;"></select>
@@ -224,35 +222,36 @@
     <div class="blackkey"></div>
     <div class="frequency">Hz</div>
   </div>
-  <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
-  <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
- </div>
- <div style="margin: 4px 0">
-  <label for="waveselect" title="wave">
-   <img id="wave" alt="wave" height="32" align="center"/>
-   <select id="waveselect" style="height: 32px;">
-   </select>
-  </label>
-  <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
-  <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
-  <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
-  <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
-  <label for="release" title="Release time">R<input id="release" type="range"/></label>
- </div>
- <div id="midi">
-   <div>
-     <span>
-       <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
-       MIDI IN
-     </span>
-   </div>
-   <div>
-     <span>
-       <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
-       MIDI OUT
-     </span>
-   </div>
- </div>
+  <div>
+    <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
+    <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
+  </div>
+  <div style="margin: 4px 0">
+    <label for="waveselect" title="wave">
+      <img id="wave" alt="wave" height="32" align="center"/>
+      <select id="waveselect" style="height: 32px;">
+      </select>
+    </label>
+    <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
+    <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
+    <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
+    <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
+    <label for="release" title="Release time">R<input id="release" type="range"/></label>
+  </div>
+  <div id="midi">
+    <div>
+      <span>
+        <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
+        MIDI IN
+      </span>
+    </div>
+    <div>
+      <span>
+        <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
+        MIDI OUT
+      </span>
+    </div>
+  </div>
 </div>
 <hr/>
 <a name="how_to_use"></a>
