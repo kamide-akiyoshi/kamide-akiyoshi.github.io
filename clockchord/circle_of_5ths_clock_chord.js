@@ -188,7 +188,14 @@ const PianoKeyboard = class {
     get C() { return this._C; },
   };
   chord = {
+    keySignatureSetButton: document.getElementById('setkey'),
     pianoKeyElements: [],
+    setup() {
+      const label = this.label = document.getElementById('chord');
+      label && (this.labelParent = label.parentNode);
+      const dialCenterLabel = this.dialCenterLabel = document.getElementById('center_chord');
+      dialCenterLabel && (this.dialCenterLabelParent = dialCenterLabel.parentNode);
+    },
     clear() {
       const {
         label,
@@ -353,14 +360,8 @@ const PianoKeyboard = class {
       pointerdown = 'touchstart';
       pointerup = 'touchend';
     }
-    chord.keySignatureSetButton = document.getElementById('setkey');
-    chord.label = document.getElementById('chord');
-    if( chord.label ) {
-      chord.labelParent = chord.label.parentNode;
-    }
-    chord.dialCenterLabel = document.getElementById('center_chord');
+    chord.setup();
     if( chord.dialCenterLabel ) {
-      chord.dialCenterLabelParent = chord.dialCenterLabel.parentNode;
       chord.dialCenterLabel.addEventListener(pointerdown, e => {
         chord.start();
       });
