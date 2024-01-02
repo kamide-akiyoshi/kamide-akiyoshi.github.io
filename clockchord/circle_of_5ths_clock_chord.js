@@ -188,13 +188,13 @@ const PianoKeyboard = class {
     get C() { return this._C; },
   };
   chord = {
-    keySignatureSetButton: document.getElementById('setkey'),
     pianoKeyElements: [],
     setup() {
       const label = this.label = document.getElementById('chord');
       label && (this.labelParent = label.parentNode);
       const dialCenterLabel = this.dialCenterLabel = document.getElementById('center_chord');
       dialCenterLabel && (this.dialCenterLabelParent = dialCenterLabel.parentNode);
+      this.keySignatureSetButton = document.getElementById('setkey');
     },
     clear() {
       const {
@@ -202,7 +202,7 @@ const PianoKeyboard = class {
         labelParent,
         dialCenterLabel,
         dialCenterLabelParent,
-        keySignatureSetButton: kssb,
+        keySignatureSetButton,
       } = this;
       labelParent.contains(label) && labelParent.removeChild(label);
       dialCenterLabelParent.contains(dialCenterLabel) && dialCenterLabelParent.removeChild(dialCenterLabel);
@@ -213,7 +213,7 @@ const PianoKeyboard = class {
       this.offset5th =
       this.offset7th =
       this.add9th = undefined;
-      kssb.style.visibility = 'hidden';
+      keySignatureSetButton.style.visibility = 'hidden';
     },
     stop: () => {
       while(this.noteOff(
@@ -275,72 +275,67 @@ const PianoKeyboard = class {
       velocity: setupSlider('velocity', 64, 0, 127, 1),
     };
     const selectedOutputs = [];
+    selectedOutputs.addPort = port => selectedOutputs.push(port);
+    selectedOutputs.removePort = port => {
+      const i = selectedOutputs.findIndex(p => p.id === port.id);
+      i < 0 || selectedOutputs.splice(i, 1);
+    };
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return selectedOutputs;
     if( ! window.isSecureContext ) {
       console.warn("MIDI access not available: Not in secure context");
       midiElement.remove();
       return selectedOutputs;
-    }
-    const unselectOutput = port => {
-      const i = selectedOutputs.findIndex(p => p.id === port.id);
-      i < 0 || selectedOutputs.splice(i, 1);
     };
-    const midiInOutElements = midiElement.getElementsByTagName("div");
-    const getCheckboxOf = port => midiElement.querySelector(`input[value="${port.id}"]`);
-    const addCheckboxOf = port => {
-      if( getCheckboxOf(port) ) {
-        return;
-      }
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.value = port.id;
-      const label = document.createElement("label");
-      label.appendChild(cb);
-      const manufacturerText = port.manufacturer ? ` (${port.manufacturer})` : "";
-      label.appendChild(document.createTextNode(`${port.name}${manufacturerText}`));
-      switch(port.type) {
-        case "input":
-          cb.name = "midi_input";
-          msgListener && cb.addEventListener("change", event => {
-            event.target.checked
-              ? port.addEventListener("midimessage", msgListener)
-              : port.removeEventListener("midimessage", msgListener);
-          });
-          midiInOutElements[0].appendChild(label);
-          break;
-        case "output":
-          cb.name = "midi_output";
-          cb.addEventListener("change", event => {
-            event.target.checked ? selectedOutputs.push(port) : unselectOutput(port)
-          });
-          midiInOutElements[1].appendChild(label);
-          break;
-      };
-    };
-    const removeCheckboxOf = port => {
-      const cb = getCheckboxOf(port);
-      if( !cb ) return;
-      switch(port.type) {
-        case "input":
-          msgListener && port.removeEventListener("midimessage", msgListener);
-          break;
-        case "output":
-          unselectOutput(port);
-          break;
-      };
-      cb.closest("label").remove();
+    const checkboxes = {
+      eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
+      get: port => midiElement.querySelector(`input[value="${port.id}"]`),
+      add: port => {
+        if( checkboxes.get(port) ) return;
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.name = `midi_${port.type}`;
+        cb.value = port.id;
+        const label = document.createElement("label");
+        label.appendChild(cb);
+        const manufacturerText = port.manufacturer ? ` (${port.manufacturer})` : "";
+        label.appendChild(document.createTextNode(`${port.name}${manufacturerText}`));
+        document.getElementById(cb.name).appendChild(label);
+        switch(port.type) {
+          case "input":
+            msgListener && cb.addEventListener("change", event => {
+              port[`${checkboxes.eventToAddOrRemove(event)}EventListener`]("midimessage", msgListener);
+            });
+            break;
+          case "output":
+            cb.addEventListener("change", event => {
+              selectedOutputs[`${checkboxes.eventToAddOrRemove(event)}Port`](port);
+            });
+            break;
+        };
+      },
+      remove: port => {
+        switch(port.type) {
+          case "input":
+            msgListener && port.removeEventListener("midimessage", msgListener);
+            break;
+          case "output":
+            selectedOutputs.removePort(port);
+            break;
+        };
+        checkboxes.get(port)?.closest("label").remove();
+      },
     };
     navigator.requestMIDIAccess({
       sysex: true,
       software: false,
     }).then(access => {
-      access.inputs.forEach(addCheckboxOf);
-      access.outputs.forEach(addCheckboxOf);
+      access.inputs.forEach(checkboxes.add);
+      access.outputs.forEach(checkboxes.add);
       access.addEventListener("statechange", ({ port }) => {
         switch(port.state) {
-          case "connected": addCheckboxOf(port); break;
-          case "disconnected": removeCheckboxOf(port); break;
+          case "connected": checkboxes.add(port); break;
+          case "disconnected": checkboxes.remove(port); break;
         }
       });
     }).catch(msg => {
