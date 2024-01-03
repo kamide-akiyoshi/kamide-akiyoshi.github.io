@@ -345,7 +345,7 @@ const PianoKeyboard = class {
   };
   constructor() {
     this.synth = new SimpleSynthesizer();
-    const { chord, leftEnd } = this;
+    const { chord, leftEnd, setupMidi, noteOn, noteOff } = this;
     leftEnd.reset();
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
@@ -365,24 +365,24 @@ const PianoKeyboard = class {
         chord.stop();
       });
     }
-    const keyboard = document.getElementById('pianokeyboard');
-    if( keyboard ) {
-      const { pianoKeys, noteOn, noteOff, setupMidi } = this;
-      this.selectedMidiOutputPorts = setupMidi(msg => {
-        const [statusWithCh, ...data] = msg.data;
-        const status = statusWithCh & 0xF0;
-        switch(status) {
-        case 0x90: // Note On event
-          if( data[1] ) { // velocity
-            noteOn(data[0]);
-            break;
-          }
-          // fallthrough: velocity === 0 means Note Off
-        case 0x80: // Note Off event
-          noteOff(data[0]);
+    this.selectedMidiOutputPorts = setupMidi(msg => {
+      const [statusWithCh, ...data] = msg.data;
+      const status = statusWithCh & 0xF0;
+      switch(status) {
+      case 0x90: // Note On event
+        if( data[1] ) { // velocity
+          noteOn(data[0]);
           break;
         }
-      });
+        // fallthrough: velocity === 0 means Note Off
+      case 0x80: // Note Off event
+        noteOff(data[0]);
+        break;
+      }
+    });
+    const keyboard = document.getElementById('pianokeyboard');
+    if( keyboard ) {
+      const { pianoKeys } = this;
       const [
         whiteKeyElement,
         blackKeyElement,
