@@ -129,11 +129,13 @@ const SimpleSynthesizer = class {
 const PianoKeyboard = class {
   pianoKeys = Array.from(
     {length: 128},
-    (_, midiNoteNumber) => ({
-      frequency: 440 * (2 ** ((midiNoteNumber - 69)/12)),
-    })
+    (_, midiNoteNumber) => {
+      return {
+        frequency: 440 * (2 ** ((midiNoteNumber - 69)/12))
+      };
+    }
   );
-  pressedPianoKeys = [];
+  pressedNoteNumbers = new Set();
   noteOn = (noteNumber, orderInChord) => {
     const chordElements = this.chord.pianoKeyElements;
     if( ! orderInChord || orderInChord == 1 ) {
@@ -147,8 +149,7 @@ const PianoKeyboard = class {
         [0x90, noteNumber, this.sliders.velocity.value ?? 64]
       ));
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
-      const p = this.pressedPianoKeys;
-      p.includes(key) || p.push(key);
+      this.pressedNoteNumbers.add(noteNumber);
       const { element } = key;
       if( element ) {
         const cl = element.classList;
@@ -170,9 +171,7 @@ const PianoKeyboard = class {
       ));
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
-      const p = this.pressedPianoKeys;
-      const i = p.indexOf(key);
-      i < 0 || p.splice(i, 1);
+      this.pressedNoteNumbers.delete(noteNumber);
     }
     return key;
   };
@@ -219,9 +218,9 @@ const PianoKeyboard = class {
       keySignatureSetButton.style.visibility = 'hidden';
     },
     stop: () => {
-      while(this.noteOff(
-        this.pianoKeys.indexOf(this.pressedPianoKeys.pop())
-      ));
+      this.pressedNoteNumbers.forEach(noteNumber => {
+        this.noteOff(noteNumber);
+      });
     },
     start: () => {
       const { leftEnd, chord } = this;
