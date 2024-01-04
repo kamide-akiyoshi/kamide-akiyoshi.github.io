@@ -465,23 +465,23 @@ const PianoKeyboard = class {
           BracketLeft:17, Equal:18,
           BracketRight:19,
       	},
-      	activeKeys: [],
+      	activeNoteNumbers: [],
       };
       keyboard.addEventListener("keydown", e => {
         if( e.repeat ) return;
-        const { activeKeys } = pcKey;
-        if( activeKeys[e.code] ) return;
+        const { activeNoteNumbers } = pcKey;
+        if( activeNoteNumbers[e.code] ) return;
         const bindedValue = pcKey.bindings[e.code] ?? -1;
         if( bindedValue < 0 ) return;
-        activeKeys[e.code] = noteOn(bindedValue + leftEnd.noteC);
+        const noteNumber = bindedValue + leftEnd.noteC;
+        noteOn(noteNumber);
+        activeNoteNumbers[e.code] = noteNumber;
         chord.clear();
       });
       keyboard.addEventListener("keyup", e => {
-        const { activeKeys } = pcKey;
-        const key = activeKeys[e.code];
-        const noteNumber = pianoKeys.indexOf(key);
-        noteOff(noteNumber);
-        delete activeKeys[e.code];
+        const { activeNoteNumbers } = pcKey;
+        noteOff(activeNoteNumbers[e.code]);
+        delete activeNoteNumbers[e.code];
       });
     }
   }
