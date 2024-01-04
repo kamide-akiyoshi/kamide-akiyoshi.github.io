@@ -403,8 +403,7 @@ const PianoKeyboard = class {
       pianoKeys.forEach((key, noteNumber) => {
         if( hour >= 5 ) {
           if( whiteKeyLeft ) {
-            key.element = whiteKeyElement.cloneNode();
-            key.element.style.left = `${whiteKeyLeft}px`;
+            (key.element = whiteKeyElement.cloneNode()).style.left = `${whiteKeyLeft}px`;
           }
           if( hour == 9 ) {
             const newFrequencyElement = frequencyElement.cloneNode();
@@ -416,8 +415,7 @@ const PianoKeyboard = class {
           hour -= 5;
         } else {
           const blackKeyLeft = whiteKeyLeft - blackKeyLeftOffsetByHour[hour];
-          key.element ??= blackKeyElement.cloneNode();
-          key.element.style.left = `${blackKeyLeft}px`;
+          (key.element ??= blackKeyElement.cloneNode()).style.left = `${blackKeyLeft}px`;
           hour += 7;
         }
         const { element } = key;
