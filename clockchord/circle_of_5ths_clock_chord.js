@@ -178,14 +178,17 @@ const PianoKeyboard = class {
   };
   leftEnd = {
     set note(n) {
-      this._note = n;
-      this._chord = n + 5;
-      this._C = Math.ceil(n / 12) * 12;
+      this._chordNote = n + 5;
+      this._noteC = Math.ceil(n / 12) * 12;
     },
-    reset() { this.note = 4 * 12 + 5; },
-    get whiteKeyPosition() { return Math.ceil(7 * this._note / 12); },
-    get chord() { return this._chord; },
-    get C() { return this._C; },
+    reset() {
+      const n = 4 * 12 + 5;
+      this._initialWhiteKeyIndex = Math.ceil(7 * n / 12);
+      this.note = n;
+    },
+    get initialWhiteKeyIndex() { return this._initialWhiteKeyIndex; },
+    get chordNote() { return this._chordNote; },
+    get noteC() { return this._noteC; },
   };
   chord = {
     pianoKeyElements: [],
@@ -240,7 +243,7 @@ const PianoKeyboard = class {
         stop,
       } = chord;
       let i = 0;
-      const noteOn = n => this.noteOn(n - Math.floor((n - leftEnd.chord) / 12) * 12, ++i);
+      const noteOn = n => this.noteOn(n - Math.floor((n - leftEnd.chordNote) / 12) * 12, ++i);
       stop();
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
@@ -440,9 +443,12 @@ const PianoKeyboard = class {
           }
         });
       });
-      keyboard.scrollLeft = whiteKeyWidth * leftEnd.whiteKeyPosition;
+      keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
       keyboard.addEventListener("scroll",
-        e => leftEnd.note = Math.ceil(pianoKeys.length * keyboard.scrollLeft / keyboard.scrollWidth)
+        event => {
+          const { scrollLeft, scrollWidth } = event.target;
+          leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
+        }
       );
       ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
       const pcKey = {
@@ -468,7 +474,7 @@ const PianoKeyboard = class {
         if( activeKeys[e.code] ) return;
         const bindedValue = pcKey.bindings[e.code] ?? -1;
         if( bindedValue < 0 ) return;
-        activeKeys[e.code] = noteOn(bindedValue + leftEnd.C);
+        activeKeys[e.code] = noteOn(bindedValue + leftEnd.noteC);
         chord.clear();
       });
       keyboard.addEventListener("keyup", e => {
