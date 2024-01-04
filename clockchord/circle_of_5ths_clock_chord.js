@@ -402,25 +402,25 @@ const PianoKeyboard = class {
         return noteNumber ? Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour) : w;
       });
       let [whiteKeyLeft, hour] = [0, 6];
-      pianoKeys.forEach((key, noteNumber) => {
-        if( hour >= 5 ) {
+      pianoKeys.forEach((pianoKey, noteNumber) => {
+        if( hour >= 5 ) { // F(5) C(6) G(7) D(8) A(9) E(10) B(11)
           if( whiteKeyLeft ) {
-            (key.element = whiteKeyElement.cloneNode()).style.left = `${whiteKeyLeft}px`;
+            (pianoKey.element = whiteKeyElement.cloneNode()).style.left = `${whiteKeyLeft}px`;
           }
           if( hour == 9 ) {
             const newFrequencyElement = frequencyElement.cloneNode();
-            newFrequencyElement.innerHTML = key.frequency;
-            newFrequencyElement.style.left = key.element.style.left;
+            newFrequencyElement.innerHTML = pianoKey.frequency;
+            newFrequencyElement.style.left = pianoKey.element.style.left;
             keyboard.appendChild(newFrequencyElement);
           }
           whiteKeyLeft += whiteKeyWidth;
           hour -= 5;
-        } else {
+        } else { // Gb(0) Db(1) Ab(2) Eb(3) Bb(4)
           const blackKeyLeft = whiteKeyLeft - blackKeyLeftOffsetByHour[hour];
-          (key.element ??= blackKeyElement.cloneNode()).style.left = `${blackKeyLeft}px`;
+          (pianoKey.element ??= blackKeyElement.cloneNode()).style.left = `${blackKeyLeft}px`;
           hour += 7;
         }
-        const { element } = key;
+        const { element } = pianoKey;
         keyboard.appendChild(element);
         element.addEventListener(pointerdown, e => {
           chord.clear();
