@@ -145,9 +145,15 @@ const PianoKeyboard = class {
     }
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      this.selectedMidiOutputPorts?.forEach(port => port.send(
-        [0x90, noteNumber, this.sliders.velocity.value ?? 64]
-      ));
+      const outputs = this.selectedMidiOutputPorts;
+      if( outputs ) {
+        const midiMessage = [
+          0x90 + parseInt(this.midiChannelSelect.value),
+          noteNumber,
+          this.sliders.velocity.value ?? 64
+        ];
+        outputs?.forEach(port => port.send(midiMessage));
+      }
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
       this.pressedNoteNumbers.add(noteNumber);
       const { element } = key;
@@ -166,9 +172,15 @@ const PianoKeyboard = class {
   noteOff = noteNumber => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      this.selectedMidiOutputPorts?.forEach(port => port.send(
-        [0x90, noteNumber, 0]
-      ));
+      const outputs = this.selectedMidiOutputPorts;
+      if( outputs ) {
+        const midiMessage = [
+          0x90 + parseInt(this.midiChannelSelect.value),
+          noteNumber,
+          0
+        ];
+        outputs?.forEach(port => port.send(midiMessage));
+      }
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
       this.pressedNoteNumbers.delete(noteNumber);
@@ -328,6 +340,14 @@ const PianoKeyboard = class {
         checkboxes.get(port)?.closest("label").remove();
       },
     };
+    const chSelect = this.midiChannelSelect = document.getElementById('midi_channel');
+    for( let ch = 0; ch < 16; ++ch ) {
+      const option = document.createElement("option");
+      option.value = ch;
+      const drumText = ch == 9 ? " (Drum)" : "";
+      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
+      chSelect.appendChild(option);
+    }
     navigator.requestMIDIAccess({
       sysex: true,
       software: false,
@@ -370,15 +390,16 @@ const PianoKeyboard = class {
     this.selectedMidiOutputPorts = setupMidi(msg => {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
+      const channel = statusWithCh & 0xF;
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
-          noteOn(data[0]);
+          (channel == parseInt(this.midiChannelSelect.value)) && noteOn(data[0]);
           break;
         }
         // fallthrough: velocity === 0 means Note Off
       case 0x80: // Note Off event
-        noteOff(data[0]);
+        (channel == parseInt(this.midiChannelSelect.value)) && noteOff(data[0]);
         break;
       }
     });

@@ -170,17 +170,21 @@
 	}
 	#midi {
 		display: flex;
+		align-items: flex-start;
 	}
 	#midi > * {
 		display: flex;
 		flex-direction: column;
 		margin-left: 10px;
 	}
-	#midi > *:first-of-type {
+	#midi > *:first-child {
 		margin-left: 0;
 	}
 	#midi * {
 		font-size: small;
+	}
+	#midi_channel {
+		margin-top: 2px;
 	}
 </style>
 </HEAD>
@@ -251,6 +255,10 @@
         MIDI OUT
       </span>
     </div>
+    <label for="midi_channel">
+      MIDI Channel
+      <select id="midi_channel"></select>
+    <label>
   </div>
 </div>
 <hr/>
