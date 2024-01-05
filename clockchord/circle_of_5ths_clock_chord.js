@@ -145,15 +145,6 @@ const PianoKeyboard = class {
     }
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      const outputs = this.selectedMidiOutputPorts;
-      if( outputs ) {
-        const midiMessage = [
-          0x90 + parseInt(this.midiChannelSelect.value),
-          noteNumber,
-          this.sliders.velocity.value ?? 64
-        ];
-        outputs?.forEach(port => port.send(midiMessage));
-      }
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
       this.pressedNoteNumbers.add(noteNumber);
       const { element } = key;
@@ -172,15 +163,6 @@ const PianoKeyboard = class {
   noteOff = noteNumber => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      const outputs = this.selectedMidiOutputPorts;
-      if( outputs ) {
-        const midiMessage = [
-          0x90 + parseInt(this.midiChannelSelect.value),
-          noteNumber,
-          0
-        ];
-        outputs?.forEach(port => port.send(midiMessage));
-      }
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
       this.pressedNoteNumbers.delete(noteNumber);
@@ -231,6 +213,7 @@ const PianoKeyboard = class {
     },
     stop: () => {
       this.pressedNoteNumbers.forEach(noteNumber => {
+        this.selectedMidiOutputPorts.noteOff(noteNumber);
         this.noteOff(noteNumber);
       });
     },
@@ -254,7 +237,11 @@ const PianoKeyboard = class {
         stop,
       } = chord;
       let i = 0;
-      const noteOn = n => this.noteOn(n - Math.floor((n - leftEnd.chordNote) / 12) * 12, ++i);
+      const noteOn = n => {
+        const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
+        this.selectedMidiOutputPorts.noteOn(noteNumber);
+        this.noteOn(noteNumber, ++i);
+      };
       stop();
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
@@ -293,6 +280,22 @@ const PianoKeyboard = class {
     selectedOutputs.removePort = port => {
       const i = selectedOutputs.findIndex(p => p.id === port.id);
       i < 0 || selectedOutputs.splice(i, 1);
+    };
+    selectedOutputs.noteOn = noteNumber => {
+      const midiMessage = [
+        0x90 + parseInt(this.midiChannelSelect.value),
+        noteNumber,
+        this.sliders.velocity.value ?? 64
+      ];
+      selectedOutputs.forEach(port => port.send(midiMessage));
+    };
+    selectedOutputs.noteOff = noteNumber => {
+      const midiMessage = [
+        0x90 + parseInt(this.midiChannelSelect.value),
+        noteNumber,
+        0
+      ];
+      selectedOutputs.forEach(port => port.send(midiMessage));
     };
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return selectedOutputs;
@@ -367,7 +370,7 @@ const PianoKeyboard = class {
   };
   constructor() {
     this.synth = new SimpleSynthesizer();
-    const { chord, leftEnd, setupMidi, noteOn, noteOff } = this;
+    const { chord, leftEnd, setupMidi } = this;
     leftEnd.reset();
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
@@ -394,12 +397,12 @@ const PianoKeyboard = class {
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
-          (channel == parseInt(this.midiChannelSelect.value)) && noteOn(data[0]);
+          (channel == parseInt(this.midiChannelSelect.value)) && this.noteOn(data[0]);
           break;
         }
         // fallthrough: velocity === 0 means Note Off
       case 0x80: // Note Off event
-        (channel == parseInt(this.midiChannelSelect.value)) && noteOff(data[0]);
+        (channel == parseInt(this.midiChannelSelect.value)) && this.noteOff(data[0]);
         break;
       }
     });
@@ -445,21 +448,25 @@ const PianoKeyboard = class {
         keyboard.appendChild(element);
         element.addEventListener(pointerdown, e => {
           chord.clear();
-          noteOn(noteNumber);
+          this.selectedMidiOutputPorts.noteOn(noteNumber);
+          this.noteOn(noteNumber);
           keyboard.focus();
           e.preventDefault();
         });
         element.addEventListener(pointerup, e => {
-          noteOff(noteNumber);
+          this.selectedMidiOutputPorts.noteOff(noteNumber);
+          this.noteOff(noteNumber);
         });
         element.addEventListener(pointerenter, e => {
           if( e.buttons & 1 ) {
-            noteOn(noteNumber);
+            this.selectedMidiOutputPorts.noteOn(noteNumber);
+            this.noteOn(noteNumber);
           }
         });
         element.addEventListener(pointerleave, e => {
           if( e.buttons & 1 ) {
-            noteOff(noteNumber);
+            this.selectedMidiOutputPorts.noteOff(noteNumber);
+            this.noteOff(noteNumber);
           }
         });
       });
@@ -495,13 +502,16 @@ const PianoKeyboard = class {
         const bindedValue = pcKey.bindings[e.code] ?? -1;
         if( bindedValue < 0 ) return;
         const noteNumber = bindedValue + leftEnd.noteC;
-        noteOn(noteNumber);
+        this.selectedMidiOutputPorts.noteOn(noteNumber);
+        this.noteOn(noteNumber);
         activeNoteNumbers[e.code] = noteNumber;
         chord.clear();
       });
       keyboard.addEventListener("keyup", e => {
         const { activeNoteNumbers } = pcKey;
-        noteOff(activeNoteNumbers[e.code]);
+        const noteNumber = activeNoteNumbers[e.code];
+        this.selectedMidiOutputPorts.noteOff(noteNumber);
+        this.noteOff(noteNumber);
         delete activeNoteNumbers[e.code];
       });
     }
