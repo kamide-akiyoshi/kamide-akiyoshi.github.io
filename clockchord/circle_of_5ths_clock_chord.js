@@ -136,11 +136,11 @@ const PianoKeyboard = class {
     }
   );
   pressedNoteNumbers = new Set();
+  chordClassLists = [];
   noteOn = (noteNumber, orderInChord) => {
-    const chordElements = this.chord.pianoKeyElements;
     if( ! orderInChord || orderInChord == 1 ) {
-      while( chordElements.length ) {
-        chordElements.pop().classList.remove('chord', 'root');
+      while( this.chordClassLists.length ) {
+        this.chordClassLists.pop().remove('chord', 'root');
       }
     }
     const key = this.pianoKeys[noteNumber];
@@ -154,7 +154,7 @@ const PianoKeyboard = class {
         if( orderInChord ) {
           cl.add('chord');
           orderInChord == 1 && cl.add('root');
-          chordElements.push(element);
+          this.chordClassLists.push(cl);
         }
       }
     }
@@ -184,7 +184,6 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
-    pianoKeyElements: [],
     setup() {
       const label = this.label = document.getElementById('chord');
       label && (this.labelParent = label.parentNode);
@@ -212,11 +211,10 @@ const PianoKeyboard = class {
       keySignatureSetButton.style.visibility = 'hidden';
     },
     stop: () => {
-      const noteOff = noteNumber => {
+      this.pressedNoteNumbers.forEach(noteNumber => {
         this.selectedMidiOutputPorts.noteOff(noteNumber);
         this.noteOff(noteNumber);
-      };
-      this.pressedNoteNumbers.forEach(noteOff);
+      });
     },
     start: () => {
       const { leftEnd, chord } = this;
