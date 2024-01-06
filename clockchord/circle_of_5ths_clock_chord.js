@@ -212,10 +212,11 @@ const PianoKeyboard = class {
       keySignatureSetButton.style.visibility = 'hidden';
     },
     stop: () => {
-      this.pressedNoteNumbers.forEach(noteNumber => {
+      const noteOff = noteNumber => {
         this.selectedMidiOutputPorts.noteOff(noteNumber);
         this.noteOff(noteNumber);
-      });
+      };
+      this.pressedNoteNumbers.forEach(noteOff);
     },
     start: () => {
       const { leftEnd, chord } = this;
@@ -409,6 +410,14 @@ const PianoKeyboard = class {
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
       const { pianoKeys } = this;
+      const noteOn = noteNumber => {
+        this.selectedMidiOutputPorts.noteOn(noteNumber);
+        this.noteOn(noteNumber);
+      };
+      const noteOff = noteNumber => {
+        this.selectedMidiOutputPorts.noteOff(noteNumber);
+        this.noteOff(noteNumber);
+      };
       const [
         whiteKeyElement,
         blackKeyElement,
@@ -448,25 +457,21 @@ const PianoKeyboard = class {
         keyboard.appendChild(element);
         element.addEventListener(pointerdown, e => {
           chord.clear();
-          this.selectedMidiOutputPorts.noteOn(noteNumber);
-          this.noteOn(noteNumber);
+          noteOn(noteNumber);
           keyboard.focus();
           e.preventDefault();
         });
         element.addEventListener(pointerup, e => {
-          this.selectedMidiOutputPorts.noteOff(noteNumber);
-          this.noteOff(noteNumber);
+          noteOff(noteNumber);
         });
         element.addEventListener(pointerenter, e => {
           if( e.buttons & 1 ) {
-            this.selectedMidiOutputPorts.noteOn(noteNumber);
-            this.noteOn(noteNumber);
+            noteOn(noteNumber);
           }
         });
         element.addEventListener(pointerleave, e => {
           if( e.buttons & 1 ) {
-            this.selectedMidiOutputPorts.noteOff(noteNumber);
-            this.noteOff(noteNumber);
+            noteOff(noteNumber);
           }
         });
       });
@@ -502,16 +507,13 @@ const PianoKeyboard = class {
         const bindedValue = pcKey.bindings[e.code] ?? -1;
         if( bindedValue < 0 ) return;
         const noteNumber = bindedValue + leftEnd.noteC;
-        this.selectedMidiOutputPorts.noteOn(noteNumber);
-        this.noteOn(noteNumber);
+        noteOn(noteNumber);
         activeNoteNumbers[e.code] = noteNumber;
         chord.clear();
       });
       keyboard.addEventListener("keyup", e => {
         const { activeNoteNumbers } = pcKey;
-        const noteNumber = activeNoteNumbers[e.code];
-        this.selectedMidiOutputPorts.noteOff(noteNumber);
-        this.noteOff(noteNumber);
+        noteOff(activeNoteNumbers[e.code]);
         delete activeNoteNumbers[e.code];
       });
     }
