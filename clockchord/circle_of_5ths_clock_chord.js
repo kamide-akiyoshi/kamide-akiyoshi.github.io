@@ -423,7 +423,7 @@ const PianoKeyboard = class {
       ] = keyboard.getElementsByTagName('*');
       const [
         whiteKeyWidth,
-        blackKeyLeftOffsets
+        xOffsets
       ] = [
         whiteKeyElement,
         blackKeyElement
@@ -451,7 +451,7 @@ const PianoKeyboard = class {
           if( ! pianoKey.element ) {
             keyboard.appendChild(pianoKey.element = blackKeyElement.cloneNode());
           }
-          pianoKey.element.style.left = `${whiteKeyLeft - blackKeyLeftOffsets[hour]}px`;
+          pianoKey.element.style.left = `${whiteKeyLeft - xOffsets[hour]}px`;
           hour += 7;
         }
         const { element } = pianoKey;
