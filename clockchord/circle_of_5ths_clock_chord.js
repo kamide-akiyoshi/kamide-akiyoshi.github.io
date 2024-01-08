@@ -387,6 +387,7 @@ const PianoKeyboard = class {
     const { chord, leftEnd, setupMidi } = this;
     setupMidi();
     leftEnd.reset();
+    chord.setup();
     // Mouse/Touch event names
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
@@ -395,17 +396,6 @@ const PianoKeyboard = class {
     if( typeof window.ontouchstart !== 'undefined' ) {
       pointerdown = 'touchstart';
       pointerup = 'touchend';
-    }
-    // Setup chord button
-    chord.setup();
-    if( chord.dialCenterLabel ) {
-      chord.dialCenterLabel.addEventListener(pointerdown, e => {
-        chord.start();
-      });
-      chord.dialCenterLabel.addEventListener(pointerup, e => {
-        chord.canvas.focus();
-        chord.stop();
-      });
     }
     // Setup piano keyboard
     const keyboard = document.getElementById('pianokeyboard');
@@ -990,6 +980,15 @@ const CircleOfFifthsClock = class {
     eventTypes.disable.forEach(t => canvas.addEventListener(t, handleEvent));
     eventTypes.start.forEach(t => canvas.addEventListener(t, e => handleEvent(e, chord)));
     eventTypes.end.forEach(t => canvas.addEventListener(t, chord.stop));
+    if( chord.dialCenterLabel ) {
+      chord.dialCenterLabel.addEventListener('pointerdown', e => {
+        chord.start();
+      });
+      chord.dialCenterLabel.addEventListener('pointerup', e => {
+        chord.canvas.focus();
+        chord.stop();
+      });
+    }
   };
 };
 
