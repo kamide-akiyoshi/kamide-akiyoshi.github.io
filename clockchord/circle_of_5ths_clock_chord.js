@@ -270,11 +270,11 @@ const PianoKeyboard = class {
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
     },
   };
-  setupMidi = (msgListener) => {
+  setupMidi = () => {
     this.sliders = {
       velocity: setupSlider('velocity', 64, 0, 127, 1),
     };
-    const selectedOutputs = [];
+    const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
     selectedOutputs.removePort = port => {
       const i = selectedOutputs.findIndex(p => p.id === port.id);
@@ -297,11 +297,27 @@ const PianoKeyboard = class {
       selectedOutputs.forEach(port => port.send(midiMessage));
     };
     const midiElement = document.getElementById('midi');
-    if( ! midiElement ) return selectedOutputs;
+    if( ! midiElement ) return;
     if( ! window.isSecureContext ) {
       console.warn("MIDI access not available: Not in secure context");
       midiElement.remove();
-      return selectedOutputs;
+      return;
+    };
+    const msgListener = msg => {
+      const [statusWithCh, ...data] = msg.data;
+      const status = statusWithCh & 0xF0;
+      const channel = statusWithCh & 0xF;
+      switch(status) {
+      case 0x90: // Note On event
+        if( data[1] ) { // velocity
+          (channel == parseInt(this.midiChannelSelect.value)) && this.noteOn(data[0]);
+          break;
+        }
+        // fallthrough: velocity === 0 means Note Off
+      case 0x80: // Note Off event
+        (channel == parseInt(this.midiChannelSelect.value)) && this.noteOff(data[0]);
+        break;
+      }
     };
     const checkboxes = {
       eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
@@ -319,7 +335,7 @@ const PianoKeyboard = class {
         document.getElementById(cb.name).appendChild(label);
         switch(port.type) {
           case "input":
-            msgListener && cb.addEventListener("change", event => {
+            cb.addEventListener("change", event => {
               port[`${checkboxes.eventToAddOrRemove(event)}EventListener`]("midimessage", msgListener);
             });
             break;
@@ -333,7 +349,7 @@ const PianoKeyboard = class {
       remove: port => {
         switch(port.type) {
           case "input":
-            msgListener && port.removeEventListener("midimessage", msgListener);
+            port.removeEventListener("midimessage", msgListener);
             break;
           case "output":
             selectedOutputs.removePort(port);
@@ -365,12 +381,13 @@ const PianoKeyboard = class {
     }).catch(msg => {
       alert(msg);
     });
-    return selectedOutputs;
   };
   constructor() {
     this.synth = new SimpleSynthesizer();
     const { chord, leftEnd, setupMidi } = this;
+    setupMidi();
     leftEnd.reset();
+    // Mouse/Touch event names
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
     let pointerenter = 'mouseenter';
@@ -379,6 +396,7 @@ const PianoKeyboard = class {
       pointerdown = 'touchstart';
       pointerup = 'touchend';
     }
+    // Setup chord button
     chord.setup();
     if( chord.dialCenterLabel ) {
       chord.dialCenterLabel.addEventListener(pointerdown, e => {
@@ -389,22 +407,7 @@ const PianoKeyboard = class {
         chord.stop();
       });
     }
-    this.selectedMidiOutputPorts = setupMidi(msg => {
-      const [statusWithCh, ...data] = msg.data;
-      const status = statusWithCh & 0xF0;
-      const channel = statusWithCh & 0xF;
-      switch(status) {
-      case 0x90: // Note On event
-        if( data[1] ) { // velocity
-          (channel == parseInt(this.midiChannelSelect.value)) && this.noteOn(data[0]);
-          break;
-        }
-        // fallthrough: velocity === 0 means Note Off
-      case 0x80: // Note Off event
-        (channel == parseInt(this.midiChannelSelect.value)) && this.noteOff(data[0]);
-        break;
-      }
-    });
+    // Setup piano keyboard
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
       const { pianoKeys } = this;
