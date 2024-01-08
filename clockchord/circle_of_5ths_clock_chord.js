@@ -271,9 +271,7 @@ const PianoKeyboard = class {
     },
   };
   setupMidi = () => {
-    this.sliders = {
-      velocity: setupSlider('velocity', 64, 0, 127, 1),
-    };
+    const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
     selectedOutputs.removePort = port => {
@@ -284,7 +282,7 @@ const PianoKeyboard = class {
       port => port.send([
         0x90 + parseInt(this.midiChannelSelect.value),
         noteNumber,
-        this.sliders.velocity.value
+        velocitySlider.value
       ])
     );
     selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
