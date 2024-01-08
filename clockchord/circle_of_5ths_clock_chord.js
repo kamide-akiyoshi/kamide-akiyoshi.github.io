@@ -280,22 +280,20 @@ const PianoKeyboard = class {
       const i = selectedOutputs.findIndex(p => p.id === port.id);
       i < 0 || selectedOutputs.splice(i, 1);
     };
-    selectedOutputs.noteOn = noteNumber => {
-      const midiMessage = [
+    selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
+      port => port.send([
         0x90 + parseInt(this.midiChannelSelect.value),
         noteNumber,
-        this.sliders.velocity.value ?? 64
-      ];
-      selectedOutputs.forEach(port => port.send(midiMessage));
-    };
-    selectedOutputs.noteOff = noteNumber => {
-      const midiMessage = [
+        this.sliders.velocity.value
+      ])
+    );
+    selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
+      port => port.send([
         0x90 + parseInt(this.midiChannelSelect.value),
         noteNumber,
         0
-      ];
-      selectedOutputs.forEach(port => port.send(midiMessage));
-    };
+      ])
+    );
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return;
     if( ! window.isSecureContext ) {
@@ -374,8 +372,12 @@ const PianoKeyboard = class {
       access.outputs.forEach(checkboxes.add);
       access.addEventListener("statechange", ({ port }) => {
         switch(port.state) {
-          case "connected": checkboxes.add(port); break;
-          case "disconnected": checkboxes.remove(port); break;
+          case "connected": // USB MIDI plugged
+            checkboxes.add(port);
+            break;
+          case "disconnected": // USB MIDI unplugged
+            checkboxes.remove(port);
+            break;
         }
       });
     }).catch(msg => {
