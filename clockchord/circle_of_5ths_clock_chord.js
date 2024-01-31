@@ -184,24 +184,24 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
-    createLabelEntry(id) {
-      const label = document.getElementById(id);
-      if( !label ) return undefined;
-      const parent = label.parentNode;
-      return {
-        label,
-        attach: (text) => {
-          text && (label.innerHTML = text);
-          parent.contains(label) || parent.appendChild(label);
-        },
-        detach: () => {
-          parent.contains(label) && parent.removeChild(label);
-        },
-      };
-    },
     setup() {
-      this.label = this.createLabelEntry('chord');
-      this.dialCenterLabel = this.createLabelEntry('center_chord');
+      const createLabelEntry = id => {
+        const label = document.getElementById(id);
+        if( !label ) return undefined;
+        const parent = label.parentNode;
+        return {
+          label,
+          attach: (text) => {
+            text && (label.innerHTML = text);
+            parent.contains(label) || parent.appendChild(label);
+          },
+          detach: () => {
+            parent.contains(label) && parent.removeChild(label);
+          },
+        };
+      };
+      this.label = createLabelEntry('chord');
+      this.dialCenterLabel = createLabelEntry('center_chord');
       this.keySignatureSetButton = document.getElementById('setkey');
     },
     clear() {
