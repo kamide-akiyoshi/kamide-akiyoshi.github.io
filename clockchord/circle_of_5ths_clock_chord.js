@@ -184,23 +184,34 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
+    createLabelEntry(id) {
+      const label = document.getElementById(id);
+      if( !label ) return undefined;
+      const parent = label.parentNode;
+      return {
+        label,
+        attach: (text) => {
+          text && (label.innerHTML = text);
+          parent.contains(label) || parent.appendChild(label);
+        },
+        detach: () => {
+          parent.contains(label) && parent.removeChild(label);
+        },
+      };
+    },
     setup() {
-      const label = this.label = document.getElementById('chord');
-      label && (this.labelParent = label.parentNode);
-      const dialCenterLabel = this.dialCenterLabel = document.getElementById('center_chord');
-      dialCenterLabel && (this.dialCenterLabelParent = dialCenterLabel.parentNode);
+      this.label = createLabelEntry('chord');
+      this.dialCenterLabel = createLabelEntry('center_chord');
       this.keySignatureSetButton = document.getElementById('setkey');
     },
     clear() {
       const {
         label,
-        labelParent,
         dialCenterLabel,
-        dialCenterLabelParent,
         keySignatureSetButton,
       } = this;
-      labelParent.contains(label) && labelParent.removeChild(label);
-      dialCenterLabelParent.contains(dialCenterLabel) && dialCenterLabelParent.removeChild(dialCenterLabel);
+      label?.detach();
+      dialCenterLabel?.detach();
       this.hour =
       this.rootPitchName =
       this.rootPitchNumber =
@@ -223,9 +234,7 @@ const PianoKeyboard = class {
         rootPitchName,
         rootPitchNumber,
         label,
-        labelParent,
         dialCenterLabel,
-        dialCenterLabelParent,
         button,
         keySignature,
         keySignatureSetButton,
@@ -263,9 +272,8 @@ const PianoKeyboard = class {
       fs && (text += `<sup>${fs}</sup>`);
       sub && (text += `<sub>${sub}</sub>`);
       sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
-      dialCenterLabel.innerHTML = label.innerHTML = text;
-      labelParent.contains(label) || labelParent.appendChild(label);
-      dialCenterLabelParent.contains(dialCenterLabel) || dialCenterLabelParent.appendChild(dialCenterLabel);
+      label.attach(text);
+      dialCenterLabel.attach(text);
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
     },
@@ -981,10 +989,11 @@ const CircleOfFifthsClock = class {
     eventTypes.start.forEach(t => canvas.addEventListener(t, e => handleEvent(e, chord)));
     eventTypes.end.forEach(t => canvas.addEventListener(t, chord.stop));
     if( chord.dialCenterLabel ) {
-      chord.dialCenterLabel.addEventListener('pointerdown', e => {
+      const { label } = chord.dialCenterLabel;
+      label.addEventListener('pointerdown', e => {
         chord.start();
       });
-      chord.dialCenterLabel.addEventListener('pointerup', e => {
+      label.addEventListener('pointerup', e => {
         chord.canvas.focus();
         chord.stop();
       });
