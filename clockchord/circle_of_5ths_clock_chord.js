@@ -200,8 +200,8 @@ const PianoKeyboard = class {
       };
     },
     setup() {
-      this.label = createLabelEntry('chord');
-      this.dialCenterLabel = createLabelEntry('center_chord');
+      this.label = this.createLabelEntry('chord');
+      this.dialCenterLabel = this.createLabelEntry('center_chord');
       this.keySignatureSetButton = document.getElementById('setkey');
     },
     clear() {
