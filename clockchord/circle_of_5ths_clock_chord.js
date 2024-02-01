@@ -257,23 +257,25 @@ const PianoKeyboard = class {
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
       if( ! rootPitchName ) return;
-      let sub = '', sup = '';
-      if( offset3rd < 0 && offset5th < 0 && offset7th == 1 ) {
-        sup += 'dim' + (add9th ? '9':'7');
-      } else {
-        offset3rd < 0 && (sub += 'm');
-        offset5th > 0 && (sup += 'aug');
-        sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th];
-        offset5th < 0 && (sup += '-5');
-        offset3rd > 0 && (sup += 'sus4');
+      if( label || dialCenterLabel ) {
+        let sub = '', sup = '';
+        if( offset3rd < 0 && offset5th < 0 && offset7th == 1 ) {
+          sup += 'dim' + (add9th ? '9':'7');
+        } else {
+          offset3rd < 0 && (sub += 'm');
+          offset5th > 0 && (sup += 'aug');
+          sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th];
+          offset5th < 0 && (sup += '-5');
+          offset3rd > 0 && (sup += 'sus4');
+        }
+        let text = rootPitchName[0];
+        const fs = rootPitchName[1];
+        fs && (text += `<sup>${fs}</sup>`);
+        sub && (text += `<sub>${sub}</sub>`);
+        sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
+        label?.attach(text);
+        dialCenterLabel?.attach(text);
       }
-      let text = rootPitchName[0];
-      const fs = rootPitchName[1];
-      fs && (text += `<sup>${fs}</sup>`);
-      sub && (text += `<sub>${sub}</sub>`);
-      sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
-      label.attach(text);
-      dialCenterLabel.attach(text);
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
     },
