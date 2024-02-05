@@ -63,31 +63,32 @@ const SimpleSynthesizer = class {
         setIcon(waveselect.value);
       }
     }
+    const createAmplifier = context => {
+      const amp = context.createGain();
+      const { gain } = amp;
+      const { volume } = sliders;
+      const changeVolume = () => gain.value = volume.value ** 2;
+      volume.addEventListener && volume.addEventListener('input', changeVolume);
+      changeVolume();
+      amp.connect(context.destination);
+      return amp;
+    };
     this.createVoice = frequency => {
       const context = SimpleSynthesizer.audioContext;
-      if( ! this.amplifier ) {
-        const amp = this.amplifier = context.createGain();
-        const gain = amp.gain;
-        gain.value = 0;
-        amp.connect(context.destination);
-        const volume = sliders.volume;
-        const changeVolume = () => gain.value = volume.value ** 2;
-        volume.addEventListener && volume.addEventListener('input', changeVolume);
-        changeVolume();
-      }
+      const amp = this.amplifier ??= createAmplifier(context);
       const envelope = context.createGain();
       envelope.gain.value = 0;
-      envelope.connect(this.amplifier);
+      envelope.connect(amp);
       const osc = context.createOscillator();
       osc.frequency.value = frequency;
       osc.connect(envelope);
       osc.start();
-      let timeoutIdToStop = null;
+      let timeoutIdToStop;
       return {
         attack: () => {
           clearTimeout(timeoutIdToStop);
-          timeoutIdToStop = null;
-          const gain = envelope.gain;
+          timeoutIdToStop = undefined;
+          const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
           const sustainLevel = sliders.sustainLevel.value;
           const attackTime = sliders.attackTime.value - 0;
@@ -105,10 +106,10 @@ const SimpleSynthesizer = class {
         },
         release: stopped => {
           if( timeoutIdToStop ) return;
-          const gain = envelope.gain;
+          const { gain } = envelope;
           const gainValueToStop = 0.001;
           const stop = () => {
-            timeoutIdToStop = null;
+            timeoutIdToStop = undefined;
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
             osc.stop();
