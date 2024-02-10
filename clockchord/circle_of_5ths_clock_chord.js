@@ -829,55 +829,47 @@ const CircleOfFifthsClock = class {
     }
     keySignature.value = 0;
     chord.clear();
-    const rotateArrayToLeft = array => {
+    const keyToLeftRight = key => [`${key}Left`, `${key}Right`];
+    const shiftLikeKeys = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(keyToLeftRight);
+    const charToKey = c => `Key${c}`;
+    const moveTopOneToBottom = array => {
       array.push(array.shift());
       return array;
     };
-    const chordBindings = Object.fromEntries(
+    const chordKeyBindings = Object.fromEntries(
       [
         [
-          ...rotateArrayToLeft(
+          ...moveTopOneToBottom(
             Array.from({ length: 10 }, (_, index) => `Digit${index}`)
           ),
           'Minus',
           'Equal',
         ],[
-          ...Array.from('QWERTYUIOP').map(c => `Key${c}`),
-          'BracketLeft',
-          'BracketRight',
+          ...Array.from('QWERTYUIOP').map(charToKey),
+          ...keyToLeftRight('Bracket'),
         ],[
-          ...Array.from('ASDFGHJKL').map(c => `Key${c}`),
+          ...Array.from('ASDFGHJKL').map(charToKey),
           'Semicolon',
           'Quote',
           'Backslash',
         ],
-      ].map(
-        (keyArray, rowIndex) => keyArray.map(
-          (key, columnIndex) => ([key, [columnIndex - 5, 1 - rowIndex]])
-        )
-      ).flat()
+      ].flatMap((keys, y) => keys.map((key, x) => {
+        const hour = x - 5;
+        const offset3rd = 1 - y;
+        return [key, [hour, offset3rd]];
+      }))
     );
-    const shiftKeys = [
-      'ShiftLeft',
-      'ShiftRight',
-      'AltLeft',
-      'AltRight',
-      'ControlLeft',
-      'ControlRight',
-      'MetaLeft',
-      'MetaRight',
-    ];
     const handleEvent = (event, chord) => {
       switch( event.type ) {
         case 'keydown':
           {
-            if( event.repeat || ! chord || shiftKeys.some(code => code === event.code) ) {
+            if( event.repeat || ! chord || shiftLikeKeys.includes(event.code) ) {
               event.preventDefault();
               return;
             }
-            const chordBinding = chordBindings[event.code];
-            if( chordBinding ) {
-              [chord.hour, chord.offset3rd] = chordBinding;
+            const chordKeyBinding = chordKeyBindings[event.code];
+            if( chordKeyBinding ) {
+              [chord.hour, chord.offset3rd] = chordKeyBinding;
               chord.hour += keySignature.value;
             } else {
               switch(event.code) {
