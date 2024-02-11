@@ -829,26 +829,26 @@ const CircleOfFifthsClock = class {
     }
     keySignature.value = 0;
     chord.clear();
-    const keyToLeftRight = key => [`${key}Left`, `${key}Right`];
+    const keyToLeftRight = (key) => [`${key}Left`, `${key}Right`];
     const shiftLikeKeys = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(keyToLeftRight);
-    const charToKey = c => `Key${c}`;
-    const moveTopOneToBottom = array => {
-      array.push(array.shift());
-      return array;
+    const createCharKeys = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
+    const createDigitKeys = () => {
+      const keys = Array.from({ length: 10 }, (_, index) => `Digit${index}`);
+      const digit0 = keys.shift();
+      keys.push(digit0);
+      return keys;
     };
     const chordKeyBindings = Object.fromEntries(
       [
         [
-          ...moveTopOneToBottom(
-            Array.from({ length: 10 }, (_, index) => `Digit${index}`)
-          ),
+          ...createDigitKeys(),
           'Minus',
           'Equal',
         ],[
-          ...Array.from('QWERTYUIOP').map(charToKey),
+          ...createCharKeys('QWERTYUIOP'),
           ...keyToLeftRight('Bracket'),
         ],[
-          ...Array.from('ASDFGHJKL').map(charToKey),
+          ...createCharKeys('ASDFGHJKL'),
           'Semicolon',
           'Quote',
           'Backslash',
