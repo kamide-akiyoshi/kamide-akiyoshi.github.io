@@ -245,13 +245,14 @@ const PianoKeyboard = class {
         add9th,
         stop,
       } = chord;
+      stop();
+      if( !rootPitchNumber && rootPitchNumber !== 0 ) return;
       let i = 0;
       const noteOn = n => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
         this.selectedMidiOutputPorts.noteOn(noteNumber);
         this.noteOn(noteNumber, ++i);
       };
-      stop();
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
       noteOn(rootPitchNumber + 7 + offset5th);
@@ -874,10 +875,12 @@ const CircleOfFifthsClock = class {
               switch(event.code) {
                 case 'Space':
                   event.preventDefault(); // To avoid unexpected page down
-                  break;
+                  // fallthrough
                 case 'Enter':
-                  break;
+                  chord.start();
+                  return;
                 case 'Tab':
+                  // Ignore to move focus
                   return;
                 case 'ArrowLeft': keySignature.value-- ; event.preventDefault(); return;
                 case 'ArrowRight': keySignature.value++ ; event.preventDefault(); return;
