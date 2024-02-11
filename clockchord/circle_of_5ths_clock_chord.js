@@ -802,7 +802,6 @@ const CircleOfFifthsClock = class {
       return;
     }
     const { chord } = this.pianokeyboard = new PianoKeyboard();
-    chord.canvas = canvas;
     canvas.focus();
     const { keySignature, dial } = this;
     chord.keySignature = keySignature;
@@ -989,7 +988,7 @@ const CircleOfFifthsClock = class {
         chord.start();
       });
       label.addEventListener('pointerup', e => {
-        chord.canvas.focus();
+        canvas.focus();
         chord.stop();
       });
     }
