@@ -896,8 +896,6 @@ const CircleOfFifthsClock = class {
           }
           break;
         case 'touchmove':
-          event.preventDefault();
-          break;
         case 'mousemove':
           event.preventDefault();
           return;
