@@ -213,13 +213,13 @@ const PianoKeyboard = class {
       } = this;
       label?.detach();
       dialCenterLabel?.detach();
-      this.hour =
-      this.rootPitchName =
-      this.rootPitchNumber =
-      this.offset3rd =
-      this.offset5th =
-      this.offset7th =
-      this.add9th = undefined;
+      delete this.hour;
+      delete this.rootPitchName;
+      delete this.rootPitchNumber;
+      delete this.offset3rd;
+      delete this.offset5th;
+      delete this.offset7th;
+      delete this.add9th;
       keySignatureSetButton.style.visibility = 'hidden';
     },
     stop: () => {
