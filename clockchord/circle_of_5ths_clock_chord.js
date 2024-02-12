@@ -205,6 +205,14 @@ const PianoKeyboard = class {
       this.dialCenterLabel = createLabelEntry('center_chord');
       this.keySignatureSetButton = document.getElementById('setkey');
     },
+    clearButtonCanvas: () => {
+      const { buttonCanvas } = this.chord;
+      if( buttonCanvas ) {
+        const context = buttonCanvas.getContext("2d");
+        const { width, height } = buttonCanvas;
+        context.clearRect(0, 0, width, height);
+      }
+    },
     clear() {
       const {
         label,
@@ -221,6 +229,7 @@ const PianoKeyboard = class {
       delete this.offset7th;
       delete this.add9th;
       keySignatureSetButton.style.visibility = 'hidden';
+      this.clearButtonCanvas();
     },
     stop: () => {
       this.pressedNoteNumbers.forEach(noteNumber => {
@@ -244,8 +253,12 @@ const PianoKeyboard = class {
         offset7th,
         add9th,
         stop,
+        buttonCanvas,
+        clearButtonCanvas,
+        dial,
       } = chord;
       stop();
+      clearButtonCanvas();
       if( !rootPitchNumber && rootPitchNumber !== 0 ) return;
       let i = 0;
       const noteOn = n => {
@@ -280,6 +293,18 @@ const PianoKeyboard = class {
       }
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
+      const centerXY = [
+        dial.center.x,
+        dial.center.y,
+      ];
+      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[chord.offset3rd + i] * buttonCanvas.width);
+      const [startAngle, endAngle] = [3.5, 2.5].map(dh => (chord.hour - dh) / 6 * Math.PI);
+      const context = buttonCanvas.getContext("2d");
+      context.beginPath();
+      context.fillStyle = "#80808080";
+      context.arc(...centerXY, innerRadius, startAngle, endAngle);
+      context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
+      context.fill();
     },
   };
   setupMidi = () => {
@@ -808,6 +833,8 @@ const CircleOfFifthsClock = class {
     canvas.focus();
     const { keySignature, dial } = this;
     chord.keySignature = keySignature;
+    chord.buttonCanvas = canvas;
+    chord.dial = dial;
     keySignature.chord = chord;
     keySignature.dial = dial;
     dial.keySignatureTextAt0 = 'key/sus4';
