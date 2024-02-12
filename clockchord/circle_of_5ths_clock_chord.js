@@ -791,7 +791,9 @@ const CircleOfFifthsClock = class {
         osdc.width = width;
         osdc.height = height;
       }
-      hasToStartListening && this.listen(canvas);
+      const chordButtonCanvasId = 'circleOfFifthsClockChordButtonCanvas';
+      const chordButtonCanvas = document.getElementById(chordButtonCanvasId);
+      chordButtonCanvas && this.listen(chordButtonCanvas);
       dial.draw();
       hands.moving = true;
     }

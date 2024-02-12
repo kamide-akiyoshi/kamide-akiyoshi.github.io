@@ -6,7 +6,7 @@
 <link rel="shortcut icon" href="../midichordhelper.ico">
 <TITLE>ClockChord - Musical chord instrument on the circle-of-fifths clock</TITLE>
 <script src="./circle_of_5ths_clock_chord.js"></script>
-<script>new CircleOfFifthsClock(true);</script>
+<script>new CircleOfFifthsClock();</script>
 <style type="text/css">
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	.clock {
@@ -203,7 +203,8 @@
     <button id="enharmonic" title="Enharmonic key"></button>
     <button id="setkey" title="Set the chord as key signature"></button>
     <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
-    <canvas id="circleOfFifthsClockCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
+    <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
+    <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
     <span id="center_chord" class="disable_selection chord-tap"></span>
   </div>
   <div id="button_container">
