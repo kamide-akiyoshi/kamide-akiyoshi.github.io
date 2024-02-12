@@ -898,6 +898,9 @@ const CircleOfFifthsClock = class {
         case 'touchmove':
           event.preventDefault();
           break;
+        case 'mousemove':
+          event.preventDefault();
+          return;
         default:
       	  {
             const touched = (typeof event.changedTouches !== 'undefined') ? event.changedTouches[0] : event;
