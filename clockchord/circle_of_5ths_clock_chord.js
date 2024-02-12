@@ -768,7 +768,7 @@ const CircleOfFifthsClock = class {
     },
     toggle() { this.value = this.enharmonicHour; }
   };
-  constructor(hasToStartListening) {
+  constructor() {
     const loader = event => {
       const canvasId = 'circleOfFifthsClockCanvas';
       const canvas = document.getElementById(canvasId);
