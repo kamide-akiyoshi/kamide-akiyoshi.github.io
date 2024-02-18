@@ -241,8 +241,6 @@ const PianoKeyboard = class {
       const { leftEnd, chord } = this;
       const {
         hour,
-        rootPitchName,
-        rootPitchNumber,
         label,
         dialCenterLabel,
         button,
@@ -259,7 +257,9 @@ const PianoKeyboard = class {
       } = chord;
       stop();
       clearButtonCanvas();
-      if( !rootPitchNumber && rootPitchNumber !== 0 ) return;
+      if( !hour && hour !== 0 ) return;
+      const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
+      const rootPitchNumber = Music.togglePitchNumberAndHour(majorRootHour);
       let i = 0;
       const noteOn = n => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
@@ -271,6 +271,7 @@ const PianoKeyboard = class {
       noteOn(rootPitchNumber + 7 + offset5th);
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
+      const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
       if( label || dialCenterLabel ) {
         let sub = '', sup = '';
@@ -572,6 +573,7 @@ const Music = class {
     const fs = hour < 0 ? Music.FLAT : Music.SHARP;
     return n == 1 ? fs : (n > 2 ? n : fs) + fs;
   };
+  static togglePitchNumberAndHour = n => n + ((n & 1) ? 66 : 60);
   static normalizeHourAsKey = hour => {
     while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
     return hour;
@@ -944,8 +946,6 @@ const CircleOfFifthsClock = class {
       }
       const relativeHour = chord.hour - keySignature.value;
       if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
-      chord.rootPitchName = Music.majorPitchNameAt(chord.rootPitchNumber = chord.hour + (chord.offset3rd < 0 ? 3 : 0));
-      chord.rootPitchNumber += ((chord.rootPitchNumber & 1) ? 18 : 12);
       chord.offset5th = 0;
       const { shiftButtonStatus } = this;
       if( event.altKey || shiftButtonStatus?.button_flat5 ) {
