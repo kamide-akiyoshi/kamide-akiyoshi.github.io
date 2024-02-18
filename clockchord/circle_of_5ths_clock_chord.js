@@ -992,7 +992,7 @@ const CircleOfFifthsClock = class {
         'selectstart',
       ],
       start: ['pointerdown', 'keydown'],
-      end: ['pointerup', 'keyup']
+      end: ['pointerup', 'keyup', 'mouseleave']
     };
     const buttonContainer = document.getElementById('button_container');
     if( isSmartphone ) {
@@ -1030,6 +1030,9 @@ const CircleOfFifthsClock = class {
       });
       label.addEventListener('pointerup', e => {
         canvas.focus();
+        chord.stop();
+      });
+      label.addEventListener('mouseleave', e => {
         chord.stop();
       });
     }
