@@ -308,6 +308,13 @@ const PianoKeyboard = class {
     },
   };
   setupMidi = () => {
+    const midiElement = document.getElementById('midi');
+    if( ! midiElement ) return;
+    if( ! window.isSecureContext ) {
+      console.warn("MIDI access not available: Not in secure context");
+      midiElement.remove();
+      return;
+    };
     const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
@@ -329,13 +336,6 @@ const PianoKeyboard = class {
         0
       ])
     );
-    const midiElement = document.getElementById('midi');
-    if( ! midiElement ) return;
-    if( ! window.isSecureContext ) {
-      console.warn("MIDI access not available: Not in secure context");
-      midiElement.remove();
-      return;
-    };
     const msgListener = msg => {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
