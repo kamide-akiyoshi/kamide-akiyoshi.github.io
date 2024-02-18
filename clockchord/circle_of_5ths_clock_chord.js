@@ -254,7 +254,11 @@ const PianoKeyboard = class {
       context.fill();
     },
     start: () => {
-      const { leftEnd, chord } = this;
+      const {
+        leftEnd,
+        chord,
+        selectedMidiOutputPorts,
+      } = this;
       const {
         hour,
         label,
@@ -278,7 +282,7 @@ const PianoKeyboard = class {
       let i = 0;
       const noteOn = n => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
-        this.selectedMidiOutputPorts.noteOn(noteNumber);
+        selectedMidiOutputPorts.noteOn(noteNumber);
         this.noteOn(noteNumber, ++i);
       };
       noteOn(rootPitchNumber);
