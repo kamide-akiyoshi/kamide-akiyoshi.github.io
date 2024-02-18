@@ -808,7 +808,7 @@ const CircleOfFifthsClock = class {
       const canvasId = 'circleOfFifthsClockCanvas';
       const canvas = document.getElementById(canvasId);
       if( ! canvas ) {
-        console.error(`No HTML element: ID='${canvasId}'`);
+        console.error(`${canvasId}: No such element ID`);
         return;
       }
       const { hands, dial } = this;
