@@ -237,6 +237,22 @@ const PianoKeyboard = class {
         this.noteOff(noteNumber);
       });
     },
+    selectButtonCanvas: () => {
+      const { chord } = this;
+      const { dial, buttonCanvas, hour } = chord;
+      const centerXY = [
+        dial.center.x,
+        dial.center.y,
+      ];
+      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[chord.offset3rd + i] * buttonCanvas.width);
+      const [startAngle, endAngle] = [3.5, 2.5].map(dh => (hour - dh) / 6 * Math.PI);
+      const context = buttonCanvas.getContext("2d");
+      context.beginPath();
+      context.fillStyle = "#80808080";
+      context.arc(...centerXY, innerRadius, startAngle, endAngle);
+      context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
+      context.fill();
+    },
     start: () => {
       const { leftEnd, chord } = this;
       const {
@@ -251,9 +267,8 @@ const PianoKeyboard = class {
         offset7th,
         add9th,
         stop,
-        buttonCanvas,
         clearButtonCanvas,
-        dial,
+        selectButtonCanvas,
       } = chord;
       stop();
       clearButtonCanvas();
@@ -294,18 +309,7 @@ const PianoKeyboard = class {
       }
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
-      const centerXY = [
-        dial.center.x,
-        dial.center.y,
-      ];
-      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[chord.offset3rd + i] * buttonCanvas.width);
-      const [startAngle, endAngle] = [3.5, 2.5].map(dh => (chord.hour - dh) / 6 * Math.PI);
-      const context = buttonCanvas.getContext("2d");
-      context.beginPath();
-      context.fillStyle = "#80808080";
-      context.arc(...centerXY, innerRadius, startAngle, endAngle);
-      context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
-      context.fill();
+      selectButtonCanvas();
     },
   };
   setupMidi = () => {
