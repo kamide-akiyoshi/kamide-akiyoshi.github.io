@@ -235,6 +235,7 @@ const PianoKeyboard = class {
       this.pressedNoteNumbers.forEach(noteNumber => {
         this.selectedMidiOutputPorts.noteOff(noteNumber);
         this.noteOff(noteNumber);
+        this.toneIndicatorCanvas.noteOff(noteNumber);
       });
     },
     selectButtonCanvas: () => {
@@ -258,6 +259,7 @@ const PianoKeyboard = class {
         leftEnd,
         chord,
         selectedMidiOutputPorts,
+        toneIndicatorCanvas,
       } = this;
       const {
         hour,
@@ -284,6 +286,7 @@ const PianoKeyboard = class {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
         selectedMidiOutputPorts.noteOn(noteNumber);
         this.noteOn(noteNumber, ++i);
+        toneIndicatorCanvas.noteOn(noteNumber);
       };
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
@@ -333,31 +336,35 @@ const PianoKeyboard = class {
     };
     selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + parseInt(this.midiChannelSelect.value),
+        0x90 + this.midiChannelSelect.value,
         noteNumber,
         velocitySlider.value
       ])
     );
     selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + parseInt(this.midiChannelSelect.value),
+        0x90 + this.midiChannelSelect.value,
         noteNumber,
         0
       ])
     );
+    const { toneIndicatorCanvas } = this;
     const msgListener = msg => {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
       const channel = statusWithCh & 0xF;
+      const isActiveChannel = channel == 0 + this.midiChannelSelect.value;
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
-          (channel == parseInt(this.midiChannelSelect.value)) && this.noteOn(data[0]);
+          isActiveChannel && this.noteOn(data[0]);
+          toneIndicatorCanvas.noteOn(data[0]);
           break;
         }
         // fallthrough: velocity === 0 means Note Off
       case 0x80: // Note Off event
-        (channel == parseInt(this.midiChannelSelect.value)) && this.noteOff(data[0]);
+        isActiveChannel && this.noteOff(data[0]);
+        toneIndicatorCanvas.noteOff(data[0]);
         break;
       }
     };
@@ -428,9 +435,158 @@ const PianoKeyboard = class {
       alert(msg);
     });
   };
-  constructor() {
+  setupToneIndicatorCanvas = (canvas) => {
+    const { dial, width, height } = this.toneIndicatorCanvas = canvas;
+    const { center, borderRadius } = dial;
+    const toneIndicating = Array.from({ length: 12 }, () => 0);
+    const majorDirections = toneIndicating.map((_, hour) => {
+      const tStart = (hour - 0.5) * Math.PI / 6;
+      const t = hour * Math.PI / 6;
+      return {
+        angle: (hour - 3.5) * Math.PI / 6,
+        dx: center.dx(tStart),
+        dy: center.dy(tStart),
+        center: {
+          dx: center.dx(t),
+          dy: center.dy(t),
+        },
+      };
+    });
+    const clear = () => {
+      canvas.getContext("2d").clearRect(0, 0, width, height);
+    }
+    const draw = (hour) => {
+      const majorDirection = majorDirections[hour];
+      const context = canvas.getContext("2d");
+      context.lineWidth = 3;
+      // Major chord root
+      context.beginPath();
+      context.strokeStyle = 'black';
+      context.moveTo(
+        center.x + borderRadius[2] * majorDirection.dx,
+        center.y + borderRadius[2] * majorDirection.dy
+      );
+      context.lineTo(
+        center.x + borderRadius[1] * majorDirection.dx,
+        center.y + borderRadius[1] * majorDirection.dy
+      );
+      // Relative hours - CW (clockwise)
+      const hour1 = (hour + 1) % 12;
+      const hour2 = (hour + 2) % 12;
+      const hour3 = (hour + 3) % 12;
+      const hour4 = (hour + 4) % 12;
+      const hour6 = (hour + 6) % 12;
+      // CCW (counterclockwise)
+      const hour4ccw = (hour + 8) % 12;
+      const hour3ccw = (hour + 9) % 12;
+      const hour2ccw = (hour + 10) % 12;
+      const hour1ccw = (hour + 11) % 12;
+      // Major 3rd
+      if( toneIndicating[hour4] ) {
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[1] * width,
+          majorDirection.angle,
+          majorDirections[hour1].angle
+        );
+      }
+      // Minor chord root
+      const minorDirection = majorDirections[hour3ccw];
+      context.moveTo(
+        center.x + borderRadius[1] * minorDirection.dx,
+        center.y + borderRadius[1] * minorDirection.dy
+      );
+      context.lineTo(
+        center.x + borderRadius[0] * minorDirection.dx,
+        center.y + borderRadius[0] * minorDirection.dy
+      );
+      context.stroke();
+      // Major 3rd of other major chord root
+      if( toneIndicating[hour4ccw] ) {
+        context.beginPath();
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[1] * width,
+          ...[hour4ccw, hour3ccw].map(h => majorDirections[h].angle)
+        );
+        context.stroke();
+      }
+      // Tritone
+      if( toneIndicating[hour6] ) {
+        [hour3ccw, hour3].forEach(h => {
+          const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
+          context.beginPath();
+          context.arc(
+            center.x + minorCenter * majorDirections[h].center.dx,
+            center.y + minorCenter * majorDirections[h].center.dy,
+            0.04 * width,
+            0, 2 * Math.PI
+          );
+          context.stroke();
+        });
+      }
+      // Suspended 4th (sus4)
+      const drawSus4 = (...hours) => {
+        const [startDir, endDir] = hours.map(h => majorDirections[h]);
+        const [inner, outer] = [2, 3].map(r => borderRadius[r]);
+        context.beginPath();
+        context.moveTo(
+          center.x + outer * startDir.dx,
+          center.y + outer * startDir.dy
+        );
+        context.lineTo(
+          center.x + inner * startDir.dx,
+          center.y + inner * startDir.dy
+        );
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[2] * width,
+          startDir.angle,
+          endDir.angle
+        );
+        context.lineTo(
+          center.x + outer * endDir.dx,
+          center.y + outer * endDir.dy
+        );
+        context.stroke();
+      };
+      if( toneIndicating[hour1ccw] && toneIndicating[hour1] ) {
+        // Root of sus4
+        //   hour1ccw: parfect 4th
+        //   hour1:    parfect 5th
+        drawSus4(hour, hour1);
+      }
+      if( toneIndicating[hour2ccw] && toneIndicating[hour1ccw] ) {
+        // Parfect 5th of other sus4 root (hour1ccw)
+        drawSus4(hour1ccw, hour);
+      }
+      if( toneIndicating[hour1] && toneIndicating[hour2] ) {
+        // Parfect 4th of other sus4 root (hour1)
+        drawSus4(hour1, hour2);
+      }
+    };
+    canvas.noteOn = (noteNumber) => {
+      const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
+      if( toneIndicating[hour]++ === 0 ) {
+        draw(hour);
+      }
+    };
+    canvas.noteOff = (noteNumber) => {
+      const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
+      if( --toneIndicating[hour] <= 0) {
+        toneIndicating[hour] = 0;
+        clear();
+        toneIndicating.forEach((weight, hour) => weight && draw(hour));
+      }
+    };
+  };
+  constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
-    const { chord, leftEnd, setupMidi } = this;
+    const { chord, leftEnd, setupMidi, setupToneIndicatorCanvas } = this;
+    setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidi();
     leftEnd.reset();
     chord.setup();
@@ -450,10 +606,12 @@ const PianoKeyboard = class {
       const noteOn = noteNumber => {
         this.selectedMidiOutputPorts.noteOn(noteNumber);
         this.noteOn(noteNumber);
+        toneIndicatorCanvas.noteOn(noteNumber);
       };
       const noteOff = noteNumber => {
         this.selectedMidiOutputPorts.noteOff(noteNumber);
         this.noteOff(noteNumber);
+        toneIndicatorCanvas.noteOff(noteNumber);
       };
       const [
         whiteKeyElement,
@@ -819,29 +977,31 @@ const CircleOfFifthsClock = class {
         dx: t =>  width  * Math.sin(t),
         dy: t => -height * Math.cos(t),
       };
-      const dialCanvasId = 'circleOfFifthsClockDialCanvas';
-      dial.canvas = document.getElementById(dialCanvasId);
+      dial.canvas = document.getElementById('circleOfFifthsClockDialCanvas');
       if( ! dial.canvas ) {
         const osdc = hands.offscreenDialCanvas = dial.canvas = document.createElement('canvas');
         osdc.width = width;
         osdc.height = height;
       }
-      const chordButtonCanvasId = 'circleOfFifthsClockChordButtonCanvas';
-      const chordButtonCanvas = document.getElementById(chordButtonCanvasId);
-      chordButtonCanvas && this.listen(chordButtonCanvas);
+      const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
+      chordButtonCanvas && this.listen({
+        chordButtonCanvas,
+        toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
+      });
       dial.draw();
       hands.moving = true;
     }
     window.addEventListener("load", loader);
   };
-  listen = canvas => {
+  listen = ({chordButtonCanvas: canvas, toneIndicatorCanvas}) => {
     if( this.pianokeyboard ) {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
-    const { chord } = this.pianokeyboard = new PianoKeyboard();
-    canvas.focus();
     const { keySignature, dial } = this;
+    toneIndicatorCanvas.dial = dial;
+    const { chord } = this.pianokeyboard = new PianoKeyboard(toneIndicatorCanvas);
+    canvas.focus();
     chord.keySignature = keySignature;
     chord.buttonCanvas = canvas;
     chord.dial = dial;
