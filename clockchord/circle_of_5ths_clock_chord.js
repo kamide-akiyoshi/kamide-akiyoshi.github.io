@@ -327,6 +327,15 @@ const PianoKeyboard = class {
       midiElement.remove();
       return;
     };
+    const chSelect = document.getElementById('midi_channel');
+    for( let ch = 0; ch < 16; ++ch ) {
+      const option = document.createElement("option");
+      option.value = ch;
+      const drumText = ch == 9 ? " (Drum)" : "";
+      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
+      chSelect.appendChild(option);
+    }
+    const omniCheckbox = document.getElementById('omni');
     const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
@@ -336,14 +345,14 @@ const PianoKeyboard = class {
     };
     selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + this.midiChannelSelect.value,
+        0x90 + chSelect.value,
         noteNumber,
         velocitySlider.value
       ])
     );
     selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + this.midiChannelSelect.value,
+        0x90 + chSelect.value,
         noteNumber,
         0
       ])
@@ -353,7 +362,7 @@ const PianoKeyboard = class {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
       const channel = statusWithCh & 0xF;
-      const isActiveChannel = channel == 0 + this.midiChannelSelect.value;
+      const isActiveChannel = omniCheckbox.checked || (channel == 0 + chSelect.value);
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
@@ -407,14 +416,6 @@ const PianoKeyboard = class {
         checkboxes.get(port)?.closest("label").remove();
       },
     };
-    const chSelect = this.midiChannelSelect = document.getElementById('midi_channel');
-    for( let ch = 0; ch < 16; ++ch ) {
-      const option = document.createElement("option");
-      option.value = ch;
-      const drumText = ch == 9 ? " (Drum)" : "";
-      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
-      chSelect.appendChild(option);
-    }
     navigator.requestMIDIAccess({
       sysex: true,
       software: false,
