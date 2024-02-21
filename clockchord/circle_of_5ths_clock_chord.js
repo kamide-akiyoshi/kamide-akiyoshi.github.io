@@ -345,14 +345,14 @@ const PianoKeyboard = class {
     };
     selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + chSelect.value,
+        0x90 + parseInt(chSelect.value),
         noteNumber,
         velocitySlider.value
       ])
     );
     selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + chSelect.value,
+        0x90 + parseInt(chSelect.value),
         noteNumber,
         0
       ])
@@ -363,7 +363,7 @@ const PianoKeyboard = class {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
       const channel = statusWithCh & 0xF;
-      const isActiveChannel = channel != DRUM_MIDI_CH && (omniCheckbox.checked || (channel == 0 + chSelect.value));
+      const isActiveChannel = channel != DRUM_MIDI_CH && (omniCheckbox.checked || channel == parseInt(chSelect.value));
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
