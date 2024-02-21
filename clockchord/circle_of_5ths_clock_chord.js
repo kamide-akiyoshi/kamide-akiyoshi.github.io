@@ -456,20 +456,7 @@ const PianoKeyboard = class {
       canvas.getContext("2d").clearRect(0, 0, width, height);
     }
     const draw = (hour) => {
-      const majorDirection = majorDirections[hour];
       const context = canvas.getContext("2d");
-      context.lineWidth = 3;
-      // Major chord root
-      context.beginPath();
-      context.strokeStyle = 'black';
-      context.moveTo(
-        center.x + borderRadius[2] * majorDirection.dx,
-        center.y + borderRadius[2] * majorDirection.dy
-      );
-      context.lineTo(
-        center.x + borderRadius[1] * majorDirection.dx,
-        center.y + borderRadius[1] * majorDirection.dy
-      );
       // Relative hours - CW (clockwise)
       const hour1 = (hour + 1) % 12;
       const hour2 = (hour + 2) % 12;
@@ -481,27 +468,48 @@ const PianoKeyboard = class {
       const hour3ccw = (hour + 9) % 12;
       const hour2ccw = (hour + 10) % 12;
       const hour1ccw = (hour + 11) % 12;
+      // Draw root line / short 5th line
+      const drawRoot = (hourStart, hourEnd, radiusStart, radiusEnd) => {
+        const dirStart = majorDirections[hourStart];
+        const dirEnd = majorDirections[hourEnd];
+        const radiusShortEnd = radiusStart + (radiusEnd - radiusStart) / 4;
+        context.moveTo(
+          center.x + radiusStart * dirStart.dx,
+          center.y + radiusStart * dirStart.dy
+        );
+        context.lineTo(
+          center.x + radiusEnd * dirStart.dx,
+          center.y + radiusEnd * dirStart.dy
+        );
+        context.moveTo(
+          center.x + radiusStart * dirEnd.dx,
+          center.y + radiusStart * dirEnd.dy
+        );
+        context.lineTo(
+          center.x + radiusShortEnd * dirEnd.dx,
+          center.y + radiusShortEnd * dirEnd.dy
+        );
+      };
+      context.lineWidth = 3;
+      context.beginPath();
+      context.strokeStyle = 'black';
+      // Major chord root
+      drawRoot(hour,     hour1,    borderRadius[1], borderRadius[2]);
+      // Minor chord root
+      drawRoot(hour3ccw, hour2ccw, borderRadius[0], borderRadius[1]);
+      context.stroke();
       // Major 3rd
       if( toneIndicating[hour4] ) {
+        context.beginPath();
         context.arc(
           center.x,
           center.y,
           borderRadius[1] * width,
-          majorDirection.angle,
+          majorDirections[hour].angle,
           majorDirections[hour1].angle
         );
+        context.stroke();
       }
-      // Minor chord root
-      const minorDirection = majorDirections[hour3ccw];
-      context.moveTo(
-        center.x + borderRadius[1] * minorDirection.dx,
-        center.y + borderRadius[1] * minorDirection.dy
-      );
-      context.lineTo(
-        center.x + borderRadius[0] * minorDirection.dx,
-        center.y + borderRadius[0] * minorDirection.dy
-      );
-      context.stroke();
       // Major 3rd of other major chord root
       if( toneIndicating[hour4ccw] ) {
         context.beginPath();
@@ -509,7 +517,8 @@ const PianoKeyboard = class {
           center.x,
           center.y,
           borderRadius[1] * width,
-          ...[hour4ccw, hour3ccw].map(h => majorDirections[h].angle)
+          majorDirections[hour4ccw].angle,
+          majorDirections[hour3ccw].angle
         );
         context.stroke();
       }
