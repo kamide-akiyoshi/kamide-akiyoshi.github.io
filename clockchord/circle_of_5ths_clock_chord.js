@@ -357,7 +357,7 @@ const PianoKeyboard = class {
         0
       ])
     );
-    const { toneIndicatorCanvas } = this;
+    const { toneIndicatorCanvas, chord } = this;
     const DRUM_MIDI_CH = 9;
     const msgListener = msg => {
       const [statusWithCh, ...data] = msg.data;
@@ -369,6 +369,7 @@ const PianoKeyboard = class {
         if( data[1] ) { // velocity
           isActiveChannel && this.noteOn(data[0]);
           toneIndicatorCanvas.noteOn(data[0]);
+          chord.clear();
           break;
         }
         // fallthrough: velocity === 0 means Note Off
