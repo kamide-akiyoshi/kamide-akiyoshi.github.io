@@ -358,11 +358,12 @@ const PianoKeyboard = class {
       ])
     );
     const { toneIndicatorCanvas } = this;
+    const DRUM_MIDI_CH = 9;
     const msgListener = msg => {
       const [statusWithCh, ...data] = msg.data;
       const status = statusWithCh & 0xF0;
       const channel = statusWithCh & 0xF;
-      const isActiveChannel = omniCheckbox.checked || (channel == 0 + chSelect.value);
+      const isActiveChannel = channel != DRUM_MIDI_CH && (omniCheckbox.checked || (channel == 0 + chSelect.value));
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
