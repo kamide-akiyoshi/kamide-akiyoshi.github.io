@@ -512,8 +512,18 @@ const PianoKeyboard = class {
           majorDirections[hour1].angle
         );
         context.stroke();
+        if( toneIndicating[hour1] ) {
+          context.beginPath();
+          context.arc(
+            center.x,
+            center.y,
+            borderRadius[2] * width,
+            majorDirections[hour].angle,
+            majorDirections[hour1].angle
+          );
+          context.stroke();
+        }
       }
-      // Major 3rd of other major chord root
       if( toneIndicating[hour4ccw] ) {
         context.beginPath();
         context.arc(
@@ -522,6 +532,62 @@ const PianoKeyboard = class {
           borderRadius[1] * width,
           majorDirections[hour4ccw].angle,
           majorDirections[hour3ccw].angle
+        );
+        context.stroke();
+        if( toneIndicating[hour3ccw] ) {
+          context.beginPath();
+          context.arc(
+            center.x,
+            center.y,
+            borderRadius[2] * width,
+            majorDirections[hour4ccw].angle,
+            majorDirections[hour3ccw].angle
+          );
+          context.stroke();
+        }
+      }
+      if( toneIndicating[hour1ccw] && toneIndicating[hour3] ) {
+        context.beginPath();
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[2] * width,
+          majorDirections[hour1ccw].angle,
+          majorDirections[hour].angle
+        );
+        context.stroke();
+      }
+      // Minor 3rd
+      if( toneIndicating[hour1] && toneIndicating[hour3ccw] ) {
+        context.beginPath();
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[0] * width,
+          majorDirections[hour3ccw].angle,
+          majorDirections[hour2ccw].angle
+        );
+        context.stroke();
+      }
+      if( toneIndicating[hour1ccw] && toneIndicating[hour4ccw] ) {
+        context.beginPath();
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[0] * width,
+          majorDirections[hour4ccw].angle,
+          majorDirections[hour3ccw].angle
+        );
+        context.stroke();
+      }
+      if( toneIndicating[hour3] && toneIndicating[hour4] ) {
+        context.beginPath();
+        context.arc(
+          center.x,
+          center.y,
+          borderRadius[0] * width,
+          majorDirections[hour].angle,
+          majorDirections[hour1].angle
         );
         context.stroke();
       }
@@ -540,9 +606,11 @@ const PianoKeyboard = class {
         });
       }
       // Suspended 4th (sus4)
-      const drawSus4 = (...hours) => {
-        const [startDir, endDir] = hours.map(h => majorDirections[h]);
-        const [inner, outer] = [2, 3].map(r => borderRadius[r]);
+      const drawSus4 = (startHour, endHour) => {
+        const startDir = majorDirections[startHour];
+        const endDir   = majorDirections[endHour];
+        const inner = borderRadius[2];
+        const outer = borderRadius[3] - 0.005;
         context.beginPath();
         context.moveTo(
           center.x + outer * startDir.dx,
@@ -555,13 +623,21 @@ const PianoKeyboard = class {
         context.arc(
           center.x,
           center.y,
-          borderRadius[2] * width,
+          inner * width,
           startDir.angle,
           endDir.angle
         );
         context.lineTo(
           center.x + outer * endDir.dx,
           center.y + outer * endDir.dy
+        );
+        context.arc(
+          center.x,
+          center.y,
+          outer * width,
+          endDir.angle,
+          startDir.angle,
+          true
         );
         context.stroke();
       };
