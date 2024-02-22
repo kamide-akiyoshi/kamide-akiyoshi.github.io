@@ -443,218 +443,140 @@ const PianoKeyboard = class {
     const { center, borderRadius } = dial;
     const toneIndicating = Array.from({ length: 12 }, () => 0);
     const majorDirections = toneIndicating.map((_, hour) => {
-      const tStart = (hour - 0.5) * Math.PI / 6;
-      const t = hour * Math.PI / 6;
+      const arcAngle = (hour - 3.5) * Math.PI / 6;
+      const rootClockAngle = (hour - 0.5) * Math.PI / 6;
+      const centerClockAngle = hour * Math.PI / 6;
       return {
-        angle: (hour - 3.5) * Math.PI / 6,
-        dx: center.dx(tStart),
-        dy: center.dy(tStart),
+        angle: arcAngle,
+        dx: center.dx(rootClockAngle),
+        dy: center.dy(rootClockAngle),
         center: {
-          dx: center.dx(t),
-          dy: center.dy(t),
+          dx: center.dx(centerClockAngle),
+          dy: center.dy(centerClockAngle),
         },
       };
     });
+    const context = canvas.getContext("2d");
     const clear = () => {
-      canvas.getContext("2d").clearRect(0, 0, width, height);
+      context.clearRect(0, 0, width, height);
     }
+    const drawRoot = (startHour, endHour, startRadiusIndex, endRadiusIndex) => {
+      const dirStart = majorDirections[startHour];
+      const dirEnd   = majorDirections[endHour];
+      const startRadius = borderRadius[startRadiusIndex];
+      const endRadius = borderRadius[endRadiusIndex];
+      const shortEndRadius = startRadius + (endRadius - startRadius) / 4;
+      context.moveTo(
+        center.x + startRadius * dirStart.dx,
+        center.y + startRadius * dirStart.dy
+      );
+      context.lineTo(
+        center.x + endRadius * dirStart.dx,
+        center.y + endRadius * dirStart.dy
+      );
+      context.moveTo(
+        center.x + startRadius * dirEnd.dx,
+        center.y + startRadius * dirEnd.dy
+      );
+      context.lineTo(
+        center.x + shortEndRadius * dirEnd.dx,
+        center.y + shortEndRadius * dirEnd.dy
+      );
+    };
+    const drawArc = (radiusIndex, startHour, endHour) => {
+      context.beginPath();
+      context.arc(
+        center.x,
+        center.y,
+        borderRadius[radiusIndex] * width,
+        majorDirections[startHour].angle,
+        majorDirections[endHour].angle
+      );
+      context.stroke();
+    };
+    const drawSus4 = (startHour, endHour) => {
+      const startDir = majorDirections[startHour];
+      const endDir   = majorDirections[endHour];
+      const inner = borderRadius[2];
+      const outer = borderRadius[3] - 0.005;
+      context.beginPath();
+      context.moveTo(
+        center.x + outer * startDir.dx,
+        center.y + outer * startDir.dy
+      );
+      context.lineTo(
+        center.x + inner * startDir.dx,
+        center.y + inner * startDir.dy
+      );
+      context.arc(
+        center.x,
+        center.y,
+        inner * width,
+        startDir.angle,
+        endDir.angle
+      );
+      context.lineTo(
+        center.x + outer * endDir.dx,
+        center.y + outer * endDir.dy
+      );
+      context.arc(
+        center.x,
+        center.y,
+        outer * width,
+        endDir.angle,
+        startDir.angle,
+        true
+      );
+      context.stroke();
+    };
+    const drawCircleOnMinor = (hour) => {
+      const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
+      const direction = majorDirections[hour].center;
+      context.beginPath();
+      context.arc(
+        center.x + minorCenter * direction.dx,
+        center.y + minorCenter * direction.dy,
+        0.04 * width,
+        0, 2 * Math.PI
+      );
+      context.stroke();
+    };
     const draw = (hour) => {
-      const context = canvas.getContext("2d");
-      // Relative hours - CW (clockwise)
       const hour1 = (hour + 1) % 12;
       const hour2 = (hour + 2) % 12;
       const hour3 = (hour + 3) % 12;
       const hour4 = (hour + 4) % 12;
-      const hour6 = (hour + 6) % 12;
-      // CCW (counterclockwise)
       const hour4ccw = (hour + 8) % 12;
       const hour3ccw = (hour + 9) % 12;
       const hour2ccw = (hour + 10) % 12;
       const hour1ccw = (hour + 11) % 12;
-      // Draw root line / short 5th line
-      const drawRoot = (hourStart, hourEnd, radiusStart, radiusEnd) => {
-        const dirStart = majorDirections[hourStart];
-        const dirEnd = majorDirections[hourEnd];
-        const radiusShortEnd = radiusStart + (radiusEnd - radiusStart) / 4;
-        context.moveTo(
-          center.x + radiusStart * dirStart.dx,
-          center.y + radiusStart * dirStart.dy
-        );
-        context.lineTo(
-          center.x + radiusEnd * dirStart.dx,
-          center.y + radiusEnd * dirStart.dy
-        );
-        context.moveTo(
-          center.x + radiusStart * dirEnd.dx,
-          center.y + radiusStart * dirEnd.dy
-        );
-        context.lineTo(
-          center.x + radiusShortEnd * dirEnd.dx,
-          center.y + radiusShortEnd * dirEnd.dy
-        );
-      };
       context.lineWidth = 3;
-      context.beginPath();
       context.strokeStyle = 'black';
-      // Major chord root
-      drawRoot(hour,     hour1,    borderRadius[1], borderRadius[2]);
-      // Minor chord root
-      drawRoot(hour3ccw, hour2ccw, borderRadius[0], borderRadius[1]);
+      // Root tone
+      context.beginPath();
+      drawRoot(hour, hour1, 1, 2); // Major
+      drawRoot(hour3ccw, hour2ccw, 0, 1); // Minor
       context.stroke();
-      // Major 3rd
+      // Major chord
       if( toneIndicating[hour4] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[1] * width,
-          majorDirections[hour].angle,
-          majorDirections[hour1].angle
-        );
-        context.stroke();
-        if( toneIndicating[hour1] ) {
-          context.beginPath();
-          context.arc(
-            center.x,
-            center.y,
-            borderRadius[2] * width,
-            majorDirections[hour].angle,
-            majorDirections[hour1].angle
-          );
-          context.stroke();
-        }
+        drawArc(1, hour, hour1);
+        toneIndicating[hour1] && drawArc(2, hour, hour1);
       }
       if( toneIndicating[hour4ccw] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[1] * width,
-          majorDirections[hour4ccw].angle,
-          majorDirections[hour3ccw].angle
-        );
-        context.stroke();
-        if( toneIndicating[hour3ccw] ) {
-          context.beginPath();
-          context.arc(
-            center.x,
-            center.y,
-            borderRadius[2] * width,
-            majorDirections[hour4ccw].angle,
-            majorDirections[hour3ccw].angle
-          );
-          context.stroke();
-        }
+        drawArc(1, hour4ccw, hour3ccw);
+        toneIndicating[hour3ccw] && drawArc(2, hour4ccw, hour3ccw);
       }
-      if( toneIndicating[hour1ccw] && toneIndicating[hour3] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[2] * width,
-          majorDirections[hour1ccw].angle,
-          majorDirections[hour].angle
-        );
-        context.stroke();
-      }
-      // Minor 3rd
-      if( toneIndicating[hour1] && toneIndicating[hour3ccw] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[0] * width,
-          majorDirections[hour3ccw].angle,
-          majorDirections[hour2ccw].angle
-        );
-        context.stroke();
-      }
-      if( toneIndicating[hour1ccw] && toneIndicating[hour4ccw] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[0] * width,
-          majorDirections[hour4ccw].angle,
-          majorDirections[hour3ccw].angle
-        );
-        context.stroke();
-      }
-      if( toneIndicating[hour3] && toneIndicating[hour4] ) {
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          borderRadius[0] * width,
-          majorDirections[hour].angle,
-          majorDirections[hour1].angle
-        );
-        context.stroke();
-      }
+      toneIndicating[hour1ccw] && toneIndicating[hour3] && drawArc(2, hour1ccw, hour);
+      // Minor chord
+      toneIndicating[hour1]    && toneIndicating[hour3ccw] && drawArc(0, hour3ccw, hour2ccw);
+      toneIndicating[hour1ccw] && toneIndicating[hour4ccw] && drawArc(0, hour4ccw, hour3ccw);
+      toneIndicating[hour3]    && toneIndicating[hour4]    && drawArc(0, hour, hour1);
+      // Suspended 4th chord
+      toneIndicating[hour1ccw] && toneIndicating[hour1]    && drawSus4(hour, hour1);
+      toneIndicating[hour2ccw] && toneIndicating[hour1ccw] && drawSus4(hour1ccw, hour);
+      toneIndicating[hour1]    && toneIndicating[hour2]    && drawSus4(hour1, hour2);
       // Tritone
-      if( toneIndicating[hour6] ) {
-        [hour3ccw, hour3].forEach(h => {
-          const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
-          context.beginPath();
-          context.arc(
-            center.x + minorCenter * majorDirections[h].center.dx,
-            center.y + minorCenter * majorDirections[h].center.dy,
-            0.04 * width,
-            0, 2 * Math.PI
-          );
-          context.stroke();
-        });
-      }
-      // Suspended 4th (sus4)
-      const drawSus4 = (startHour, endHour) => {
-        const startDir = majorDirections[startHour];
-        const endDir   = majorDirections[endHour];
-        const inner = borderRadius[2];
-        const outer = borderRadius[3] - 0.005;
-        context.beginPath();
-        context.moveTo(
-          center.x + outer * startDir.dx,
-          center.y + outer * startDir.dy
-        );
-        context.lineTo(
-          center.x + inner * startDir.dx,
-          center.y + inner * startDir.dy
-        );
-        context.arc(
-          center.x,
-          center.y,
-          inner * width,
-          startDir.angle,
-          endDir.angle
-        );
-        context.lineTo(
-          center.x + outer * endDir.dx,
-          center.y + outer * endDir.dy
-        );
-        context.arc(
-          center.x,
-          center.y,
-          outer * width,
-          endDir.angle,
-          startDir.angle,
-          true
-        );
-        context.stroke();
-      };
-      if( toneIndicating[hour1ccw] && toneIndicating[hour1] ) {
-        // Root of sus4
-        //   hour1ccw: parfect 4th
-        //   hour1:    parfect 5th
-        drawSus4(hour, hour1);
-      }
-      if( toneIndicating[hour2ccw] && toneIndicating[hour1ccw] ) {
-        // Parfect 5th of other sus4 root (hour1ccw)
-        drawSus4(hour1ccw, hour);
-      }
-      if( toneIndicating[hour1] && toneIndicating[hour2] ) {
-        // Parfect 4th of other sus4 root (hour1)
-        drawSus4(hour1, hour2);
-      }
+      toneIndicating[(hour + 6) % 12] && [hour3ccw, hour3].forEach(drawCircleOnMinor);
     };
     canvas.noteOn = (noteNumber) => {
       const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
