@@ -439,27 +439,30 @@ const PianoKeyboard = class {
     });
   };
   setupToneIndicatorCanvas = (canvas) => {
+    const BASS_MAX_NOTE_NUMBER = 48;
     const { dial, width, height } = this.toneIndicatorCanvas = canvas;
     const { center, borderRadius } = dial;
     const toneIndicating = Array.from({ length: 12 }, () => 0);
+    const bassToneIndicating = [...toneIndicating];
     const majorDirections = toneIndicating.map((_, hour) => {
-      const arcAngle = (hour - 3.5) * Math.PI / 6;
-      const rootClockAngle = (hour - 0.5) * Math.PI / 6;
-      const centerClockAngle = hour * Math.PI / 6;
+      const diffToAngle = (diff = 0) => (hour + diff) * Math.PI / 6;
+      const rootClockAngle = diffToAngle(-0.5);
+      const centerClockAngle = diffToAngle();
       return {
-        angle: arcAngle,
         dx: center.dx(rootClockAngle),
         dy: center.dy(rootClockAngle),
         center: {
           dx: center.dx(centerClockAngle),
           dy: center.dy(centerClockAngle),
         },
+        arc: {
+          angle       : diffToAngle(-3.5),
+          bassAngle   : diffToAngle(-3.2),
+          bassEndAngle: diffToAngle(-2.8),
+        },
       };
     });
     const context = canvas.getContext("2d");
-    const clear = () => {
-      context.clearRect(0, 0, width, height);
-    }
     const drawRoot = (startHour, endHour, startRadiusIndex, endRadiusIndex) => {
       const dirStart = majorDirections[startHour];
       const dirEnd   = majorDirections[endHour];
@@ -489,8 +492,22 @@ const PianoKeyboard = class {
         center.x,
         center.y,
         borderRadius[radiusIndex] * width,
-        majorDirections[startHour].angle,
-        majorDirections[endHour].angle
+        majorDirections[startHour].arc.angle,
+        majorDirections[endHour].arc.angle
+      );
+      context.stroke();
+    };
+    const drawBassArc = (radiusIndex, hour) => {
+      const inner = borderRadius[radiusIndex];
+      const outer = borderRadius[radiusIndex + 1];
+      const radius = inner + (outer - inner) / 5;
+      context.beginPath();
+      context.arc(
+        center.x,
+        center.y,
+        radius * width,
+        majorDirections[hour].arc.bassAngle,
+        majorDirections[hour].arc.bassEndAngle
       );
       context.stroke();
     };
@@ -512,8 +529,8 @@ const PianoKeyboard = class {
         center.x,
         center.y,
         inner * width,
-        startDir.angle,
-        endDir.angle
+        startDir.arc.angle,
+        endDir.arc.angle
       );
       context.lineTo(
         center.x + outer * endDir.dx,
@@ -523,8 +540,8 @@ const PianoKeyboard = class {
         center.x,
         center.y,
         outer * width,
-        endDir.angle,
-        startDir.angle,
+        endDir.arc.angle,
+        startDir.arc.angle,
         true
       );
       context.stroke();
@@ -578,19 +595,41 @@ const PianoKeyboard = class {
       // Tritone
       toneIndicating[(hour + 6) % 12] && [hour3ccw, hour3].forEach(drawCircleOnMinor);
     };
+    const drawBass = (hour) => {
+      const hour3ccw = (hour + 9) % 12;
+      context.lineWidth = 5;
+      context.strokeStyle = 'black';
+      drawBassArc(1, hour); // Major
+      drawBassArc(0, hour3ccw); // Minor
+    };
+    const redrawAll = () => {
+      context.clearRect(0, 0, width, height);
+      toneIndicating.forEach((weight, hour) => weight && draw(hour));
+      bassToneIndicating.forEach((weight, hour) => weight && drawBass(hour));
+    }
     canvas.noteOn = (noteNumber) => {
+      const bass = noteNumber <= BASS_MAX_NOTE_NUMBER;
       const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
       if( toneIndicating[hour]++ === 0 ) {
         draw(hour);
       }
+      if( bass && bassToneIndicating[hour]++ === 0 ) {
+        drawBass(hour);
+      }
     };
     canvas.noteOff = (noteNumber) => {
+      const bass = noteNumber <= BASS_MAX_NOTE_NUMBER;
       const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
+      let redrawRequired;
       if( --toneIndicating[hour] <= 0) {
         toneIndicating[hour] = 0;
-        clear();
-        toneIndicating.forEach((weight, hour) => weight && draw(hour));
+        redrawRequired = true;
       }
+      if( bass && --bassToneIndicating[hour] <= 0 ) {
+        bassToneIndicating[hour] = 0;
+        redrawRequired = true;
+      }
+      redrawRequired && redrawAll();
     };
   };
   constructor(toneIndicatorCanvas) {
