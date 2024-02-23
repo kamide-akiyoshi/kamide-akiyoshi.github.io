@@ -558,6 +558,35 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
+    const drawAug = (startHour, endHour) => {
+      const innerRadius = borderRadius[2];
+      const outerRadius = borderRadius[3];
+      const centerRadius = (innerRadius + outerRadius) / 2;
+      const startDir = majorDirections[startHour];
+      const centerDir = startDir.center;
+      const endDir = majorDirections[endHour];
+      context.beginPath();
+      context.moveTo(
+        center.x + innerRadius * centerDir.dx,
+        center.y + innerRadius * centerDir.dy
+      );
+      context.lineTo(
+        center.x + outerRadius * centerDir.dx,
+        center.y + outerRadius * centerDir.dy
+      );
+      context.moveTo(
+        center.x + centerRadius * startDir.dx,
+        center.y + centerRadius * startDir.dy
+      );
+      context.arc(
+        center.x,
+        center.y,
+        centerRadius * width,
+        startDir.arc.angle,
+        endDir.arc.angle
+      );
+      context.stroke();
+    };
     const draw = (hour) => {
       const hour1 = (hour + 1) % 12;
       const hour2 = (hour + 2) % 12;
@@ -574,10 +603,15 @@ const PianoKeyboard = class {
       drawRoot(hour, hour1, 1, 2); // Major
       drawRoot(hour3ccw, hour2ccw, 0, 1); // Minor
       context.stroke();
-      // Major chord
+      // Major 3rd tone
       if( toneIndicating[hour4] ) {
         drawArc(1, hour, hour1);
-        toneIndicating[hour1] && drawArc(2, hour, hour1);
+        toneIndicating[hour1] && drawArc(2, hour, hour1); // Major chord
+        toneIndicating[hour4ccw] && [
+          [hour4ccw, hour3ccw],
+          [hour, hour1],
+          [hour4, (hour + 5) % 12],
+        ].forEach(hours => drawAug(...hours)); // Augumented chord
       }
       if( toneIndicating[hour4ccw] ) {
         drawArc(1, hour4ccw, hour3ccw);
