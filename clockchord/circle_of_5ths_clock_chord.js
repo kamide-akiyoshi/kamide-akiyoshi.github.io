@@ -593,6 +593,7 @@ const PianoKeyboard = class {
       toneIndicating[hour2ccw] && toneIndicating[hour1ccw] && drawSus4(hour1ccw, hour);
       toneIndicating[hour1]    && toneIndicating[hour2]    && drawSus4(hour1, hour2);
       // Tritone
+      context.strokeStyle = '#808080';
       toneIndicating[(hour + 6) % 12] && [hour3ccw, hour3].forEach(drawCircleOnMinor);
     };
     const drawBass = (hour) => {
