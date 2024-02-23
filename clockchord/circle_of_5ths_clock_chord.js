@@ -367,15 +367,19 @@ const PianoKeyboard = class {
       switch(status) {
       case 0x90: // Note On event
         if( data[1] ) { // velocity
-          isActiveChannel && this.noteOn(data[0]);
-          toneIndicatorCanvas.noteOn(data[0]);
-          chord.clear();
+          if( isActiveChannel ) {
+            this.noteOn(data[0]);
+            toneIndicatorCanvas.noteOn(data[0]);
+            chord.clear();
+          }
           break;
         }
         // fallthrough: velocity === 0 means Note Off
       case 0x80: // Note Off event
-        isActiveChannel && this.noteOff(data[0]);
-        toneIndicatorCanvas.noteOff(data[0]);
+        if( isActiveChannel ) {
+          this.noteOff(data[0]);
+          toneIndicatorCanvas.noteOff(data[0]);
+        }
         break;
       }
     };
