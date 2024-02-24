@@ -467,11 +467,11 @@ const PianoKeyboard = class {
       };
     });
     const context = canvas.getContext("2d");
-    const drawRoot = (startHour, endHour, startRadiusIndex, endRadiusIndex) => {
+    const drawRoot = (startHour, endHour, startRadiusIndex) => {
       const dirStart = majorDirections[startHour];
       const dirEnd   = majorDirections[endHour];
       const startRadius = borderRadius[startRadiusIndex];
-      const endRadius = borderRadius[endRadiusIndex];
+      const endRadius = borderRadius[startRadiusIndex + 1];
       const shortEndRadius = startRadius + (endRadius - startRadius) / 4;
       context.moveTo(
         center.x + startRadius * dirStart.dx,
@@ -550,7 +550,7 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const drawCircleOnMinor = (hour) => {
+    const drawTritone = (hour) => {
       const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
       const direction = majorDirections[hour].center;
       context.beginPath();
@@ -593,53 +593,56 @@ const PianoKeyboard = class {
     };
     const draw = (hour) => {
       const hour1 = (hour + 1) % 12;
-      const hour2 = (hour + 2) % 12;
       const hour3 = (hour + 3) % 12;
       const hour4 = (hour + 4) % 12;
+      const hour6 = (hour + 6) % 12
       const hour4ccw = (hour + 8) % 12;
       const hour3ccw = (hour + 9) % 12;
       const hour2ccw = (hour + 10) % 12;
       const hour1ccw = (hour + 11) % 12;
       context.lineWidth = 3;
       context.strokeStyle = 'black';
-      // Root tone
       context.beginPath();
-      drawRoot(hour, hour1, 1, 2); // Major
-      drawRoot(hour3ccw, hour2ccw, 0, 1); // Minor
+      drawRoot(hour, hour1, 1);
+      drawRoot(hour3ccw, hour2ccw, 0);
       context.stroke();
-      // Major 3rd tone
       if( toneIndicating[hour4] ) {
         drawArc(1, hour, hour1);
-        toneIndicating[hour1] && drawArc(2, hour, hour1); // Major chord
-        toneIndicating[hour4ccw] && [
-          [hour4ccw, hour3ccw],
-          [hour, hour1],
-          [hour4, (hour + 5) % 12],
-        ].forEach(hours => drawAug(...hours)); // Augumented chord
+        toneIndicating[hour1] && drawArc(2, hour, hour1);
+        toneIndicating[hour3] && drawArc(0, hour, hour1);
+        if( toneIndicating[hour4ccw] ) {
+          const hour5 = (hour + 5) % 12;
+          [
+            [hour4ccw, hour3ccw],
+            [hour, hour1],
+            [hour4, hour5],
+          ].forEach(hours => drawAug(...hours));
+        }
       }
       if( toneIndicating[hour4ccw] ) {
         drawArc(1, hour4ccw, hour3ccw);
         toneIndicating[hour3ccw] && drawArc(2, hour4ccw, hour3ccw);
+        toneIndicating[hour1ccw] && drawArc(0, hour4ccw, hour3ccw);
       }
-      toneIndicating[hour1ccw] && toneIndicating[hour3] && drawArc(2, hour1ccw, hour);
-      // Minor chord
-      toneIndicating[hour1]    && toneIndicating[hour3ccw] && drawArc(0, hour3ccw, hour2ccw);
-      toneIndicating[hour1ccw] && toneIndicating[hour4ccw] && drawArc(0, hour4ccw, hour3ccw);
-      toneIndicating[hour3]    && toneIndicating[hour4]    && drawArc(0, hour, hour1);
-      // Suspended 4th chord
-      toneIndicating[hour1ccw] && toneIndicating[hour1]    && drawSus4(hour, hour1);
-      toneIndicating[hour2ccw] && toneIndicating[hour1ccw] && drawSus4(hour1ccw, hour);
-      toneIndicating[hour1]    && toneIndicating[hour2]    && drawSus4(hour1, hour2);
-      // Tritone
+      if( toneIndicating[hour1] ) {
+        const hour2 = (hour + 2) % 12;
+        toneIndicating[hour3ccw] && drawArc(0, hour3ccw, hour2ccw);
+        toneIndicating[hour1ccw] && drawSus4(hour,  hour1);
+        toneIndicating[hour2]    && drawSus4(hour1, hour2);
+      }
+      if( toneIndicating[hour1ccw] ) {
+        toneIndicating[hour3]    && drawArc(2, hour1ccw, hour);
+        toneIndicating[hour2ccw] && drawSus4(  hour1ccw, hour);
+      }
       context.strokeStyle = '#404040';
-      toneIndicating[(hour + 6) % 12] && [hour3ccw, hour3].forEach(drawCircleOnMinor);
+      toneIndicating[hour6] && [hour3ccw, hour3].forEach(drawTritone);
     };
     const drawBass = (hour) => {
       const hour3ccw = (hour + 9) % 12;
       context.lineWidth = 5;
       context.strokeStyle = 'black';
-      drawBassArc(1, hour); // Major
-      drawBassArc(0, hour3ccw); // Minor
+      drawBassArc(1, hour);
+      drawBassArc(0, hour3ccw);
     };
     const redrawAll = () => {
       context.clearRect(0, 0, width, height);
