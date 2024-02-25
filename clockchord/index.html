@@ -8,6 +8,18 @@
 <script src="./circle_of_5ths_clock_chord.js"></script>
 <script>new CircleOfFifthsClock();</script>
 <style type="text/css">
+	:root {
+		--center-chord-background: radial-gradient(#FFFFFFD0 50%, #FFFFFF00);
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--center-chord-background: radial-gradient(#404040D0 50%, #40404000);
+		}
+		.clock {
+			color: white;
+			background-color: #404040;
+		}
+	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	.clock {
 		position: relative;
@@ -51,7 +63,7 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		background: radial-gradient(#FFFFFFD0 50%, #FFFFFF00);
+		background: var(--center-chord-background);
 		padding: 10px;
 	}
 	button {
