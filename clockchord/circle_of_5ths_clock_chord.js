@@ -467,11 +467,11 @@ const PianoKeyboard = class {
       };
     });
     const context = canvas.getContext("2d");
-    const drawRoot = (startHour, endHour, startRadiusIndex) => {
+    const drawRoot = (radiusIndex, startHour, endHour) => {
       const dirStart = majorDirections[startHour];
       const dirEnd   = majorDirections[endHour];
-      const startRadius = borderRadius[startRadiusIndex];
-      const endRadius = borderRadius[startRadiusIndex + 1];
+      const startRadius = borderRadius[radiusIndex];
+      const endRadius = borderRadius[radiusIndex + 1];
       const shortEndRadius = startRadius + (endRadius - startRadius) / 4;
       context.moveTo(
         center.x + startRadius * dirStart.dx,
@@ -592,42 +592,43 @@ const PianoKeyboard = class {
       context.stroke();
     };
     const draw = (hour) => {
-      const hour1 = (hour + 1) % 12;
-      const hour3 = (hour + 3) % 12;
-      const hour4 = (hour + 4) % 12;
-      const hour6 = (hour + 6) % 12
-      const hour4ccw = (hour + 8) % 12;
-      const hour3ccw = (hour + 9) % 12;
-      const hour2ccw = (hour + 10) % 12;
-      const hour1ccw = (hour + 11) % 12;
+      const hour1ccw = hour ? hour - 1 : 11;
+      const hour2ccw = hour + (hour < 2 ? 10 : -2);
+      const hour3ccw = hour + (hour < 3 ? 9 : -3);
+      const hour4ccw = hour + (hour < 4 ? 8 : -4);
+      const hour4 = hour + (hour < 8 ? 4 : -8);
+      const hour3 = hour + (hour < 9 ? 3 : -9);
+      const hour1 = hour < 11 ? hour + 1 : 0;
+      const hours = [hour, hour1];
+      const hours3ccw = [hour3ccw, hour2ccw];
       context.lineWidth = 3;
       context.strokeStyle = 'black';
       context.beginPath();
-      drawRoot(hour, hour1, 1);
-      drawRoot(hour3ccw, hour2ccw, 0);
+      drawRoot(1, ...hours);
+      drawRoot(0, ...hours3ccw);
       context.stroke();
       if( toneIndicating[hour4] ) {
-        drawArc(1, hour, hour1);
-        toneIndicating[hour1] && drawArc(2, hour, hour1);
-        toneIndicating[hour3] && drawArc(0, hour, hour1);
-        if( toneIndicating[hour4ccw] ) {
-          const hour5 = (hour + 5) % 12;
-          [
-            [hour4ccw, hour3ccw],
-            [hour, hour1],
-            [hour4, hour5],
-          ].forEach(hours => drawAug(...hours));
-        }
+        drawArc(1, ...hours);
+        toneIndicating[hour1] && drawArc(2, ...hours);
+        toneIndicating[hour3] && drawArc(0, ...hours);
       }
       if( toneIndicating[hour4ccw] ) {
-        drawArc(1, hour4ccw, hour3ccw);
-        toneIndicating[hour3ccw] && drawArc(2, hour4ccw, hour3ccw);
-        toneIndicating[hour1ccw] && drawArc(0, hour4ccw, hour3ccw);
+        const hours4ccw = [hour4ccw, hour3ccw];
+        drawArc(1, ...hours4ccw);
+        toneIndicating[hour3ccw] && drawArc(2, ...hours4ccw);
+        toneIndicating[hour1ccw] && drawArc(0, ...hours4ccw);
+        if( toneIndicating[hour4] ) {
+          const hours4 = [
+            hour4,
+            hour + (hour < 7 ? 5 : -7),
+          ];
+          [hours4ccw, hours, hours4].forEach(hours => drawAug(...hours));
+        }
       }
       if( toneIndicating[hour1] ) {
-        const hour2 = (hour + 2) % 12;
-        toneIndicating[hour3ccw] && drawArc(0, hour3ccw, hour2ccw);
-        toneIndicating[hour1ccw] && drawSus4(hour,  hour1);
+        const hour2 = hour + (hour < 10 ? 2 : -10);
+        toneIndicating[hour3ccw] && drawArc(0, ...hours3ccw);
+        toneIndicating[hour1ccw] && drawSus4(...hours);
         toneIndicating[hour2]    && drawSus4(hour1, hour2);
       }
       if( toneIndicating[hour1ccw] ) {
@@ -635,10 +636,10 @@ const PianoKeyboard = class {
         toneIndicating[hour2ccw] && drawSus4(  hour1ccw, hour);
       }
       context.strokeStyle = '#404040';
-      toneIndicating[hour6] && [hour3ccw, hour3].forEach(drawTritone);
+      toneIndicating[hour + (hour < 6 ? 6 : -6)] && [hour3ccw, hour3].forEach(drawTritone);
     };
     const drawBass = (hour) => {
-      const hour3ccw = (hour + 9) % 12;
+      const hour3ccw = hour + (hour < 3 ? 9 : -3);
       context.lineWidth = 5;
       context.strokeStyle = 'black';
       drawBassArc(1, hour);
