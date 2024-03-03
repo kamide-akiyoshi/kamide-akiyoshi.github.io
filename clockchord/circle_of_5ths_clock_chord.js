@@ -940,14 +940,26 @@ const CircleOfFifthsClock = class {
     keySignatureTextAt0: 'key',
     draw: () => {
       const { dial, keySignature } = this;
-      const { canvas, center, themeColors } = dial;
-      const theme = themeColors[dial.theme];
+      const { canvas, center, themeColors, theme, chord } = dial;
+      const clock = canvas.parentElement;
+      if( !clock.classList.contains(`clock_${theme}`) ) {
+        const cl = clock.classList;
+        cl.remove(`clock_${theme === 'dark' ? 'light' : 'dark'}`);
+        cl.add(`clock_${theme}`)
+      }
+      const centerLabel = chord.dialCenterLabel.label;
+      if( centerLabel && !centerLabel.classList.contains(`center_chord_${theme}`) ) {
+        const cl = centerLabel.classList;
+        cl.remove(`center_chord_${theme === 'dark' ? 'light' : 'dark'}`);
+        cl.add(`center_chord_${theme}`)
+      }
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const addCirclePath = (width == height)?
         (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i):
         (r, i) => context.ellipse(center.x, center.y, r * width, r * height, 0, 0, 2 * Math.PI, i);
-      theme.background.forEach((color, i) => {
+      const themeColor = themeColors[theme];
+      themeColor.background.forEach((color, i) => {
         context.beginPath();
         const r = dial.borderRadius;
         addCirclePath(r[i  ]);
@@ -955,7 +967,7 @@ const CircleOfFifthsClock = class {
         context.fillStyle = color;
         context.fill();
       });
-      const textColorAt = h => theme[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
+      const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
       const majorTextAt = h => Music.majorPitchNameAt(h).join('');
@@ -974,13 +986,13 @@ const CircleOfFifthsClock = class {
         let yy = center.dy(tt);
         let r0 = dial.borderRadius[0];
         let r1 = dial.borderRadius[3];
-        context.strokeStyle = theme.hourBorder[(relativeHour + 24) % 3 == 1 ? 'coarse' : 'fine'];
+        context.strokeStyle = themeColor.hourBorder[(relativeHour + 24) % 3 == 1 ? 'coarse' : 'fine'];
         context.beginPath();
         context.moveTo( center.x + r0*xx, center.y + r0*yy );
         context.lineTo( center.x + r1*xx, center.y + r1*yy );
         context.stroke();
         // Dot
-        context.fillStyle = theme.background[1];
+        context.fillStyle = themeColor.background[1];
         r0 = dial.borderRadius[2];
         xx = x; yy = y; let rDot = 3;
         for( let i = 0; i < 5; i++ ) {
@@ -1149,9 +1161,7 @@ const CircleOfFifthsClock = class {
         console.error(`${canvasId}: No such element ID`);
         return;
       }
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const { hands, dial } = this;
-      const getThemeKey = query => query.matches ? 'dark' : 'light';
       const { width, height } = hands.canvas = canvas;
       hands.center = dial.center = {
         x: width/2,
@@ -1170,12 +1180,21 @@ const CircleOfFifthsClock = class {
         chordButtonCanvas,
         toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
       });
-      darkModeMediaQuery.addEventListener('change', e => {
-        dial.theme = getThemeKey(e);
+      const darkModeSelect = document.getElementById('dark_mode_select');
+      if( darkModeSelect ) {
+        darkModeSelect.addEventListener('change', e => {
+          dial.theme = e.target.value;
+          dial.draw();
+        });
+      }
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const loadSystemTheme = () => {
+        dial.theme = darkModeMediaQuery.matches ? 'dark' : 'light';
+        darkModeSelect && (darkModeSelect.value = dial.theme);
         dial.draw();
-      });
-      dial.theme = getThemeKey(darkModeMediaQuery);
-      dial.draw();
+      };
+      darkModeMediaQuery.addEventListener('change', loadSystemTheme);
+      loadSystemTheme();
       hands.moving = true;
     }
     window.addEventListener("load", loader);
@@ -1193,6 +1212,7 @@ const CircleOfFifthsClock = class {
     chord.keySignature = keySignature;
     chord.buttonCanvas = canvas;
     chord.dial = dial;
+    dial.chord = chord;
     keySignature.chord = chord;
     keySignature.dial = dial;
     dial.keySignatureTextAt0 = 'key/sus4';
