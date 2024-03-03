@@ -914,7 +914,7 @@ const CircleOfFifthsClock = class {
         indicator: ['blue', 'firebrick', 'gold'],
       },
       dark: {
-        background: ['#204060', '#802040', '#806000'],
+        background: ['#102030', '#401020', '#403000'],
         foreground: '#A0A0A0',
         grayoutForeground: '#707070',
         hourBorder: {
