@@ -947,7 +947,7 @@ const CircleOfFifthsClock = class {
         cl.remove(`clock_${theme === 'dark' ? 'light' : 'dark'}`);
         cl.add(`clock_${theme}`)
       }
-      const centerLabel = chord.dialCenterLabel.label;
+      const centerLabel = chord?.dialCenterLabel.label;
       if( centerLabel && !centerLabel.classList.contains(`center_chord_${theme}`) ) {
         const cl = centerLabel.classList;
         cl.remove(`center_chord_${theme === 'dark' ? 'light' : 'dark'}`);
