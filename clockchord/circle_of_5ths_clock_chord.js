@@ -911,12 +911,12 @@ const CircleOfFifthsClock = class {
           minute: 'rgba(0, 0, 0, 0.5)',
           second: '#ff4000',
         },
-        indicator: ['blue', 'firebrick', 'gold'],
+        indicator: ['blue', 'firebrick', 'darkorange'],
       },
       dark: {
-        background: ['#102030', '#401020', '#403000'],
-        foreground: '#A0A0A0',
-        grayoutForeground: '#707070',
+        background: ['#102030', '#301020', '#302000'],
+        foreground: '#808080',
+        grayoutForeground: '#404040',
         hourBorder: {
           fine: 'rgb(255, 255, 255, 0.2)',
           coarse: 'rgb(255, 255, 255, 0.6)',
