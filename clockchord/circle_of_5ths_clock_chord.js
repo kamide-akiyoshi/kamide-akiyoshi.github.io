@@ -806,19 +806,18 @@ const PianoKeyboard = class {
           keyboard.focus();
           e.preventDefault();
         });
-        element.addEventListener(pointerup, e => {
-          noteOff(noteNumber);
-        });
         element.addEventListener(pointerenter, e => {
           if( e.buttons & 1 ) {
             noteOn(noteNumber);
           }
         });
-        element.addEventListener(pointerleave, e => {
-          if( e.buttons & 1 ) {
-            noteOff(noteNumber);
-          }
-        });
+        const handleOff = e => {
+          noteOff(noteNumber);
+        };
+        element.addEventListener(pointerup, handleOff);
+        element.addEventListener(pointerleave, handleOff);
+        // Disable context menu by clicking mouse right button
+        element.addEventListener('contextmenu', e => e.preventDefault());
       });
       keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
       keyboard.addEventListener("scroll",
