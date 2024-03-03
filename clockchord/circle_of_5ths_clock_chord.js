@@ -942,13 +942,13 @@ const CircleOfFifthsClock = class {
       const { dial, keySignature } = this;
       const { canvas, center, themeColors, theme, chord } = dial;
       const clock = canvas.parentElement;
-      if( !clock.classList.contains(`clock_${theme}`) ) {
+      if( clock?.classList && !clock.classList.contains(`clock_${theme}`) ) {
         const cl = clock.classList;
         cl.remove(`clock_${theme === 'dark' ? 'light' : 'dark'}`);
         cl.add(`clock_${theme}`)
       }
       const centerLabel = chord?.dialCenterLabel.label;
-      if( centerLabel && !centerLabel.classList.contains(`center_chord_${theme}`) ) {
+      if( centerLabel?.classList && !centerLabel.classList.contains(`center_chord_${theme}`) ) {
         const cl = centerLabel.classList;
         cl.remove(`center_chord_${theme === 'dark' ? 'light' : 'dark'}`);
         cl.add(`center_chord_${theme}`)
