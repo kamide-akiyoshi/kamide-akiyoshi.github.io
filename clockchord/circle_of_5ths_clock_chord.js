@@ -280,7 +280,7 @@ const PianoKeyboard = class {
       clearButtonCanvas();
       if( !hour && hour !== 0 ) return;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
-      const rootPitchNumber = Music.togglePitchNumberAndHour(majorRootHour);
+      const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
       let i = 0;
       const noteOn = n => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
@@ -444,10 +444,16 @@ const PianoKeyboard = class {
   };
   setupToneIndicatorCanvas = (canvas) => {
     const BASS_MAX_NOTE_NUMBER = 48;
-    const { dial, width, height } = this.toneIndicatorCanvas = canvas;
+    const { dial, width, height, keySignature } = this.toneIndicatorCanvas = canvas;
     const { center, borderRadius, themeColors } = dial;
     const toneIndicating = Array.from({ length: 12 }, () => 0);
     const bassToneIndicating = [...toneIndicating];
+    const getColorOf = (hour, flatThreshold) => {
+      const { indicator } = themeColors[dial.theme];
+      let offset = hour - keySignature?.value + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
+      if( offset < 0 ) offset += 12; else if ( offset >= 12 ) offset -= 12;
+      return indicator[offset < 7 ? 1 : offset < flatThreshold ? 2 : 0];
+    };
     const majorDirections = toneIndicating.map((_, hour) => {
       const diffToAngle = (diff = 0) => (hour + diff) * Math.PI / 6;
       const rootClockAngle = diffToAngle(-0.5);
@@ -467,28 +473,36 @@ const PianoKeyboard = class {
       };
     });
     const context = canvas.getContext("2d");
-    const drawRoot = (radiusIndex, startHour, endHour) => {
-      const dirStart = majorDirections[startHour];
-      const dirEnd   = majorDirections[endHour];
+    const drawRoot = (radiusIndex, hour) => {
+      const dir = majorDirections[hour];
+      const startRadius = borderRadius[radiusIndex];
+      const endRadius = borderRadius[radiusIndex + 1];
+      context.beginPath();
+      context.moveTo(
+        center.x + startRadius * dir.dx,
+        center.y + startRadius * dir.dy
+      );
+      context.lineTo(
+        center.x + endRadius * dir.dx,
+        center.y + endRadius * dir.dy
+      );
+      context.stroke();
+    };
+    const draw5th = (radiusIndex, hour) => {
+      const dir = majorDirections[hour];
       const startRadius = borderRadius[radiusIndex];
       const endRadius = borderRadius[radiusIndex + 1];
       const shortEndRadius = startRadius + (endRadius - startRadius) / 4;
+      context.beginPath();
       context.moveTo(
-        center.x + startRadius * dirStart.dx,
-        center.y + startRadius * dirStart.dy
+        center.x + startRadius * dir.dx,
+        center.y + startRadius * dir.dy
       );
       context.lineTo(
-        center.x + endRadius * dirStart.dx,
-        center.y + endRadius * dirStart.dy
+        center.x + shortEndRadius * dir.dx,
+        center.y + shortEndRadius * dir.dy
       );
-      context.moveTo(
-        center.x + startRadius * dirEnd.dx,
-        center.y + startRadius * dirEnd.dy
-      );
-      context.lineTo(
-        center.x + shortEndRadius * dirEnd.dx,
-        center.y + shortEndRadius * dirEnd.dy
-      );
+      context.stroke();
     };
     const drawArc = (radiusIndex, startHour, endHour) => {
       context.beginPath();
@@ -515,37 +529,50 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const drawSus4 = (startHour, endHour) => {
-      const startDir = majorDirections[startHour];
-      const endDir   = majorDirections[endHour];
+    const drawSus4 = (hour, fifthHour, rootColor, sus4Color, fifthColor) => {
+      const dir = majorDirections[hour];
+      const fifthDir = majorDirections[fifthHour];
       const inner = borderRadius[2];
       const outer = borderRadius[3] - 0.005;
       context.beginPath();
+      context.strokeStyle = rootColor;
       context.moveTo(
-        center.x + outer * startDir.dx,
-        center.y + outer * startDir.dy
+        center.x + outer * dir.dx,
+        center.y + outer * dir.dy
       );
       context.lineTo(
-        center.x + inner * startDir.dx,
-        center.y + inner * startDir.dy
+        center.x + inner * dir.dx,
+        center.y + inner * dir.dy
       );
+      context.stroke();
+      context.beginPath();
+      context.strokeStyle = fifthColor;
+      context.moveTo(
+        center.x + outer * fifthDir.dx,
+        center.y + outer * fifthDir.dy
+      );
+      context.lineTo(
+        center.x + inner * fifthDir.dx,
+        center.y + inner * fifthDir.dy
+      );
+      context.stroke();
+      context.beginPath();
+      context.strokeStyle = sus4Color;
       context.arc(
         center.x,
         center.y,
         inner * width,
-        startDir.arc.angle,
-        endDir.arc.angle
+        dir.arc.angle,
+        fifthDir.arc.angle
       );
-      context.lineTo(
-        center.x + outer * endDir.dx,
-        center.y + outer * endDir.dy
-      );
+      context.stroke();
+      context.beginPath();
       context.arc(
         center.x,
         center.y,
         outer * width,
-        endDir.arc.angle,
-        startDir.arc.angle,
+        fifthDir.arc.angle,
+        dir.arc.angle,
         true
       );
       context.stroke();
@@ -557,7 +584,7 @@ const PianoKeyboard = class {
       context.arc(
         center.x + minorCenter * direction.dx,
         center.y + minorCenter * direction.dy,
-        0.04 * width,
+        0.03 * width,
         0, 2 * Math.PI
       );
       context.stroke();
@@ -595,57 +622,84 @@ const PianoKeyboard = class {
       const hour1ccw = hour ? hour - 1 : 11;
       const hour2ccw = hour + (hour < 2 ? 10 : -2);
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
-      const hour4ccw = hour + (hour < 4 ? 8 : -4);
-      const hour4 = hour + (hour < 8 ? 4 : -8);
       const hour3 = hour + (hour < 9 ? 3 : -9);
       const hour1 = hour < 11 ? hour + 1 : 0;
-      const hours = [hour, hour1];
-      const hours3ccw = [hour3ccw, hour2ccw];
-      const theme = themeColors[dial.theme];
       context.lineWidth = 3;
-      context.strokeStyle = theme.indicator;
-      context.beginPath();
-      drawRoot(1, ...hours);
-      drawRoot(0, ...hours3ccw);
-      context.stroke();
+      context.strokeStyle = getColorOf(hour, 8); drawRoot(1, hour);
+      context.strokeStyle = getColorOf(hour, 11); drawRoot(0, hour3ccw);
+      context.strokeStyle = getColorOf(hour1, 8); draw5th(1, hour1);
+      context.strokeStyle = getColorOf(hour1, 11); draw5th(0, hour2ccw);
+      const hour4 = hour + (hour < 8 ? 4 : -8);
       if( toneIndicating[hour4] ) {
-        drawArc(1, ...hours);
-        toneIndicating[hour1] && drawArc(2, ...hours);
-        toneIndicating[hour3] && drawArc(0, ...hours);
-      }
-      if( toneIndicating[hour4ccw] ) {
-        const hours4ccw = [hour4ccw, hour3ccw];
-        drawArc(1, ...hours4ccw);
-        toneIndicating[hour3ccw] && drawArc(2, ...hours4ccw);
-        toneIndicating[hour1ccw] && drawArc(0, ...hours4ccw);
-        if( toneIndicating[hour4] ) {
-          const hours4 = [
-            hour4,
-            hour + (hour < 7 ? 5 : -7),
-          ];
-          [hours4ccw, hours, hours4].forEach(hours => drawAug(...hours));
+        if( toneIndicating[hour3] ) { // root:hour3 + minor3rd:hour + 5th:hour4
+          context.strokeStyle = getColorOf(hour, 8);
+          drawArc(0, hour, hour1);
+          drawArc(1, hour, hour1);
+        } else { // root:hour + major3rd:hour4
+          context.strokeStyle = getColorOf(hour4, 11);
+          drawArc(1, hour, hour1);
+          if( toneIndicating[hour1] ) { // + 5th:hour1
+            drawArc(2, hour, hour1);
+          }
         }
       }
-      if( toneIndicating[hour1] ) {
+      const hour4ccw = hour + (hour < 4 ? 8 : -4);
+      if( toneIndicating[hour4ccw] ) {
+        if( toneIndicating[hour1ccw] ) { // root:hour1ccw + minor3rd:hour4ccw + 5th:hour
+          context.strokeStyle = getColorOf(hour4ccw, 8);
+          drawArc(0, hour4ccw, hour3ccw);
+          drawArc(1, hour4ccw, hour3ccw);
+        } else { // root:hour4ccw + major3rd:hour
+          context.strokeStyle = getColorOf(hour, 11);
+          drawArc(1, hour4ccw, hour3ccw);
+          if( toneIndicating[hour3ccw] ) { // + 5th:hour3ccw
+            drawArc(2, hour4ccw, hour3ccw);
+          }
+        }
+        if( toneIndicating[hour4] ) { // Augumented
+          // root:hour4ccw + major3rd:hour + aug5th:hour4
+          context.strokeStyle = getColorOf(hour4, 12); drawAug(hour4ccw, hour3ccw);
+          // root:hour + major3rd:hour4 + aug5th:hour4ccw
+          context.strokeStyle = getColorOf(hour4ccw, 12); drawAug(hour, hour1);
+          // root:hour4 + major3rd:hour4ccw + aug5th:hour
+          context.strokeStyle = getColorOf(hour, 12); drawAug(hour4, hour + (hour < 7 ? 5 : -7));
+        }
+      }
+      if( toneIndicating[hour1] ) { // root:hour + 5th:hour1
+        if( toneIndicating[hour3ccw] ) { // + minor3rd:hour3ccw
+          context.strokeStyle = getColorOf(hour3ccw, 8);
+          drawArc(0, hour3ccw, hour2ccw);
+        }
+        if( toneIndicating[hour1ccw] ) { // + sus4:hour1ccw
+          drawSus4(hour, hour1, getColorOf(hour, 8), getColorOf(hour1ccw, 8), getColorOf(hour1, 8));
+        }
         const hour2 = hour + (hour < 10 ? 2 : -10);
-        toneIndicating[hour3ccw] && drawArc(0, ...hours3ccw);
-        toneIndicating[hour1ccw] && drawSus4(...hours);
-        toneIndicating[hour2]    && drawSus4(hour1, hour2);
+        if( toneIndicating[hour2] ) { // root:hour1 + sus4:hour + 5th:hour2
+          drawSus4(hour1, hour2, getColorOf(hour1, 8), getColorOf(hour, 8), getColorOf(hour2, 8));
+        }
       }
-      if( toneIndicating[hour1ccw] ) {
-        toneIndicating[hour3]    && drawArc(2, hour1ccw, hour);
-        toneIndicating[hour2ccw] && drawSus4(  hour1ccw, hour);
+      if( toneIndicating[hour1ccw] ) { // root:hour1ccw + 5th:hour
+        if( toneIndicating[hour3] ) { // + major3rd:hour3
+          context.strokeStyle = getColorOf(hour3, 11);
+          drawArc(2, hour1ccw, hour);
+        }
+        if( toneIndicating[hour2ccw] ) { // root:hour1ccw + sus4:hour2ccw + 5th:hour
+          drawSus4(hour1ccw, hour, getColorOf(hour1ccw, 8), getColorOf(hour2ccw, 8), getColorOf(hour, 8));
+        }
       }
-      context.strokeStyle = theme.tritoneIndicator;
-      toneIndicating[hour + (hour < 6 ? 6 : -6)] && [hour3ccw, hour3].forEach(drawTritone);
+      const hour6 = hour + (hour < 6 ? 6 : -6);
+      if( toneIndicating[hour6] ) { // Tritone
+        context.strokeStyle = getColorOf(hour6, 11);
+        drawTritone(hour3ccw);
+        context.strokeStyle = getColorOf(hour, 8);
+        drawTritone(hour3);
+      }
     };
     const drawBass = (hour) => {
-      const theme = themeColors[dial.theme];
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
       context.lineWidth = 5;
-      context.strokeStyle = theme.indicator;
-      drawBassArc(1, hour);
-      drawBassArc(0, hour3ccw);
+      context.strokeStyle = getColorOf(hour, 8); drawBassArc(1, hour);
+      context.strokeStyle = getColorOf(hour, 11); drawBassArc(0, hour3ccw);
     };
     const redrawAll = () => {
       context.clearRect(0, 0, width, height);
@@ -654,17 +708,17 @@ const PianoKeyboard = class {
     }
     canvas.noteOn = (noteNumber) => {
       const bass = noteNumber <= BASS_MAX_NOTE_NUMBER;
-      const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
-      if( toneIndicating[hour]++ === 0 ) {
-        draw(hour);
+      const majorHour = Music.togglePitchNumberAndMajorHour(noteNumber) % 12;
+      if( toneIndicating[majorHour]++ === 0 ) {
+        draw(majorHour);
       }
-      if( bass && bassToneIndicating[hour]++ === 0 ) {
-        drawBass(hour);
+      if( bass && bassToneIndicating[majorHour]++ === 0 ) {
+        drawBass(majorHour);
       }
     };
     canvas.noteOff = (noteNumber) => {
       const bass = noteNumber <= BASS_MAX_NOTE_NUMBER;
-      const hour = Music.togglePitchNumberAndHour(noteNumber) % 12;
+      const hour = Music.togglePitchNumberAndMajorHour(noteNumber) % 12;
       let redrawRequired;
       if( --toneIndicating[hour] <= 0) {
         toneIndicating[hour] = 0;
@@ -833,7 +887,7 @@ const Music = class {
     const fs = hour < 0 ? Music.FLAT : Music.SHARP;
     return n == 1 ? fs : (n > 2 ? n : fs) + fs;
   };
-  static togglePitchNumberAndHour = n => n + ((n & 1) ? 66 : 60);
+  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
   static normalizeHourAsKey = hour => {
     while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
     return hour;
@@ -858,8 +912,7 @@ const CircleOfFifthsClock = class {
           minute: 'rgba(0, 0, 0, 0.5)',
           second: '#ff4000',
         },
-        indicator: 'black',
-        tritoneIndicator: '#404040',
+        indicator: ['blue', 'firebrick', 'gold'],
       },
       dark: {
         background: ['#204060', '#802040', '#806000'],
@@ -874,8 +927,7 @@ const CircleOfFifthsClock = class {
           minute: 'rgba(0, 0, 0, 0.5)',
           second: '#ff4000',
         },
-        indicator: 'white',
-        tritoneIndicator: '#C0C0C0',
+        indicator: ['cyan', 'lightpink', 'yellow'],
       },
     },
     borderRadius: [0.14, 0.29, 0.42, 0.5],
@@ -1136,6 +1188,7 @@ const CircleOfFifthsClock = class {
     }
     const { keySignature, dial } = this;
     toneIndicatorCanvas.dial = dial;
+    toneIndicatorCanvas.keySignature = keySignature;
     const { chord } = this.pianokeyboard = new PianoKeyboard(toneIndicatorCanvas);
     canvas.focus();
     chord.keySignature = keySignature;
