@@ -922,8 +922,8 @@ const CircleOfFifthsClock = class {
           coarse: 'rgb(255, 255, 255, 0.6)',
         },
         hand: {
-          hour: 'rgba(0, 0, 0, 0.5)',
-          minute: 'rgba(0, 0, 0, 0.5)',
+          hour: 'rgba(255, 255, 255, 0.5)',
+          minute: 'rgba(255, 255, 255, 0.5)',
           second: '#ff4000',
         },
         indicator: ['cyan', 'lightpink', 'yellow'],
@@ -1049,7 +1049,6 @@ const CircleOfFifthsClock = class {
     }
   };
   hands = {
-    dial: this.dial,
     parameter: {
       hour: {
         getValueAt: time => time.getHours(), valuePerTurn: 12,
@@ -1073,9 +1072,36 @@ const CircleOfFifthsClock = class {
       dial && context.drawImage(dial, 0, 0);
       return context;
     },
+    draw: () => {
+      const { hands, dial } = this;
+      const { center } = hands;
+      const drawHand = (context, hand) => {
+        const color = dial.themeColors[dial.theme].hand[hand.colorKey];
+        context.beginPath();
+        context.moveTo( center.x, center.y );
+        context.lineWidth = hand.width;
+        context.lineCap = 'round';
+        context.lineTo( center.x + hand.x, center.y + hand.y );
+        context.strokeStyle = color;
+        context.stroke();
+        hand.tail && drawHand(context, hand.tail);
+        if( hand.center ) {
+          context.beginPath();
+          context.arc(center.x, center.y, hand.center.radius, 0, 2 * Math.PI);
+          context.fillStyle = color;
+          context.fill();
+        }
+        return context;
+      };
+      const { hour, minute, second } = hands.parameter;
+      [hour, minute, second].reduce(drawHand, hands.clear());
+    },
     set time(time) {
-      const { center, parameter, dial } = this;
-      const { hour, minute, second } = parameter;
+      const {
+        center,
+        parameter: { hour, minute, second },
+        draw,
+      } = this;
       this._time = time;
       [second, minute, hour].reduce((fraction, hand) => {
         const turn = (hand.getValueAt(time) + fraction) / hand.valuePerTurn;
@@ -1090,25 +1116,7 @@ const CircleOfFifthsClock = class {
         }
         return turn;
       }, 0);
-      const draw = (context, hand) => {
-        const theme = dial.themeColors[dial.theme].hand;
-        context.beginPath();
-        context.moveTo( center.x, center.y );
-        context.lineWidth = hand.width;
-        context.lineCap = 'round';
-        context.lineTo( center.x + hand.x, center.y + hand.y );
-        context.strokeStyle = theme[hand.colorKey];
-        context.stroke();
-        hand.tail && draw(context, hand.tail);
-        if( hand.center ) {
-          context.beginPath();
-          context.arc(center.x, center.y, hand.center.radius, 0, 2 * Math.PI);
-          context.fillStyle = theme[hand.colorKey];
-          context.fill();
-        }
-        return context;
-      };
-      [hour, minute, second].reduce(draw, this.clear());
+      draw();
     },
     get time() { return this._time; },
     set moving(flag) {
@@ -1185,6 +1193,7 @@ const CircleOfFifthsClock = class {
         darkModeSelect.addEventListener('change', e => {
           dial.theme = e.target.value;
           dial.draw();
+          hands.draw();
         });
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -1192,6 +1201,7 @@ const CircleOfFifthsClock = class {
         dial.theme = darkModeMediaQuery.matches ? 'dark' : 'light';
         darkModeSelect && (darkModeSelect.value = dial.theme);
         dial.draw();
+        hands.draw();
       };
       darkModeMediaQuery.addEventListener('change', loadSystemTheme);
       loadSystemTheme();
