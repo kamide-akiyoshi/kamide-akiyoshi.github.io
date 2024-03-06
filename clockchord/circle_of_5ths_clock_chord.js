@@ -897,11 +897,15 @@ const Music = class {
 const CircleOfFifthsClock = class {
   dial = {
     theme: "light",
+    backgroundMode: "donut",
     themeColors: {
       light: {
-        background: ['#99CCFF', '#FB99CC', '#FFFF99'],
         foreground: 'black',
         grayoutForeground: 'gray',
+        background: {
+          donut: ['#99CCFF', '#FB99CC', '#FFFF99'],
+          pie: ['#FB99CC', '#FFFF66', '#CCFFCC', '#99CCFF'],
+        },
         hourBorder: {
           fine: 'rgb(0, 0, 0, 0.2)',
           coarse: 'rgb(0, 0, 0, 0.6)',
@@ -914,9 +918,12 @@ const CircleOfFifthsClock = class {
         indicator: ['blue', 'firebrick', 'darkorange'],
       },
       dark: {
-        background: ['#102030', '#301020', '#302000'],
         foreground: '#808080',
         grayoutForeground: '#404040',
+        background: {
+          donut: ['#102030', '#301020', '#302000'],
+          pie: ['#301020', '#302000', '#103010', '#102030'],
+        },
         hourBorder: {
           fine: 'rgb(255, 255, 255, 0.2)',
           coarse: 'rgb(255, 255, 255, 0.6)',
@@ -940,7 +947,14 @@ const CircleOfFifthsClock = class {
     keySignatureTextAt0: 'key',
     draw: () => {
       const { dial, keySignature } = this;
-      const { canvas, center, themeColors, theme, chord } = dial;
+      const {
+        canvas,
+        center,
+        themeColors,
+        theme,
+        backgroundMode,
+        chord,
+      } = dial;
       const clock = canvas.parentElement;
       if( clock?.classList && !clock.classList.contains(`clock_${theme}`) ) {
         const cl = clock.classList;
@@ -955,18 +969,73 @@ const CircleOfFifthsClock = class {
       }
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const addCirclePath = (width == height)?
-        (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i):
-        (r, i) => context.ellipse(center.x, center.y, r * width, r * height, 0, 0, 2 * Math.PI, i);
       const themeColor = themeColors[theme];
-      themeColor.background.forEach((color, i) => {
+      const selectedHour = keySignature.value;
+      if( backgroundMode === 'pie' ) {
+        themeColor.background.pie.forEach((color, i) => {
+          context.beginPath();
+          const startHour = selectedHour + 3 * i - 1.5;
+          const radianPerHour = Math.PI / 6;
+          const startLineAngle = startHour * radianPerHour;
+          const endLineAngle = (startHour + 3) * radianPerHour;
+          const startArcAngle = (startHour - 3) * radianPerHour;
+          const endArcAngle = startLineAngle;
+          const inner = dial.borderRadius[0];
+          const outer = dial.borderRadius[3];
+          const startX = center.dx(startLineAngle);
+          const startY = center.dy(startLineAngle);
+          context.moveTo(
+            center.x + inner * startX,
+            center.y + inner * startY
+          );
+          context.lineTo(
+            center.x + outer * startX,
+            center.y + outer * startY
+          );
+          context.arc(
+            center.x,
+            center.y,
+            outer * width,
+            startArcAngle,
+            endArcAngle
+          );
+          context.lineTo(
+            center.x + outer * center.dx(endLineAngle),
+            center.y + outer * center.dy(endLineAngle)
+          );
+          context.arc(
+            center.x,
+            center.y,
+            inner * width,
+            endArcAngle,
+            startArcAngle,
+            true
+          );
+          context.fillStyle = color;
+          context.fill();
+        });
         context.beginPath();
-        const r = dial.borderRadius;
-        addCirclePath(r[i  ]);
-        addCirclePath(r[i+1], true);
-        context.fillStyle = color;
-        context.fill();
-      });
+        context.arc(
+          center.x,
+          center.y,
+          width * dial.borderRadius[1],
+          0, 2 * Math.PI,
+        );
+        context.strokeStyle = themeColor.grayoutForeground;
+        context.stroke();
+      } else {
+        const addCirclePath = (width == height)?
+          (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i):
+          (r, i) => context.ellipse(center.x, center.y, r * width, r * height, 0, 0, 2 * Math.PI, i);
+        themeColor.background.donut.forEach((color, i) => {
+          context.beginPath();
+          const r = dial.borderRadius;
+          addCirclePath(r[i]);
+          addCirclePath(r[i+1], true);
+          context.fillStyle = color;
+          context.fill();
+        });
+      }
       const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
@@ -974,7 +1043,6 @@ const CircleOfFifthsClock = class {
       const minorTextAt = h => Music.majorPitchNameAt(h+3).join('')+'m';
       context.textAlign = "center";
       context.textBaseline = "middle";
-      const selectedHour = keySignature.value;
       for( let hour = -5; hour <= 6; hour++ ) {
         const t = hour * Math.PI / 6;
         const x = center.dx(t);
@@ -992,7 +1060,7 @@ const CircleOfFifthsClock = class {
         context.lineTo( center.x + r1*xx, center.y + r1*yy );
         context.stroke();
         // Dot
-        context.fillStyle = themeColor.background[1];
+        context.fillStyle = backgroundMode == "pie" ? themeColor.grayoutForeground : themeColor.background.donut[1];
         r0 = dial.borderRadius[2];
         xx = x; yy = y; let rDot = 3;
         for( let i = 0; i < 5; i++ ) {
@@ -1188,6 +1256,13 @@ const CircleOfFifthsClock = class {
         chordButtonCanvas,
         toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
       });
+      const backgroundModeSelect = document.getElementById('background_mode_select');
+      if( backgroundModeSelect ) {
+        backgroundModeSelect.addEventListener('change', e => {
+          dial.backgroundMode = e.target.value;
+          dial.draw();
+        });
+      }
       const darkModeSelect = document.getElementById('dark_mode_select');
       if( darkModeSelect ) {
         darkModeSelect.addEventListener('change', e => {

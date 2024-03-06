@@ -12,6 +12,10 @@
 		right: 0;
 		top: 0;
 	}
+	#background_mode_select {
+		right: 0;
+		top: 24px;
+	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	.clock {
 		position: relative;
@@ -220,6 +224,10 @@
     <select id="dark_mode_select">
       <option value="light" selected>Light</option>
       <option value="dark">Dark</option>
+    </select>
+    <select id="background_mode_select">
+      <option value="donut" selected>Donut</option>
+      <option value="pie">Pie</option>
     </select>
     <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
     <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
