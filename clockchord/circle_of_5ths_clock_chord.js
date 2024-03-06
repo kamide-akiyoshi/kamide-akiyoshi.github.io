@@ -929,8 +929,8 @@ const CircleOfFifthsClock = class {
           coarse: 'rgb(255, 255, 255, 0.6)',
         },
         hand: {
-          hour: 'rgba(255, 255, 255, 0.5)',
-          minute: 'rgba(255, 255, 255, 0.5)',
+          hour: 'rgba(255, 255, 255, 0.25)',
+          minute: 'rgba(255, 255, 255, 0.25)',
           second: '#ff4000',
         },
         indicator: ['cyan', 'lightpink', 'yellow'],
