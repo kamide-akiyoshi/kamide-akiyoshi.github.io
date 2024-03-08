@@ -971,71 +971,36 @@ const CircleOfFifthsClock = class {
       const context = canvas.getContext("2d");
       const themeColor = themeColors[theme];
       const selectedHour = keySignature.value;
+      const addCirclePath = (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i)
       if( backgroundMode === 'pie' ) {
+        const r = [0, 3].map(i => dial.borderRadius[i] * width);
+        const rph = Math.PI / 6; // Radian per hour
         themeColor.background.pie.forEach((color, i) => {
-          context.beginPath();
-          const startHour = selectedHour + 3 * i - 1.5;
-          const radianPerHour = Math.PI / 6;
-          const startLineAngle = startHour * radianPerHour;
-          const endLineAngle = (startHour + 3) * radianPerHour;
-          const startArcAngle = (startHour - 3) * radianPerHour;
-          const endArcAngle = startLineAngle;
-          const inner = dial.borderRadius[0];
-          const outer = dial.borderRadius[3];
-          const startX = center.dx(startLineAngle);
-          const startY = center.dy(startLineAngle);
-          context.moveTo(
-            center.x + inner * startX,
-            center.y + inner * startY
-          );
-          context.lineTo(
-            center.x + outer * startX,
-            center.y + outer * startY
-          );
-          context.arc(
-            center.x,
-            center.y,
-            outer * width,
-            startArcAngle,
-            endArcAngle
-          );
-          context.lineTo(
-            center.x + outer * center.dx(endLineAngle),
-            center.y + outer * center.dy(endLineAngle)
-          );
-          context.arc(
-            center.x,
-            center.y,
-            inner * width,
-            endArcAngle,
-            startArcAngle,
-            true
-          );
           context.fillStyle = color;
+          const hour = selectedHour + 3 * i - 1.5;
+          const start = (hour - 3) * rph;
+          const end = hour * rph;
+          context.beginPath();
+          [
+            [start, end],
+            [end, start, true],
+          ].forEach((a, i) => context.arc(center.x, center.y, r[i], ...a));
           context.fill();
         });
-        context.beginPath();
-        context.arc(
-          center.x,
-          center.y,
-          width * dial.borderRadius[1],
-          0, 2 * Math.PI,
-        );
-        context.strokeStyle = themeColor.grayoutForeground;
-        context.stroke();
       } else {
-        const addCirclePath = (width == height)?
-          (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i):
-          (r, i) => context.ellipse(center.x, center.y, r * width, r * height, 0, 0, 2 * Math.PI, i);
-        themeColor.background.donut.forEach((color, i) => {
-          context.beginPath();
-          const r = dial.borderRadius;
-          addCirclePath(r[i]);
-          addCirclePath(r[i+1], true);
+         themeColor.background.donut.forEach((color, i) => {
           context.fillStyle = color;
+          context.beginPath();
+          dial.borderRadius.slice(i, i+2).forEach(addCirclePath);
           context.fill();
         });
       }
+      context.strokeStyle = themeColor.hourBorder.fine;
+      dial.borderRadius.slice(1, 3).forEach(r => {
+        context.beginPath();
+        addCirclePath(r);
+        context.stroke();
+      });
       const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
@@ -1060,7 +1025,7 @@ const CircleOfFifthsClock = class {
         context.lineTo( center.x + r1*xx, center.y + r1*yy );
         context.stroke();
         // Dot
-        context.fillStyle = backgroundMode == "pie" ? themeColor.grayoutForeground : themeColor.background.donut[1];
+        context.fillStyle = themeColor.grayoutForeground;
         r0 = dial.borderRadius[2];
         xx = x; yy = y; let rDot = 3;
         for( let i = 0; i < 5; i++ ) {
