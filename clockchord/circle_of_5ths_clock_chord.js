@@ -1221,13 +1221,6 @@ const CircleOfFifthsClock = class {
         chordButtonCanvas,
         toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
       });
-      const backgroundModeSelect = document.getElementById('background_mode_select');
-      if( backgroundModeSelect ) {
-        backgroundModeSelect.addEventListener('change', e => {
-          dial.backgroundMode = e.target.value;
-          dial.draw();
-        });
-      }
       const darkModeSelect = document.getElementById('dark_mode_select');
       if( darkModeSelect ) {
         darkModeSelect.addEventListener('change', e => {
@@ -1244,6 +1237,14 @@ const CircleOfFifthsClock = class {
         hands.draw();
       };
       darkModeMediaQuery.addEventListener('change', loadSystemTheme);
+      const backgroundModeSelect = document.getElementById('background_mode_select');
+      if( backgroundModeSelect ) {
+        backgroundModeSelect.addEventListener('change', e => {
+          dial.backgroundMode = e.target.value;
+          dial.draw();
+        });
+        dial.backgroundMode = backgroundModeSelect.value;
+      }
       loadSystemTheme();
       hands.moving = true;
     }
