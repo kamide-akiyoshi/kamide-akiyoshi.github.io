@@ -17,6 +17,7 @@
 		top: 24px;
 	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
+	dt { font-weight: bold; }
 	.clock {
 		position: relative;
 		width: 400px; height: 400px;
@@ -319,6 +320,39 @@
 <li>異名同音の調がある場合（♯、♭の数が5〜7個）</li>
 <li>選択中の調とコードで指している時間が異なる場合（クリックするとそのコードをルートとする調に切り替えます）</li>
 </ul>
+<h3>表示スタイル選択</h3>
+<dl>
+<dt>ダークモード</dt>
+<dd>Light/Darkの選択ボックスで明暗の切り替えができます。OSやブラウザの設定にも反応します。
+</dd>
+<br/>
+<dt>文字盤の背景モード</dt>
+<dd>Donut/Pieの2種類から選べます。
+<dl>
+<dt>Donut</dt>
+<dd>ドーナツモード（デフォルト） - ドーナツ状の<span
+ style="color: blue;">マイナー</span>、<span
+ style="color: hotpink;">メジャー</span>、<span
+ style="color: goldenrod;">sus4</span>の領域それぞれに色をつけるモードです。</dd>
+<dt>Pie</dt>
+<dd>パイモード - 4等分したピザパイのような、扇形の4つの領域それぞれに色をつけるモードです。MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時計回りの順で次のようになります。
+<ul>
+<li><span style="color: hotpink;">ピンク色</span> - その調でよく使う、ダイアトニックコード</li>
+<li><span style="color: goldenrod;">黄色</span> - <span
+ style="color: hotpink;">短調</span>→<span
+ style="color: goldenrod;">長調</span>の同主調転調後によく使う、<span
+ style="color: goldenrod;">ホット</span>に聞こえるコード</li>
+<li><span style="color: green;">緑色</span> - 真裏の調でよく使うコード</li>
+<li><span style="color: blue;">青色</span> - <span
+ style="color: hotpink;">長調</span>→<span
+ style="color: blue;">短調</span>の同主調転調後によく使う、<span
+ style="color: blue;">クール</span>に聞こえるコード</li>
+</ul>
+音を鳴らすと MIDI Chord Helper のように調に合わせて色が変わるトーンインジケータが表示されますが、パイモードにすると背景とトーンインジケータが似た色になるので、音を眺めて楽しむときはこのモードがおすすめです。さらに、ダークモードと組み合わせるとよりきらめき感が増すので、曲によっては色が変わるところで感動して鳥肌が立つかも知れません！
+</dd>
+</dl>
+</dd>
+</dl>
 <h3>MIDI IN/OUT 選択</h3>
 <p>MIDIポートを装備している場合、ポート名のチェックボックスが現れますので、接続したいポートをチェックしてください。</p>
 <p>MIDIチャンネルを選択して、MIDI OUTに出力するチャンネルを変更できます。MIDI IN の Omni チェックボックスにチェックを入れると、すべてのMIDIチャンネル（ドラムCh.10を除く）のメッセージを受信、チェックを外すと選択したMIDIチャンネルのメッセージのみを受信します。</p>
