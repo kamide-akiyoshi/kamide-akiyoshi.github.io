@@ -996,7 +996,7 @@ const CircleOfFifthsClock = class {
         });
       }
       context.strokeStyle = themeColor.hourBorder.fine;
-      dial.borderRadius.slice(1, 3).forEach(r => {
+      dial.borderRadius.forEach(r => {
         context.beginPath();
         addCirclePath(r);
         context.stroke();
