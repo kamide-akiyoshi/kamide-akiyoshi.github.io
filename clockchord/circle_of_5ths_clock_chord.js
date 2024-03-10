@@ -473,109 +473,49 @@ const PianoKeyboard = class {
       };
     });
     const context = canvas.getContext("2d");
-    const drawRoot = (radiusIndex, hour) => {
-      const dir = majorDirections[hour];
-      const startRadius = borderRadius[radiusIndex];
-      const endRadius = borderRadius[radiusIndex + 1];
+    const drawRadial = (direction, startRadius, endRadius) => {
       context.beginPath();
       context.moveTo(
-        center.x + startRadius * dir.dx,
-        center.y + startRadius * dir.dy
+        center.x + startRadius * direction.dx,
+        center.y + startRadius * direction.dy
       );
       context.lineTo(
-        center.x + endRadius * dir.dx,
-        center.y + endRadius * dir.dy
+        center.x + endRadius * direction.dx,
+        center.y + endRadius * direction.dy
       );
       context.stroke();
     };
-    const draw5th = (radiusIndex, hour) => {
-      const dir = majorDirections[hour];
-      const startRadius = borderRadius[radiusIndex];
-      const endRadius = borderRadius[radiusIndex + 1];
-      const shortEndRadius = startRadius + (endRadius - startRadius) / 4;
-      context.beginPath();
-      context.moveTo(
-        center.x + startRadius * dir.dx,
-        center.y + startRadius * dir.dy
-      );
-      context.lineTo(
-        center.x + shortEndRadius * dir.dx,
-        center.y + shortEndRadius * dir.dy
-      );
-      context.stroke();
-    };
-    const drawArc = (radiusIndex, startHour, endHour) => {
-      context.beginPath();
-      context.arc(
-        center.x,
-        center.y,
-        borderRadius[radiusIndex] * width,
-        majorDirections[startHour].arc.angle,
-        majorDirections[endHour].arc.angle
-      );
-      context.stroke();
-    };
-    const drawBassArc = (radiusIndex, hour) => {
-      const inner = borderRadius[radiusIndex];
-      const outer = borderRadius[radiusIndex + 1];
-      const radius = inner + (outer - inner) / 5;
+    const drawArc = (radius, startDirection, endDirection) => {
       context.beginPath();
       context.arc(
         center.x,
         center.y,
         radius * width,
-        majorDirections[hour].arc.bassAngle,
-        majorDirections[hour].arc.bassEndAngle
+        startDirection.arc.angle,
+        endDirection.arc.angle
       );
       context.stroke();
+    };
+    const draw5th = (hour, radiusIndex) => {
+      const startRadius = borderRadius[radiusIndex];
+      drawRadial(
+        majorDirections[hour],
+        startRadius,
+        startRadius + (borderRadius[radiusIndex + 1] - startRadius) / 4
+      );
     };
     const drawSus4 = (hour, fifthHour, rootColor, sus4Color, fifthColor) => {
       const dir = majorDirections[hour];
       const fifthDir = majorDirections[fifthHour];
       const inner = borderRadius[2];
       const outer = borderRadius[3] - 0.005;
-      context.beginPath();
       context.strokeStyle = rootColor;
-      context.moveTo(
-        center.x + outer * dir.dx,
-        center.y + outer * dir.dy
-      );
-      context.lineTo(
-        center.x + inner * dir.dx,
-        center.y + inner * dir.dy
-      );
-      context.stroke();
-      context.beginPath();
+      drawRadial(dir, inner, outer);
       context.strokeStyle = fifthColor;
-      context.moveTo(
-        center.x + outer * fifthDir.dx,
-        center.y + outer * fifthDir.dy
-      );
-      context.lineTo(
-        center.x + inner * fifthDir.dx,
-        center.y + inner * fifthDir.dy
-      );
-      context.stroke();
-      context.beginPath();
+      drawRadial(fifthDir, inner, outer);
       context.strokeStyle = sus4Color;
-      context.arc(
-        center.x,
-        center.y,
-        inner * width,
-        dir.arc.angle,
-        fifthDir.arc.angle
-      );
-      context.stroke();
-      context.beginPath();
-      context.arc(
-        center.x,
-        center.y,
-        outer * width,
-        fifthDir.arc.angle,
-        dir.arc.angle,
-        true
-      );
-      context.stroke();
+      drawArc(inner, dir, fifthDir);
+      drawArc(outer, dir, fifthDir);
     };
     const drawTritone = (hour) => {
       const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
@@ -590,33 +530,20 @@ const PianoKeyboard = class {
       context.stroke();
     };
     const drawAug = (startHour, endHour) => {
-      const innerRadius = borderRadius[2];
-      const outerRadius = borderRadius[3];
-      const centerRadius = (innerRadius + outerRadius) / 2;
+      const inner = borderRadius[2];
+      const outer = borderRadius[3];
       const startDir = majorDirections[startHour];
-      const centerDir = startDir.center;
       const endDir = majorDirections[endHour];
-      context.beginPath();
-      context.moveTo(
-        center.x + innerRadius * centerDir.dx,
-        center.y + innerRadius * centerDir.dy
+      drawRadial(
+        startDir.center,
+        inner,
+        outer
       );
-      context.lineTo(
-        center.x + outerRadius * centerDir.dx,
-        center.y + outerRadius * centerDir.dy
+      drawArc(
+        (inner + outer) / 2,
+        startDir,
+        endDir
       );
-      context.moveTo(
-        center.x + centerRadius * startDir.dx,
-        center.y + centerRadius * startDir.dy
-      );
-      context.arc(
-        center.x,
-        center.y,
-        centerRadius * width,
-        startDir.arc.angle,
-        endDir.arc.angle
-      );
-      context.stroke();
     };
     const draw = (hour) => {
       const hour1ccw = hour ? hour - 1 : 11;
@@ -625,66 +552,111 @@ const PianoKeyboard = class {
       const hour3 = hour + (hour < 9 ? 3 : -9);
       const hour1 = hour < 11 ? hour + 1 : 0;
       context.lineWidth = 3;
-      context.strokeStyle = getColorOf(hour, 8); drawRoot(1, hour);
-      context.strokeStyle = getColorOf(hour, 11); drawRoot(0, hour3ccw);
-      context.strokeStyle = getColorOf(hour1, 8); draw5th(1, hour1);
-      context.strokeStyle = getColorOf(hour1, 11); draw5th(0, hour2ccw);
+      context.strokeStyle = getColorOf(hour, 8); drawRadial(
+        majorDirections[hour],
+        borderRadius[1],
+        borderRadius[2]
+      );
+      context.strokeStyle = getColorOf(hour, 11); drawRadial(
+        majorDirections[hour3ccw],
+        borderRadius[0],
+        borderRadius[1]
+      );
+      context.strokeStyle = getColorOf(hour1, 8); draw5th(hour1, 1);
+      context.strokeStyle = getColorOf(hour1, 11); draw5th(hour2ccw, 0);
       const hour4 = hour + (hour < 8 ? 4 : -8);
-      if( toneIndicating[hour4] ) {
+      if( toneIndicating[hour4] ) { // root:hour + major3rd:hour4
+        const directions = [
+          majorDirections[hour],
+          majorDirections[hour1],
+        ];
         if( toneIndicating[hour3] ) { // root:hour3 + minor3rd:hour + 5th:hour4
           context.strokeStyle = getColorOf(hour, 8);
-          drawArc(0, hour, hour1);
-          drawArc(1, hour, hour1);
-        } else { // root:hour + major3rd:hour4
+          drawArc(borderRadius[0], ...directions);
+          drawArc(borderRadius[1], ...directions);
+        } else {
           context.strokeStyle = getColorOf(hour4, 11);
-          drawArc(1, hour, hour1);
+          drawArc(borderRadius[1], ...directions);
           if( toneIndicating[hour1] ) { // + 5th:hour1
-            drawArc(2, hour, hour1);
+            drawArc(borderRadius[2], ...directions);
           }
         }
       }
       const hour4ccw = hour + (hour < 4 ? 8 : -4);
-      if( toneIndicating[hour4ccw] ) {
+      if( toneIndicating[hour4ccw] ) { // root:hour4ccw + major3rd:hour
+        const directions = [
+          majorDirections[hour4ccw],
+          majorDirections[hour3ccw],
+        ];
         if( toneIndicating[hour1ccw] ) { // root:hour1ccw + minor3rd:hour4ccw + 5th:hour
           context.strokeStyle = getColorOf(hour4ccw, 8);
-          drawArc(0, hour4ccw, hour3ccw);
-          drawArc(1, hour4ccw, hour3ccw);
-        } else { // root:hour4ccw + major3rd:hour
+          drawArc(borderRadius[0], ...directions);
+          drawArc(borderRadius[1], ...directions);
+        } else {
           context.strokeStyle = getColorOf(hour, 11);
-          drawArc(1, hour4ccw, hour3ccw);
+          drawArc(borderRadius[1], ...directions);
           if( toneIndicating[hour3ccw] ) { // + 5th:hour3ccw
-            drawArc(2, hour4ccw, hour3ccw);
+            drawArc(borderRadius[2], ...directions);
           }
         }
         if( toneIndicating[hour4] ) { // Augumented
           // root:hour4ccw + major3rd:hour + aug5th:hour4
-          context.strokeStyle = getColorOf(hour4, 12); drawAug(hour4ccw, hour3ccw);
+          context.strokeStyle = getColorOf(hour4, 12);
+          drawAug(hour4ccw, hour3ccw);
           // root:hour + major3rd:hour4 + aug5th:hour4ccw
-          context.strokeStyle = getColorOf(hour4ccw, 12); drawAug(hour, hour1);
+          context.strokeStyle = getColorOf(hour4ccw, 12);
+          drawAug(hour, hour1);
           // root:hour4 + major3rd:hour4ccw + aug5th:hour
-          context.strokeStyle = getColorOf(hour, 12); drawAug(hour4, hour + (hour < 7 ? 5 : -7));
+          context.strokeStyle = getColorOf(hour, 12);
+          drawAug(hour4, hour + (hour < 7 ? 5 : -7));
         }
       }
       if( toneIndicating[hour1] ) { // root:hour + 5th:hour1
         if( toneIndicating[hour3ccw] ) { // + minor3rd:hour3ccw
           context.strokeStyle = getColorOf(hour3ccw, 8);
-          drawArc(0, hour3ccw, hour2ccw);
+          drawArc(
+            borderRadius[0],
+            majorDirections[hour3ccw],
+            majorDirections[hour2ccw]
+          );
         }
         if( toneIndicating[hour1ccw] ) { // + sus4:hour1ccw
-          drawSus4(hour, hour1, getColorOf(hour, 8), getColorOf(hour1ccw, 8), getColorOf(hour1, 8));
+          drawSus4(
+            hour,
+            hour1,
+            getColorOf(hour, 8),
+            getColorOf(hour1ccw, 8),
+            getColorOf(hour1, 8)
+          );
         }
         const hour2 = hour + (hour < 10 ? 2 : -10);
         if( toneIndicating[hour2] ) { // root:hour1 + sus4:hour + 5th:hour2
-          drawSus4(hour1, hour2, getColorOf(hour1, 8), getColorOf(hour, 8), getColorOf(hour2, 8));
+          drawSus4(
+            hour1,
+            hour2,
+            getColorOf(hour1, 8),
+            getColorOf(hour, 8),
+            getColorOf(hour2, 8)
+          );
         }
       }
       if( toneIndicating[hour1ccw] ) { // root:hour1ccw + 5th:hour
         if( toneIndicating[hour3] ) { // + major3rd:hour3
           context.strokeStyle = getColorOf(hour3, 11);
-          drawArc(2, hour1ccw, hour);
+          drawArc(
+            borderRadius[2],
+            majorDirections[hour1ccw],
+            majorDirections[hour]
+          );
         }
         if( toneIndicating[hour2ccw] ) { // root:hour1ccw + sus4:hour2ccw + 5th:hour
-          drawSus4(hour1ccw, hour, getColorOf(hour1ccw, 8), getColorOf(hour2ccw, 8), getColorOf(hour, 8));
+          drawSus4(
+            hour1ccw,
+            hour,
+            getColorOf(hour1ccw, 8),
+            getColorOf(hour2ccw, 8),
+            getColorOf(hour, 8)
+          );
         }
       }
       const hour6 = hour + (hour < 6 ? 6 : -6);
@@ -695,11 +667,25 @@ const PianoKeyboard = class {
         drawTritone(hour3);
       }
     };
+    const drawBassArc = (radiusIndex, direction) => {
+      const inner = borderRadius[radiusIndex];
+      const outer = borderRadius[radiusIndex + 1];
+      const radius = inner + (outer - inner) / 5;
+      context.beginPath();
+      context.arc(
+        center.x,
+        center.y,
+        radius * width,
+        direction.arc.bassAngle,
+        direction.arc.bassEndAngle
+      );
+      context.stroke();
+    };
     const drawBass = (hour) => {
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
       context.lineWidth = 5;
-      context.strokeStyle = getColorOf(hour, 8); drawBassArc(1, hour);
-      context.strokeStyle = getColorOf(hour, 11); drawBassArc(0, hour3ccw);
+      context.strokeStyle = getColorOf(hour, 8); drawBassArc(1, majorDirections[hour]);
+      context.strokeStyle = getColorOf(hour, 11); drawBassArc(0, majorDirections[hour3ccw]);
     };
     const redrawAll = () => {
       context.clearRect(0, 0, width, height);
