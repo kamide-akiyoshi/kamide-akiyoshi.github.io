@@ -689,9 +689,9 @@ const PianoKeyboard = class {
       }
       const hour6 = hour + (hour < 6 ? 6 : -6);
       if( toneIndicating[hour6] ) { // Tritone
-        context.strokeStyle = getColorOf(hour6, 11);
+        context.strokeStyle = getColorOf(hour6, 7);
         drawTritone(hour3ccw);
-        context.strokeStyle = getColorOf(hour, 8);
+        context.strokeStyle = getColorOf(hour, 7);
         drawTritone(hour3);
       }
     };
