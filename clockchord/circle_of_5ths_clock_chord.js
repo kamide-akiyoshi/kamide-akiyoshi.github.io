@@ -941,6 +941,7 @@ const CircleOfFifthsClock = class {
         backgroundMode,
         chord,
       } = dial;
+      // Update HTML element to be new theme color
       const clock = canvas.parentElement;
       if( clock?.classList && !clock.classList.contains(`clock_${theme}`) ) {
         const cl = clock.classList;
@@ -957,36 +958,37 @@ const CircleOfFifthsClock = class {
       const context = canvas.getContext("2d");
       const themeColor = themeColors[theme];
       const selectedHour = keySignature.value;
-      const addCirclePath = (r, i) => context.arc(center.x, center.y, r * width, 0, 2 * Math.PI, i)
+      // Background
+      const arcRadius = dial.borderRadius.map(r => r * width);
+      const addCirclePath = (r, i) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, i)
       if( backgroundMode === 'pie' ) {
-        const r = [0, 3].map(i => dial.borderRadius[i] * width);
+        const addArcPath = (ap, i) => context.arc(center.x, center.y, arcRadius[i * 3], ...ap);
         const rph = Math.PI / 6; // Radian per hour
         themeColor.background.pie.forEach((color, i) => {
           context.fillStyle = color;
-          const hour = selectedHour + 3 * i - 1.5;
-          const start = (hour - 3) * rph;
-          const end = hour * rph;
+          const hour = selectedHour + 3 * i;
+          const startAngle = (hour - 4.5) * rph;
+          const endAngle   = (hour - 1.5) * rph;
           context.beginPath();
-          [
-            [start, end],
-            [end, start, true],
-          ].forEach((a, i) => context.arc(center.x, center.y, r[i], ...a));
+          [[startAngle, endAngle], [endAngle, startAngle, true]].forEach(addArcPath);
           context.fill();
         });
       } else {
          themeColor.background.donut.forEach((color, i) => {
           context.fillStyle = color;
           context.beginPath();
-          dial.borderRadius.slice(i, i+2).forEach(addCirclePath);
+          arcRadius.slice(i, i+2).forEach(addCirclePath);
           context.fill();
         });
       }
+      // Donut border
       context.strokeStyle = themeColor.hourBorder.fine;
-      dial.borderRadius.forEach(r => {
+      arcRadius.forEach(r => {
         context.beginPath();
         addCirclePath(r);
         context.stroke();
       });
+      // Foreground
       const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
