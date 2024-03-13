@@ -960,24 +960,30 @@ const CircleOfFifthsClock = class {
       const selectedHour = keySignature.value;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
-      const addCirclePath = (r, i) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, i)
+      const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
       if( backgroundMode === 'pie' ) {
-        const addArcPath = (ap, i) => context.arc(center.x, center.y, arcRadius[i * 3], ...ap);
-        const rph = Math.PI / 6; // Radian per hour
-        themeColor.background.pie.forEach((color, i) => {
-          context.fillStyle = color;
-          const hour = selectedHour + 3 * i;
-          const startAngle = (hour - 4.5) * rph;
-          const endAngle   = (hour - 1.5) * rph;
-          context.beginPath();
-          [[startAngle, endAngle], [endAngle, startAngle, true]].forEach(addArcPath);
-          context.fill();
-        });
+        themeColor.background.pie.map(
+          (color, index) => {
+            const relativeHour = 3 * index;
+            const startAngle = (selectedHour + relativeHour - 4.5) * Math.PI / 6;
+            return {startAngle, color};
+          }
+        ).forEach(
+          ({startAngle, color}, index, array) => {
+            const endAngle = (array[index + 1] ?? array[0]).startAngle;
+            context.fillStyle = color;
+            context.beginPath();
+            context.arc(center.x, center.y, arcRadius[0], startAngle, endAngle);
+            context.arc(center.x, center.y, arcRadius[3], endAngle, startAngle, true);
+            context.fill();
+          }
+        );
       } else {
          themeColor.background.donut.forEach((color, i) => {
           context.fillStyle = color;
           context.beginPath();
-          arcRadius.slice(i, i+2).forEach(addCirclePath);
+          addCirclePath(arcRadius[i]);
+          addCirclePath(arcRadius[i + 1], true);
           context.fill();
         });
       }
