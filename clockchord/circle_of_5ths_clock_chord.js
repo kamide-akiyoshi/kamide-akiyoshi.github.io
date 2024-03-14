@@ -365,7 +365,7 @@ const PianoKeyboard = class {
       const channel = statusWithCh & 0xF;
       const isActiveChannel = channel != DRUM_MIDI_CH && (omniCheckbox.checked || channel == parseInt(chSelect.value));
       switch(status) {
-      case 0x90: // Note On event
+      case 0x90: // Note On
         if( data[1] ) { // velocity
           if( isActiveChannel ) {
             this.noteOn(data[0]);
@@ -375,10 +375,17 @@ const PianoKeyboard = class {
           break;
         }
         // fallthrough: velocity === 0 means Note Off
-      case 0x80: // Note Off event
+      case 0x80: // Note Off
         if( isActiveChannel ) {
           this.noteOff(data[0]);
           toneIndicatorCanvas.noteOff(data[0]);
+        }
+        break;
+      case 0xB0: // Control Change
+        if( data[1] == 0x78 ) { // All Sound Off
+          if( isActiveChannel ) {
+            this.stop();
+          }
         }
         break;
       }
@@ -440,6 +447,18 @@ const PianoKeyboard = class {
       });
     }).catch(msg => {
       alert(msg);
+    });
+    // WebMidiLink support
+    window.addEventListener('message', event => {
+      const msg = event.data.split(",");
+      const msgType = msg.shift();
+      switch(msgType) {
+        case 'midi':
+          msgListener({
+            data: msg.map(hexStr => parseInt(hexStr, 16)),
+          });
+          break;
+      }
     });
   };
   setupToneIndicatorCanvas = (canvas) => {
