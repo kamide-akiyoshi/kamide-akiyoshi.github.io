@@ -961,19 +961,17 @@ const CircleOfFifthsClock = class {
         backgroundMode,
         chord,
       } = dial;
-      // Update HTML element to be new theme color
-      const clock = canvas.parentElement;
-      if( clock?.classList && !clock.classList.contains(`clock_${theme}`) ) {
-        const cl = clock.classList;
-        cl.remove(`clock_${theme === 'dark' ? 'light' : 'dark'}`);
-        cl.add(`clock_${theme}`)
-      }
-      const centerLabel = chord?.dialCenterLabel.label;
-      if( centerLabel?.classList && !centerLabel.classList.contains(`center_chord_${theme}`) ) {
-        const cl = centerLabel.classList;
-        cl.remove(`center_chord_${theme === 'dark' ? 'light' : 'dark'}`);
-        cl.add(`center_chord_${theme}`)
-      }
+      const changeDarkClass = (classList, classPrefix) => {
+        if( !classList ) return;
+        const newClassName = `${classPrefix}${theme}`;
+        if( !classList.contains(newClassName) ) {
+          const oldClassName = `${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`;
+          classList.remove(oldClassName);
+          classList.add(newClassName);
+        }
+      };
+      changeDarkClass(canvas.parentElement?.classList, 'clock_');
+      changeDarkClass(chord?.dialCenterLabel.label?.classList, 'center_chord_');
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const themeColor = themeColors[theme];
