@@ -323,26 +323,70 @@ const PianoKeyboard = class {
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return;
     if( ! window.isSecureContext ) {
-      console.warn("MIDI access not available: Not in secure context");
-      midiElement.remove();
-      return;
-    };
+      console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
+    }
+    // MIDI channel selecter
+    const DRUM_MIDI_CH = 9;
+    const omniCheckbox = document.getElementById('omni');
     const chSelect = document.getElementById('midi_channel');
+    const isActiveChannel = (channel) => channel != DRUM_MIDI_CH && (omniCheckbox.checked || channel == parseInt(chSelect.value));
     for( let ch = 0; ch < 16; ++ch ) {
       const option = document.createElement("option");
       option.value = ch;
-      const drumText = ch == 9 ? " (Drum)" : "";
+      const drumText = ch == DRUM_MIDI_CH ? " (Drum)" : "";
       option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
       chSelect.appendChild(option);
     }
-    const omniCheckbox = document.getElementById('omni');
-    const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
+    // MIDI message receiver
+    const {
+      toneIndicatorCanvas,
+      chord,
+    } = this;
+    const handleMidiMessage = (msg) => {
+      const [statusWithCh, ...data] = msg;
+      const channel = statusWithCh & 0xF;
+      if( !isActiveChannel(channel) ) {
+        return;
+      }
+      const status = statusWithCh & 0xF0;
+      switch(status) {
+        case 0x90: // Note On
+          if( data[1] ) { // velocity
+            this.noteOn(data[0]);
+            toneIndicatorCanvas.noteOn(data[0]);
+            chord.clear();
+            break;
+          }
+          // fallthrough: velocity === 0 means Note Off
+        case 0x80: // Note Off
+          this.noteOff(data[0]);
+          toneIndicatorCanvas.noteOff(data[0]);
+          break;
+        case 0xB0: // Control Change
+          if( data[1] == 0x78 ) { // All Sound Off
+            this.stop();
+          }
+          break;
+      }
+    };
+    // Listen WebMidiLink
+    window.addEventListener('message', event => {
+      const msg = event.data.split(",");
+      const msgType = msg.shift();
+      switch(msgType) {
+        case 'midi':
+          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+          break;
+      }
+    });
+    // MIDI message sender
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
     selectedOutputs.removePort = port => {
       const i = selectedOutputs.findIndex(p => p.id === port.id);
       i < 0 || selectedOutputs.splice(i, 1);
     };
+    const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
       port => port.send([
         0x90 + parseInt(chSelect.value),
@@ -357,39 +401,8 @@ const PianoKeyboard = class {
         0
       ])
     );
-    const { toneIndicatorCanvas, chord } = this;
-    const DRUM_MIDI_CH = 9;
-    const msgListener = msg => {
-      const [statusWithCh, ...data] = msg.data;
-      const status = statusWithCh & 0xF0;
-      const channel = statusWithCh & 0xF;
-      const isActiveChannel = channel != DRUM_MIDI_CH && (omniCheckbox.checked || channel == parseInt(chSelect.value));
-      switch(status) {
-      case 0x90: // Note On
-        if( data[1] ) { // velocity
-          if( isActiveChannel ) {
-            this.noteOn(data[0]);
-            toneIndicatorCanvas.noteOn(data[0]);
-            chord.clear();
-          }
-          break;
-        }
-        // fallthrough: velocity === 0 means Note Off
-      case 0x80: // Note Off
-        if( isActiveChannel ) {
-          this.noteOff(data[0]);
-          toneIndicatorCanvas.noteOff(data[0]);
-        }
-        break;
-      case 0xB0: // Control Change
-        if( data[1] == 0x78 ) { // All Sound Off
-          if( isActiveChannel ) {
-            this.stop();
-          }
-        }
-        break;
-      }
-    };
+    // MIDI port selecter
+    const midiMessageListener = msg => handleMidiMessage(msg.data);
     const checkboxes = {
       eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
       get: port => midiElement.querySelector(`input[value="${port.id}"]`),
@@ -407,7 +420,7 @@ const PianoKeyboard = class {
         switch(port.type) {
           case "input":
             cb.addEventListener("change", event => {
-              port[`${checkboxes.eventToAddOrRemove(event)}EventListener`]("midimessage", msgListener);
+              port[`${checkboxes.eventToAddOrRemove(event)}EventListener`]("midimessage", midiMessageListener);
             });
             break;
           case "output":
@@ -420,7 +433,7 @@ const PianoKeyboard = class {
       remove: port => {
         switch(port.type) {
           case "input":
-            port.removeEventListener("midimessage", msgListener);
+            port.removeEventListener("midimessage", midiMessageListener);
             break;
           case "output":
             selectedOutputs.removePort(port);
@@ -447,18 +460,6 @@ const PianoKeyboard = class {
       });
     }).catch(msg => {
       alert(msg);
-    });
-    // WebMidiLink support
-    window.addEventListener('message', event => {
-      const msg = event.data.split(",");
-      const msgType = msg.shift();
-      switch(msgType) {
-        case 'midi':
-          msgListener({
-            data: msg.map(hexStr => parseInt(hexStr, 16)),
-          });
-          break;
-      }
     });
   };
   setupToneIndicatorCanvas = (canvas) => {
