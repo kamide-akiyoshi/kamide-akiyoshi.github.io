@@ -644,7 +644,7 @@ const PianoKeyboard = class {
             hour,
             hour1,
             getColorOf(hour, 8),
-            getColorOf(hour1ccw, 8),
+            getColorOf(hour1ccw, 7),
             getColorOf(hour1, 8)
           );
         }
@@ -654,7 +654,7 @@ const PianoKeyboard = class {
             hour1,
             hour2,
             getColorOf(hour1, 8),
-            getColorOf(hour, 8),
+            getColorOf(hour, 7),
             getColorOf(hour2, 8)
           );
         }
@@ -673,7 +673,7 @@ const PianoKeyboard = class {
             hour1ccw,
             hour,
             getColorOf(hour1ccw, 8),
-            getColorOf(hour2ccw, 8),
+            getColorOf(hour2ccw, 7),
             getColorOf(hour, 8)
           );
         }
