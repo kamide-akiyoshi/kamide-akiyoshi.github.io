@@ -341,6 +341,8 @@ const PianoKeyboard = class {
     const {
       toneIndicatorCanvas,
       chord,
+      noteOn,
+      noteOff,
     } = this;
     const handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
@@ -352,23 +354,24 @@ const PianoKeyboard = class {
       switch(status) {
         case 0x90: // Note On
           if( data[1] ) { // velocity
-            this.noteOn(data[0]);
+            noteOn(data[0]);
             toneIndicatorCanvas.noteOn(data[0]);
             chord.clear();
             break;
           }
           // fallthrough: velocity === 0 means Note Off
         case 0x80: // Note Off
-          this.noteOff(data[0]);
+          noteOff(data[0]);
           toneIndicatorCanvas.noteOff(data[0]);
           break;
         case 0xB0: // Control Change
           if( data[1] == 0x78 ) { // All Sound Off
-            this.stop();
+            chord.stop();
           }
           break;
       }
     };
+    this.handleMidiMessage = handleMidiMessage;
     // Listen WebMidiLink
     window.addEventListener('message', event => {
       const msg = event.data.split(",");
@@ -737,11 +740,295 @@ const PianoKeyboard = class {
       redrawRequired && redrawAll();
     };
   };
+  setupMidiSequencer = () => {
+    const midiFileSelecter = document.getElementById("midi_file");
+    if( !midiFileSelecter ) {
+      return;
+    }
+    const bigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
+    const parseVariableLengthValue = (byteArray, offset=0) => {
+      const maxOffset = offset + 4;
+      let currentOffset = offset;
+      let value = 0;
+      while(currentOffset < maxOffset) {
+        const b = byteArray[currentOffset++];
+        value <<= 7;
+        value += (b & 0x7F);
+        if( (b & 0x80) == 0 ) break;
+      }
+      return { value, length: currentOffset - offset };
+    };
+    const parseMidiEvent = (byteArray, runningStatus) => {
+      const {
+        value: deltaTime, // Ticks
+        length: top,
+      } = parseVariableLengthValue(byteArray);
+      const statusOmitted = !(byteArray[top] & 0x80);
+      const status = statusOmitted ? runningStatus : byteArray[top];
+      const eventStart = statusOmitted ? top : top + 1;
+      let eventEnd = eventStart;
+      switch(status & 0xF0) {
+        case 0xC0: // Program Change
+        case 0xD0: // Channel Pressure
+          eventEnd++;
+          break;
+        case 0xF0:
+          switch(status) {
+            case 0xFF: { // Meta event
+              const metaType = byteArray[eventStart];
+              const lengthStart = eventStart + 1;
+              const {
+                value: length,
+                length: lengthLength,
+              } = parseVariableLengthValue(byteArray, lengthStart);
+              const dataStart = lengthStart + lengthLength;
+              const dataEnd = dataStart + length;
+              const data = byteArray.subarray(dataStart, dataEnd);
+              if( metaType == 0x2F || dataEnd >= byteArray.length ) {
+                return {
+                  deltaTime,
+                  metaType,
+                  eot: true, // End Of Track
+                };
+              }
+              const nextByteArray = byteArray.subarray(dataEnd, byteArray.length);
+              switch(metaType) {
+                case 0x51:
+                  {
+                    const microsecondsPerQuarter = bigEndian(data);
+                    const bpm = 60000000 / microsecondsPerQuarter;
+                    return {
+                      deltaTime,
+                      metaType,
+                      tempo: {
+                        microsecondsPerQuarter,
+                        bpm,
+                      },
+                      byteArray: nextByteArray,
+                    };
+                  }
+                case 0x59:
+                  {
+                    const sf = data[0];
+                    return {
+                      deltaTime,
+                      metaType,
+                      keySignature: (sf & 0x80) ? sf - 0x100 : sf,
+                      minor: data[1] == 1,
+                      byteArray: nextByteArray,
+                    };
+                  }
+                case 0x20:
+                  return {
+                    deltaTime,
+                    metaType,
+                    channelPrefix: data[0],
+                    byteArray: nextByteArray,
+                  };
+                case 0x21:
+                  return {
+                    deltaTime,
+                    metaType,
+                    portPrefix: data[0],
+                    byteArray: nextByteArray,
+                  };
+                default:
+                  return {
+                    deltaTime,
+                    metaType,
+                    metaData: data,
+                    byteArray: nextByteArray,
+                  };
+              }
+            }
+            case 0xF0: // System Exclusive
+              while( eventEnd < byteArray.length && byteArray[eventEnd++] != 0xF7 ); // EOX (End Of eXclucive)
+              return {
+                deltaTime,
+                systemExclusive: byteArray.subarray(eventStart, eventEnd - 1), // Remove bottom 0xF7
+                byteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
+              };
+            case 0xF2: // Song Position
+              eventEnd++;
+              // fallthrough
+            case 0xF1: // Quarter Frame
+            case 0xF3: // Song Select
+              eventEnd++;
+              break;
+            case 0xF6: // Tune Request
+            default: // Undefined
+              break;
+          }
+          break;
+        default: // Other Channel Message
+          eventEnd += 2;
+          break;
+      }
+      return {
+        deltaTime,
+        data: statusOmitted ?
+          [status, ...byteArray.subarray(eventStart, eventEnd)] :
+          byteArray.subarray(eventStart - 1, eventEnd),
+        byteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
+      };
+    };
+    const parseMidiTrack = (trackArray) => {
+      const events = [];
+      let byteArray = trackArray;
+      let tick = 0;
+      let runningStatus;
+      while(byteArray) {
+        const {
+          byteArray: nextByteArray,
+          deltaTime,
+          ...event
+        } = parseMidiEvent(byteArray, runningStatus);
+        event.tick = (tick += deltaTime);
+        events.push(event);
+        runningStatus = event.data?.[0];
+        byteArray = nextByteArray;
+      }
+      return events;
+    };
+    const parseMidiData = (midiDataArray) => {
+      const headerChunk = new TextDecoder().decode(midiDataArray.subarray(0, 4));
+      if( headerChunk != "MThd" ) {
+        alert(`Invalid MIDI file format`);
+        return undefined;
+      }
+      const headerLength = bigEndian(midiDataArray.subarray(4, 8));
+      const midiFormat = bigEndian(midiDataArray.subarray(8, 10));
+      const numberOfTracks = bigEndian(midiDataArray.subarray(10, 12));
+      if( midiDataArray[12] & 0x80 ) {
+        alert(`Warning: SMTPE resolution not supported`);
+      }
+      const ticksPerQuarter = bigEndian(midiDataArray.subarray(12, 14));
+      const allTracksArray = midiDataArray.subarray(8 + headerLength, midiDataArray.length);
+      const tracks = [];
+      let tickLength = 0;
+      Array.from({ length: numberOfTracks }).reduce(
+        (tracksArray, _, index) => {
+          if( !tracksArray ) { // No more track
+            return undefined;
+          }
+          const trackChunk = new TextDecoder().decode(tracksArray.subarray(0, 4))
+          if( trackChunk != "MTrk" ) {
+            console.error(`Track ${index}/${numberOfTracks}: Invalid MIDI track chunk '${trackChunk}' - Not 'MTrk'`);
+          }
+          const trackLength = bigEndian(tracksArray.subarray(4, 8));
+          const nextTrackStart = 8 + trackLength;
+          const events = parseMidiTrack(tracksArray.subarray(8, nextTrackStart));
+          tracks.push(events);
+          const endTick = events[events.length - 1]?.tick ?? 0;
+          if( endTick > tickLength ) {
+            tickLength = endTick;
+          }
+          if( nextTrackStart >= tracksArray.length ) { // No more track
+            return undefined;
+          }
+          return tracksArray.subarray(nextTrackStart, tracksArray.length);
+        },
+        allTracksArray
+      );
+      return {
+        midiFormat,
+        ticksPerQuarter,
+        tickLength,
+        tracks,
+      };
+    };
+    const INTERVAL_MILLI_SEC = 10;
+    let midiData;
+    let timerId;
+    let ticksPerInterval;
+    let tickPosition = 0;
+    const timePosition = setupSlider("time_position", 0, 0, 1, 1);
+    const goToTop = () => {
+      tickPosition = timePosition.value = 0;
+      midiData?.tracks.forEach((track) => track.currentEventIndex = 0);
+    };
+    const changeTempo = (mpq) => {
+      const ticksPerMicroseconds = midiData.ticksPerQuarter / mpq;
+      ticksPerInterval = ticksPerMicroseconds * 1000 * INTERVAL_MILLI_SEC;
+    };
+    midiFileSelecter.addEventListener("change", () => {
+      const file = midiFileSelecter.files[0];
+      if( !file ) {
+        midiData = undefined;
+        return;
+      }
+      const reader = new FileReader();
+      reader.addEventListener("load", (event) => {
+        const arrayBuffer = event.target.result;
+        midiData = parseMidiData(new Uint8Array(arrayBuffer));
+        midiData.file = file;
+        goToTop();
+        changeTempo(500000); // Default 120BPM = 0.5s/quarter
+        timePosition.max = midiData.tickLength;
+      });
+      reader.readAsArrayBuffer(file);
+    });
+    const topButton = document.getElementById("top");
+    if( topButton ) {
+      topButton.addEventListener('click', goToTop);
+    }
+    const playButton = document.getElementById("play");
+    if( playButton ) {
+      playButton.addEventListener('click', () => {
+        if( !midiData ) return;
+        const { tickLength, tracks } = midiData;
+        timerId = setInterval(() => {
+          timePosition.value = tickPosition;
+          tracks.forEach((events, index) => {
+            while(true) {
+              const event = events[events.currentEventIndex];
+              if( !event || event.tick > tickPosition ) {
+                break;
+              }
+              if( "metaType" in event ) { // Meta event
+                if ( "tempo" in event ) {
+                  changeTempo(event.tempo.microsecondsPerQuarter);
+                }
+                if( "keySignature" in event ) {
+                  this.toneIndicatorCanvas.keySignature.value = event.keySignature;
+                }
+                // Meta event must not be sent to MIDI port
+              } else {
+                const { data } = event;
+                if( data ) {
+                  this.handleMidiMessage(data);
+                }
+              }
+              events.currentEventIndex++;
+            }
+          });
+          tickPosition += ticksPerInterval;
+          if( tickPosition > tickLength ) {
+            tickPosition = tickLength;
+            clearInterval(timerId);
+          }
+        }, INTERVAL_MILLI_SEC);
+      });
+    }
+    const pauseButton = document.getElementById("pause");
+    if( pauseButton ) {
+      pauseButton.addEventListener('click', () => {
+        clearInterval(timerId);
+      });
+    }
+  };
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
-    const { chord, leftEnd, setupMidi, setupToneIndicatorCanvas } = this;
+    const {
+      chord,
+      leftEnd,
+      setupMidi,
+      setupMidiSequencer,
+      setupToneIndicatorCanvas,
+    } = this;
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidi();
+    setupMidiSequencer();
     leftEnd.reset();
     chord.setup();
     // Mouse/Touch event names
