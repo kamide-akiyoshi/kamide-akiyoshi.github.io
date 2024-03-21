@@ -365,8 +365,9 @@ const PianoKeyboard = class {
           toneIndicatorCanvas.noteOff(data[0]);
           break;
         case 0xB0: // Control Change
-          if( data[1] == 0x78 ) { // All Sound Off
+          if( data[0] == 0x78 ) { // All Sound Off
             chord.stop();
+            toneIndicatorCanvas.allSoundOff();
           }
           break;
       }
@@ -739,12 +740,20 @@ const PianoKeyboard = class {
       }
       redrawRequired && redrawAll();
     };
+    canvas.allSoundOff = () => {
+      toneIndicating.fill(0);
+      bassToneIndicating.fill(0);
+      redrawAll();
+    };
   };
   setupMidiSequencer = () => {
     const midiFileSelecter = document.getElementById("midi_file");
     if( !midiFileSelecter ) {
       return;
     }
+    const {
+      handleMidiMessage,
+    } = this;
     const bigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
     const parseVariableLengthValue = (byteArray, offset=0) => {
       const maxOffset = offset + 4;
@@ -942,9 +951,15 @@ const PianoKeyboard = class {
     let timerId;
     let ticksPerInterval;
     let tickPosition = 0;
-    const timePosition = setupSlider("time_position", 0, 0, 1, 1);
+    const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
+    if( tickPositionSlider ) {
+      tickPositionSlider.addEventListener("change", (event) => {
+        !timerId && (tickPosition = event.target.value);
+      });
+    }
     const goToTop = () => {
-      tickPosition = timePosition.value = 0;
+      tickPosition = 0;
+      tickPositionSlider && (tickPositionSlider.value = tickPosition);
       midiData?.tracks.forEach((track) => track.currentEventIndex = 0);
     };
     const changeTempo = (mpq) => {
@@ -964,57 +979,72 @@ const PianoKeyboard = class {
         midiData.file = file;
         goToTop();
         changeTempo(500000); // Default 120BPM = 0.5s/quarter
-        timePosition.max = midiData.tickLength;
+        tickPositionSlider && (tickPositionSlider.max = midiData.tickLength);
       });
       reader.readAsArrayBuffer(file);
     });
+    const playPauseIcon = document.getElementById("play_pause_icon");
+    const pause = () => {
+      clearInterval(timerId);
+      timerId = undefined;
+      for( let status = 0xB0; status < 0xC0; status++ ) {
+        handleMidiMessage([status, 0x78]);
+      }
+      if( playPauseIcon ) {
+        playPauseIcon.src = "image/play-button-svgrepo-com.svg";
+        playPauseIcon.alt = "Play";
+      }
+    };
+    const togglePlay = () => {
+      if( timerId ) {
+        pause();
+        return;
+      }
+      if( !midiData ) return;
+      const { tickLength, tracks } = midiData;
+      timerId = setInterval(() => {
+        tickPositionSlider && (tickPositionSlider.value = tickPosition);
+        tracks.forEach((events, index) => {
+          while(true) {
+            const event = events[events.currentEventIndex];
+            if( !event || event.tick > tickPosition ) {
+              break;
+            }
+            if( "metaType" in event ) { // Meta event
+              if ( "tempo" in event ) {
+                changeTempo(event.tempo.microsecondsPerQuarter);
+              }
+              if( "keySignature" in event ) {
+                this.toneIndicatorCanvas.keySignature.value = event.keySignature;
+              }
+              // Meta event must not be sent to MIDI port
+            } else {
+              const { data } = event;
+              if( data ) {
+                handleMidiMessage(data);
+              }
+            }
+            events.currentEventIndex++;
+          }
+        });
+        tickPosition += ticksPerInterval;
+        if( tickPosition > tickLength ) {
+          tickPosition = tickLength;
+          pause();
+        }
+      }, INTERVAL_MILLI_SEC);
+      if( playPauseIcon ) {
+        playPauseIcon.src = "image/pause-button-svgrepo-com.svg";
+        playPauseIcon.alt = "Pause";
+      }
+    };
     const topButton = document.getElementById("top");
     if( topButton ) {
       topButton.addEventListener('click', goToTop);
     }
-    const playButton = document.getElementById("play");
-    if( playButton ) {
-      playButton.addEventListener('click', () => {
-        if( !midiData ) return;
-        const { tickLength, tracks } = midiData;
-        timerId = setInterval(() => {
-          timePosition.value = tickPosition;
-          tracks.forEach((events, index) => {
-            while(true) {
-              const event = events[events.currentEventIndex];
-              if( !event || event.tick > tickPosition ) {
-                break;
-              }
-              if( "metaType" in event ) { // Meta event
-                if ( "tempo" in event ) {
-                  changeTempo(event.tempo.microsecondsPerQuarter);
-                }
-                if( "keySignature" in event ) {
-                  this.toneIndicatorCanvas.keySignature.value = event.keySignature;
-                }
-                // Meta event must not be sent to MIDI port
-              } else {
-                const { data } = event;
-                if( data ) {
-                  this.handleMidiMessage(data);
-                }
-              }
-              events.currentEventIndex++;
-            }
-          });
-          tickPosition += ticksPerInterval;
-          if( tickPosition > tickLength ) {
-            tickPosition = tickLength;
-            clearInterval(timerId);
-          }
-        }, INTERVAL_MILLI_SEC);
-      });
-    }
-    const pauseButton = document.getElementById("pause");
-    if( pauseButton ) {
-      pauseButton.addEventListener('click', () => {
-        clearInterval(timerId);
-      });
+    const playPauseButton = document.getElementById("play_pause");
+    if( playPauseButton ) {
+      playPauseButton.addEventListener('click', togglePlay);
     }
   };
   constructor(toneIndicatorCanvas) {

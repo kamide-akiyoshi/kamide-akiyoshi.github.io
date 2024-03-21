@@ -301,9 +301,12 @@
   <div id="midi_sequencer">
     <label for="midi_file">MIDI file</label>
     <input type="file" id="midi_file" accept=".mid"/>
-    <button id="top">|&lt;</button>
-    <button id="play">&gt;</button>
-    <button id="pause">■</button>
+    <button id="top">
+      <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
+    </button>
+    <button id="play_pause">
+      <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+    </button>
     <input type="range" id="time_position"></input>
   </div>
 </div>
