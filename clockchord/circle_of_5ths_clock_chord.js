@@ -954,13 +954,37 @@ const PianoKeyboard = class {
     const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
     if( tickPositionSlider ) {
       tickPositionSlider.addEventListener("change", (event) => {
-        !timerId && (tickPosition = event.target.value);
+        !timerId && setTickPosition(parseInt(event.target.value));
       });
     }
-    const goToTop = () => {
-      tickPosition = 0;
-      tickPositionSlider && (tickPositionSlider.value = tickPosition);
-      midiData?.tracks.forEach((track) => track.currentEventIndex = 0);
+    const setTickPosition = (tick) => {
+      tickPosition = tick;
+      tickPositionSlider && (tickPositionSlider.value = tick);
+      midiData?.tracks.forEach((track, index) => {
+        if( tick === 0 ) {
+          // Top
+          track.currentEventIndex = 0;
+          return;
+        } else if( tick >= midiData.tickLength ) {
+          // Bottom
+          track.currentEventIndex = track.length - 1;
+          return;
+        }
+        // Binary search
+        let [low, mid, high] = [0, 0, track.length - 1];
+        while( low <= high ) {
+          mid = Math.floor((low + high) / 2);
+          const eventTick = track[mid].tick;
+          if( eventTick > tick ) {
+            high = mid - 1;
+          } else if( eventTick < tick - midiData.ticksPerQuarter ) {
+            low = mid + 1;
+          } else {
+            break;
+          }
+        }
+        track.currentEventIndex = mid;
+      });
     };
     const changeTempo = (mpq) => {
       const ticksPerMicroseconds = midiData.ticksPerQuarter / mpq;
@@ -977,7 +1001,7 @@ const PianoKeyboard = class {
         const arrayBuffer = event.target.result;
         midiData = parseMidiData(new Uint8Array(arrayBuffer));
         midiData.file = file;
-        goToTop();
+        setTickPosition(0);
         changeTempo(500000); // Default 120BPM = 0.5s/quarter
         tickPositionSlider && (tickPositionSlider.max = midiData.tickLength);
       });
@@ -1030,7 +1054,7 @@ const PianoKeyboard = class {
         tickPosition += ticksPerInterval;
         if( tickPosition > tickLength ) {
           pause();
-          goToTop();
+          setTickPosition(0);
         }
       }, INTERVAL_MILLI_SEC);
       if( playPauseIcon ) {
@@ -1040,7 +1064,7 @@ const PianoKeyboard = class {
     };
     const topButton = document.getElementById("top");
     if( topButton ) {
-      topButton.addEventListener('click', goToTop);
+      topButton.addEventListener('click', () => setTickPosition(0));
     }
     const playPauseButton = document.getElementById("play_pause");
     if( playPauseButton ) {
