@@ -813,7 +813,7 @@ const PianoKeyboard = class {
                         microsecondsPerQuarter,
                         bpm,
                       },
-                      byteArray: nextByteArray,
+                      nextByteArray,
                     };
                   }
                 case 0x59:
@@ -824,7 +824,7 @@ const PianoKeyboard = class {
                       metaType,
                       keySignature: (sf & 0x80) ? sf - 0x100 : sf,
                       minor: data[1] == 1,
-                      byteArray: nextByteArray,
+                      nextByteArray,
                     };
                   }
                 case 0x20:
@@ -832,21 +832,21 @@ const PianoKeyboard = class {
                     deltaTime,
                     metaType,
                     channelPrefix: data[0],
-                    byteArray: nextByteArray,
+                    nextByteArray,
                   };
                 case 0x21:
                   return {
                     deltaTime,
                     metaType,
                     portPrefix: data[0],
-                    byteArray: nextByteArray,
+                    nextByteArray,
                   };
                 default:
                   return {
                     deltaTime,
                     metaType,
                     metaData: data,
-                    byteArray: nextByteArray,
+                    nextByteArray,
                   };
               }
             }
@@ -863,7 +863,7 @@ const PianoKeyboard = class {
               return {
                 deltaTime,
                 systemExclusive: byteArray.subarray(sysExDataStart, eventEnd),
-                byteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
+                nextByteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
               };
             }
             case 0xF2: // Song Position
@@ -887,7 +887,7 @@ const PianoKeyboard = class {
         data: statusOmitted ?
           [status, ...byteArray.subarray(eventStart, eventEnd)] :
           byteArray.subarray(eventStart - 1, eventEnd),
-        byteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
+        nextByteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
       };
     };
     const parseMidiTrack = (trackArray) => {
@@ -897,7 +897,7 @@ const PianoKeyboard = class {
       let runningStatus;
       while(byteArray) {
         const {
-          byteArray: nextByteArray,
+          nextByteArray,
           deltaTime,
           ...event
         } = parseMidiEvent(byteArray, runningStatus);
@@ -908,20 +908,20 @@ const PianoKeyboard = class {
       }
       return events;
     };
-    const parseMidiData = (midiDataArray) => {
-      const headerChunk = new TextDecoder().decode(midiDataArray.subarray(0, 4));
+    const parseMidiSequence = (sequenceArray) => {
+      const headerChunk = new TextDecoder().decode(sequenceArray.subarray(0, 4));
       if( headerChunk != "MThd" ) {
         alert(`Invalid MIDI file format`);
         return undefined;
       }
-      const headerLength = bigEndian(midiDataArray.subarray(4, 8));
-      const midiFormat = bigEndian(midiDataArray.subarray(8, 10));
-      const numberOfTracks = bigEndian(midiDataArray.subarray(10, 12));
-      if( midiDataArray[12] & 0x80 ) {
+      const headerLength = bigEndian(sequenceArray.subarray(4, 8));
+      const midiFormat = bigEndian(sequenceArray.subarray(8, 10));
+      const numberOfTracks = bigEndian(sequenceArray.subarray(10, 12));
+      if( sequenceArray[12] & 0x80 ) {
         alert(`Warning: SMTPE resolution not supported`);
       }
-      const ticksPerQuarter = bigEndian(midiDataArray.subarray(12, 14));
-      const allTracksArray = midiDataArray.subarray(8 + headerLength, midiDataArray.length);
+      const ticksPerQuarter = bigEndian(sequenceArray.subarray(12, 14));
+      const tracksArray = sequenceArray.subarray(8 + headerLength, sequenceArray.length);
       const tracks = [];
       let tickLength = 0;
       Array.from({ length: numberOfTracks }).reduce(
@@ -937,16 +937,16 @@ const PianoKeyboard = class {
           const nextTrackStart = 8 + trackLength;
           const events = parseMidiTrack(tracksArray.subarray(8, nextTrackStart));
           tracks.push(events);
-          const endTick = events[events.length - 1]?.tick ?? 0;
-          if( endTick > tickLength ) {
-            tickLength = endTick;
+          const trackTickLength = events[events.length - 1]?.tick ?? 0;
+          if( trackTickLength > tickLength ) {
+            tickLength = trackTickLength;
           }
           if( nextTrackStart >= tracksArray.length ) { // No more track
             return undefined;
           }
           return tracksArray.subarray(nextTrackStart, tracksArray.length);
         },
-        allTracksArray
+        tracksArray
       );
       return {
         midiFormat,
@@ -955,26 +955,17 @@ const PianoKeyboard = class {
         tracks,
       };
     };
-    const INTERVAL_MILLI_SEC = 10;
-    let midiData;
-    let timerId;
-    let ticksPerInterval;
+    let midiSequence;
     let tickPosition = 0;
-    const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
-    if( tickPositionSlider ) {
-      tickPositionSlider.addEventListener("change", (event) => {
-        !timerId && setTickPosition(parseInt(event.target.value));
-      });
-    }
     const setTickPosition = (tick) => {
       tickPosition = tick;
       tickPositionSlider && (tickPositionSlider.value = tick);
-      midiData?.tracks.forEach((track, index) => {
+      midiSequence?.tracks.forEach((track, index) => {
         if( tick === 0 ) {
           // Top
           track.currentEventIndex = 0;
           return;
-        } else if( tick >= midiData.tickLength ) {
+        } else if( tick >= midiSequence.tickLength ) {
           // Bottom
           track.currentEventIndex = track.length - 1;
           return;
@@ -986,7 +977,7 @@ const PianoKeyboard = class {
           const eventTick = track[mid].tick;
           if( eventTick > tick ) {
             high = mid - 1;
-          } else if( eventTick < tick - midiData.ticksPerQuarter ) {
+          } else if( eventTick < tick - midiSequence.ticksPerQuarter ) {
             low = mid + 1;
           } else {
             break;
@@ -995,32 +986,42 @@ const PianoKeyboard = class {
         track.currentEventIndex = mid;
       });
     };
-    const changeTempo = (mpq) => {
-      const ticksPerMicroseconds = midiData.ticksPerQuarter / mpq;
+    const INTERVAL_MILLI_SEC = 10;
+    let ticksPerInterval;
+    const changeTempo = (microsecondsPerQuarter) => {
+      const ticksPerMicroseconds = midiSequence.ticksPerQuarter / microsecondsPerQuarter;
       ticksPerInterval = ticksPerMicroseconds * 1000 * INTERVAL_MILLI_SEC;
     };
     midiFileSelecter.addEventListener("change", () => {
       const file = midiFileSelecter.files[0];
       if( !file ) {
-        midiData = undefined;
+        midiSequence = undefined;
         return;
       }
       const reader = new FileReader();
       reader.addEventListener("load", (event) => {
         const arrayBuffer = event.target.result;
-        midiData = parseMidiData(new Uint8Array(arrayBuffer));
-        midiData.file = file;
+        midiSequence = parseMidiSequence(new Uint8Array(arrayBuffer));
+        midiSequence.file = file;
         setTickPosition(0);
         changeTempo(500000); // Default 120BPM = 0.5s/quarter
-        tickPositionSlider && (tickPositionSlider.max = midiData.tickLength);
+        tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
       });
       reader.readAsArrayBuffer(file);
     });
+    let intervalId;
+    const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
+    if( tickPositionSlider ) {
+      tickPositionSlider.addEventListener("change", (event) => {
+        !intervalId && setTickPosition(parseInt(event.target.value));
+      });
+    }
     const playPauseIcon = document.getElementById("play_pause_icon");
     const pause = () => {
-      clearInterval(timerId);
-      timerId = undefined;
+      clearInterval(intervalId);
+      intervalId = undefined;
       for( let status = 0xB0; status < 0xC0; status++ ) {
+        // Send All Sound Off to all MIDI channel
         handleMidiMessage([status, 0x78]);
       }
       if( playPauseIcon ) {
@@ -1028,14 +1029,18 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Play";
       }
     };
+    const topButton = document.getElementById("top");
+    if( topButton ) {
+      topButton.addEventListener('click', () => setTickPosition(0));
+    }
     const togglePlay = () => {
-      if( timerId ) {
+      if( intervalId ) {
         pause();
         return;
       }
-      if( !midiData ) return;
-      const { tickLength, tracks } = midiData;
-      timerId = setInterval(() => {
+      if( !midiSequence ) return;
+      const { tickLength, tracks } = midiSequence;
+      intervalId = setInterval(() => {
         tickPositionSlider && (tickPositionSlider.value = tickPosition);
         tracks.forEach((events, index) => {
           while(true) {
@@ -1071,10 +1076,6 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Pause";
       }
     };
-    const topButton = document.getElementById("top");
-    if( topButton ) {
-      topButton.addEventListener('click', () => setTickPosition(0));
-    }
     const playPauseButton = document.getElementById("play_pause");
     if( playPauseButton ) {
       playPauseButton.addEventListener('click', togglePlay);
