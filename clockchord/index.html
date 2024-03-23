@@ -88,7 +88,7 @@
 		border-style: inset;
 		border-width: 1px;
 		border-color: #D0D0D0;
-		margin-top: 16px;
+		margin-top: 8px;
 		padding: 8px 0px;
 		text-align: center;
 		display: flex;
@@ -206,8 +206,11 @@
 	#midi_channel {
 		margin-top: 2px;
 	}
+	#midi_sequencer > .controller, #midi_file_selecter {
+		margin-top: 8px;
+	}
 	#time_position {
-		width: 200px;
+		width: 352px;
 	}
 </style>
 </HEAD>
@@ -249,6 +252,21 @@
     </div>
     <div class="shift_button_line">
       <div id="button_flat5" class="shift_button">-5/aug</div>
+    </div>
+  </div>
+  <div id="midi_sequencer">
+    <div id="midi_file_selecter">
+      <label for="midi_file">MIDI file</label>
+      <input type="file" id="midi_file" accept=".mid"/>
+    </div>
+    <div class="controller">
+      <button id="top">
+        <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
+      </button>
+      <button id="play_pause">
+        <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+      </button>
+      <input type="range" id="time_position"></input>
     </div>
   </div>
   <div id="chordbar">
@@ -297,17 +315,6 @@
         </select>
       </label>
     </div>
-  </div>
-  <div id="midi_sequencer">
-    <label for="midi_file">MIDI file</label>
-    <input type="file" id="midi_file" accept=".mid"/>
-    <button id="top">
-      <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
-    </button>
-    <button id="play_pause">
-      <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
-    </button>
-    <input type="range" id="time_position"></input>
   </div>
 </div>
 <hr/>
