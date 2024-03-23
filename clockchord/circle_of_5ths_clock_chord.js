@@ -850,13 +850,22 @@ const PianoKeyboard = class {
                   };
               }
             }
-            case 0xF0: // System Exclusive
-              while( eventEnd < byteArray.length && byteArray[eventEnd++] != 0xF7 ); // EOX (End Of eXclucive)
+            case 0xF0: { // System Exclusive
+              // IMPORTANT:
+              // SysEx on MIDI port has no data length, and recognized end of data by EOX (End Of eXclusive) 0xF7,
+              // but SysEx on Standard MIDI File HAS DATA LENGTH, so don't miss it !!
+              const {
+                value: length,
+                length: lengthLength,
+              } = parseVariableLengthValue(byteArray, eventStart);
+              const sysExDataStart = eventStart + lengthLength;
+              eventEnd = sysExDataStart + length;
               return {
                 deltaTime,
-                systemExclusive: byteArray.subarray(eventStart, eventEnd - 1), // Remove bottom 0xF7
+                systemExclusive: byteArray.subarray(sysExDataStart, eventEnd),
                 byteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
               };
+            }
             case 0xF2: // Song Position
               eventEnd++;
               // fallthrough
