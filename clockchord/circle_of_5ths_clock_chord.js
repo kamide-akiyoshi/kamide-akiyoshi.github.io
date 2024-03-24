@@ -747,10 +747,6 @@ const PianoKeyboard = class {
     };
   };
   setupMidiSequencer = () => {
-    const midiFileSelecter = document.getElementById("midi_file");
-    if( !midiFileSelecter ) {
-      return;
-    }
     const {
       handleMidiMessage,
     } = this;
@@ -999,6 +995,10 @@ const PianoKeyboard = class {
         }
       }
     }
+    const midiFileInput = document.getElementById("midi_file");
+    const midiFileDropZone = document.getElementById("midi_sequencer");
+    const midiFileSelectButton = document.getElementById("midi_file_select_button");
+    const midiFileName = document.getElementById("midi_file_name");
     const midiSequenceElement = document.getElementById("midi_sequence");
     const midiSequencerElement = midiSequenceElement.parentElement;
     const topButton = document.getElementById("top");
@@ -1013,18 +1013,15 @@ const PianoKeyboard = class {
       microsecondsPerQuarter: 500000,
       bpm: 120,
     };
-    midiFileSelecter.addEventListener("change", () => {
-      const file = midiFileSelecter.files[0];
+    const loadMidiFile = (file) => {
       if( !file ) {
-        midiSequence = undefined;
-        midiSequencerElement.removeChild(midiSequenceElement);
         return;
       }
       const reader = new FileReader();
       reader.addEventListener("load", (event) => {
         const arrayBuffer = event.target.result;
         midiSequence = parseMidiSequence(new Uint8Array(arrayBuffer));
-        midiSequence.file = file;
+        midiFileName.textContent = (midiSequence.file = file).name;
         midiSequencerElement.appendChild(midiSequenceElement);
         titleElement.textContent = midiSequence.title ?? "";
         changeTempo(DEFAULT_TEMPO);
@@ -1032,6 +1029,23 @@ const PianoKeyboard = class {
         tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
       });
       reader.readAsArrayBuffer(file);
+    };
+    midiFileSelectButton.addEventListener("click", () => {
+      midiFileInput.click();
+    });
+    midiFileInput.addEventListener("change", () => loadMidiFile(midiFileInput.files[0]));
+    midiFileDropZone.addEventListener("dragenter", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    midiFileDropZone.addEventListener("dragover", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    midiFileDropZone.addEventListener("drop", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      loadMidiFile(event.dataTransfer.files[0]);
     });
     let tickPosition = 0;
     const setTickPosition = (tick) => {

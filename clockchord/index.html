@@ -209,6 +209,9 @@
 	#midi_file_selecter, #midi_sequence, #midi_sequence .controller {
 		margin-top: 8px;
 	}
+	#midi_file_select_button {
+		width: auto;
+	}
 	#time_position {
 		width: 320px;
 	}
@@ -256,16 +259,17 @@
   </div>
   <div id="midi_sequencer">
     <div id="midi_file_selecter">
-      <label for="midi_file">MIDI file</label>
-      <input type="file" id="midi_file" accept=".mid"/>
+      <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
+      <button id="midi_file_select_button">Select MIDI file</button>
+      <span id="midi_file_name">or drop MIDI file here</span>
     </div>
     <div id="midi_sequence">
       <div>
-        <span id="song_title"></span>
         <span id="tempo">
           <img width="16" src="image/note4.svg" alt="BPM"/>=
           <span id="bpm"></span>
         </span>
+        <span id="song_title"></span>
       </div>
       <div class="controller">
         <button id="top">
