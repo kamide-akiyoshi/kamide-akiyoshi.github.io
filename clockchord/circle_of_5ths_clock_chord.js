@@ -1028,6 +1028,11 @@ const PianoKeyboard = class {
         changeTempo(DEFAULT_TEMPO);
         setTickPosition(0);
         tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
+        const darkModeSelect = document.getElementById("dark_mode_select");
+        if( darkModeSelect.value == "light" ) {
+          darkModeSelect.value = "dark";
+          darkModeSelect.dispatchEvent(new Event("change"));
+        }
       });
       reader.readAsArrayBuffer(file);
     };
