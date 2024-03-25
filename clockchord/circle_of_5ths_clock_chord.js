@@ -749,6 +749,7 @@ const PianoKeyboard = class {
   setupMidiSequencer = () => {
     const {
       handleMidiMessage,
+      chord,
     } = this;
     const bigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
     const parseVariableLengthValue = (byteArray, offset=0) => {
@@ -985,6 +986,7 @@ const PianoKeyboard = class {
         }
         if( "keySignature" in event ) {
           this.toneIndicatorCanvas.keySignature.value = event.keySignature;
+          chord.clear();
         }
         // Meta event must not be sent to MIDI port
       } else {
