@@ -1021,7 +1021,11 @@ const PianoKeyboard = class {
       const reader = new FileReader();
       reader.addEventListener("load", (event) => {
         const arrayBuffer = event.target.result;
-        midiSequence = parseMidiSequence(new Uint8Array(arrayBuffer));
+        const seq = parseMidiSequence(new Uint8Array(arrayBuffer));
+        if( !seq ) {
+          return;
+        }
+        midiSequence = seq;
         midiFileName.textContent = (midiSequence.file = file).name;
         midiSequencerElement.appendChild(midiSequenceElement);
         titleElement.textContent = midiSequence.title ?? "";
