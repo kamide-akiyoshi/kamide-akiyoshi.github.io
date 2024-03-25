@@ -961,10 +961,9 @@ const PianoKeyboard = class {
         },
         tracksArray
       );
-      // To search backward by array.find() easily, sort descending by tick
-      const descendingByTick = (e1, e2) => e1.tick < e2.tick ? 1 : e1.tick > e2.tick ? -1 : 0;
-      keySignatures.sort(descendingByTick);
-      tempos.sort(descendingByTick);
+      const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
+      keySignatures.sort(ascendingByTick);
+      tempos.sort(ascendingByTick);
       const sequence = {
         midiFormat,
         ticksPerQuarter,
@@ -1053,7 +1052,7 @@ const PianoKeyboard = class {
       tickPosition = tick;
       tickPositionSlider && (tickPositionSlider.value = tick);
       const doLastEventIn = (name) => {
-        const lastEvent = midiSequence?.[name].find((event) => event.tick <= tick);
+        const lastEvent = midiSequence?.[name].findLast((event) => event.tick <= tick);
         lastEvent && doEvent(lastEvent);
       }
       doLastEventIn("keySignatures");
