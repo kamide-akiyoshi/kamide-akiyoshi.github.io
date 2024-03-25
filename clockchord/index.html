@@ -206,7 +206,14 @@
 	#midi_channel {
 		margin-top: 2px;
 	}
-	#midi_file_selecter, #midi_sequence, #midi_sequence .controller {
+	#midi_sequencer {
+		width: 410px;
+		margin-top: 8px;
+		padding: 8px;
+		border: 1px solid;
+		border-radius: 8px;
+	}
+	#midi_sequence, #midi_sequence .controller {
 		margin-top: 8px;
 	}
 	#midi_file_select_button {
@@ -260,8 +267,8 @@
   <div id="midi_sequencer">
     <div id="midi_file_selecter">
       <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
-      <button id="midi_file_select_button">Select MIDI file</button>
-      <span id="midi_file_name">or drop MIDI file here</span>
+      <button id="midi_file_select_button">MIDI file</button>
+      <span id="midi_file_name">Select or drop here</span>
     </div>
     <div id="midi_sequence">
       <div>
