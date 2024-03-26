@@ -214,8 +214,12 @@
 		border: 1px solid;
 		border-radius: 8px;
 	}
-	#midi_sequence, #midi_sequence .controller {
+	#midi_sequence .controller {
 		margin-top: 8px;
+	}
+	#song_text {
+		margin-top: 8px;
+		margin-bottom: 8px;
 	}
 	#midi_file_select_button {
 		width: auto;
@@ -266,11 +270,6 @@
     </div>
   </div>
   <div id="midi_sequencer">
-    <div id="midi_file_selecter">
-      <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
-      <button id="midi_file_select_button">MIDI file</button>
-      <span id="midi_file_name">Select or drop here</span>
-    </div>
     <div id="midi_sequence">
       <div>
         <span id="tempo">
@@ -288,6 +287,12 @@
         </button>
         <input type="range" id="time_position"></input>
       </div>
+      <div id="song_text"></div>
+    </div>
+    <div id="midi_file_selecter">
+      <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
+      <button id="midi_file_select_button">MIDI file</button>
+      <span id="midi_file_name">Select or drop here</span>
     </div>
   </div>
   <div id="chordbar">

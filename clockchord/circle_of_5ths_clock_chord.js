@@ -999,6 +999,9 @@ const PianoKeyboard = class {
           this.toneIndicatorCanvas.keySignature.value = event.keySignature;
           chord.clear();
         }
+        if( "text" in event ) {
+          textElement.textContent = event.text;
+        }
         // Meta event must not be sent to MIDI port
       } else {
         const { data } = event;
@@ -1019,6 +1022,7 @@ const PianoKeyboard = class {
     const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
+    const textElement = document.getElementById("song_text");
     midiSequencerElement.removeChild(midiSequenceElement);
     let midiSequence;
     const DEFAULT_TEMPO = {
@@ -1038,7 +1042,7 @@ const PianoKeyboard = class {
         }
         midiSequence = seq;
         midiFileName.textContent = (midiSequence.file = file).name;
-        midiSequencerElement.appendChild(midiSequenceElement);
+        midiSequencerElement.prepend(midiSequenceElement);
         titleElement.textContent = midiSequence.title ?? "";
         changeTempo(DEFAULT_TEMPO);
         setTickPosition(0);
