@@ -1042,6 +1042,7 @@ const PianoKeyboard = class {
         }
         midiSequence = seq;
         midiFileName.textContent = (midiSequence.file = file).name;
+        textElement.textContent = "";
         midiSequencerElement.prepend(midiSequenceElement);
         titleElement.textContent = midiSequence.title ?? "";
         changeTempo(DEFAULT_TEMPO);
