@@ -762,7 +762,7 @@ const PianoKeyboard = class {
         return new TextDecoder("sjis").decode(byteArray);
       }
     };
-    const bigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
+    const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
     const parseVariableLengthValue = (byteArray, offset=0) => {
       const maxOffset = offset + 4;
       let currentOffset = offset;
@@ -812,7 +812,7 @@ const PianoKeyboard = class {
               switch(metaType) {
                 case 0x51:
                   {
-                    const microsecondsPerQuarter = bigEndian(data);
+                    const microsecondsPerQuarter = parseBigEndian(data);
                     const bpm = 60000000 / microsecondsPerQuarter;
                     return {
                       deltaTime,
@@ -913,13 +913,13 @@ const PianoKeyboard = class {
         alert(`Invalid MIDI file format`);
         return undefined;
       }
-      const headerLength = bigEndian(sequenceArray.subarray(4, 8));
-      const midiFormat = bigEndian(sequenceArray.subarray(8, 10));
-      const numberOfTracks = bigEndian(sequenceArray.subarray(10, 12));
+      const headerLength = parseBigEndian(sequenceArray.subarray(4, 8));
+      const midiFormat = parseBigEndian(sequenceArray.subarray(8, 10));
+      const numberOfTracks = parseBigEndian(sequenceArray.subarray(10, 12));
       if( sequenceArray[12] & 0x80 ) {
         alert(`Warning: SMTPE resolution not supported`);
       }
-      const ticksPerQuarter = bigEndian(sequenceArray.subarray(12, 14));
+      const ticksPerQuarter = parseBigEndian(sequenceArray.subarray(12, 14));
       const tracksArray = sequenceArray.subarray(8 + headerLength, sequenceArray.length);
       const tracks = [];
       const keySignatures = [];
@@ -934,7 +934,7 @@ const PianoKeyboard = class {
           if( trackChunk != "MTrk" ) {
             console.error(`Track ${index}/${numberOfTracks}: Invalid MIDI track chunk '${trackChunk}' - Not 'MTrk'`);
           }
-          const trackLength = bigEndian(tracksArray.subarray(4, 8));
+          const trackLength = parseBigEndian(tracksArray.subarray(4, 8));
           const nextTrackTop = 8 + trackLength;
           let byteArray = tracksArray.subarray(8, nextTrackTop);
           const events = [];
