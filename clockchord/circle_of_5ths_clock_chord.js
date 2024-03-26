@@ -1156,7 +1156,6 @@ const PianoKeyboard = class {
         tickPosition += ticksPerInterval;
         if( tickPosition > tickLength ) {
           pause();
-          setTickPosition(0);
         }
       }, INTERVAL_MILLI_SEC);
       if( playPauseIcon ) {
