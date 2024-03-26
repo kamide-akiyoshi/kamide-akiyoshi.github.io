@@ -751,6 +751,17 @@ const PianoKeyboard = class {
       handleMidiMessage,
       chord,
     } = this;
+    const textDecoders = {};
+    const parseText = (byteArray) => {
+      try {
+        const encoding = Encoding.detect(byteArray) || "utf-8";
+        const decoder = textDecoders[encoding] ?? (textDecoders[encoding] = new TextDecoder(encoding));
+        return decoder.decode(byteArray);
+      } catch(error) {
+        console.error(error);
+        return new TextDecoder("sjis").decode(byteArray);
+      }
+    };
     const bigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
     const parseVariableLengthValue = (byteArray, offset=0) => {
       const maxOffset = offset + 4;
@@ -844,7 +855,7 @@ const PianoKeyboard = class {
                       deltaTime,
                       metaType,
                       metaData: data,
-                      text: new TextDecoder('sjis').decode(data),
+                      text: parseText(data),
                       nextByteArray,
                     };
                   }
@@ -897,7 +908,7 @@ const PianoKeyboard = class {
       };
     };
     const parseMidiSequence = (sequenceArray) => {
-      const headerChunk = new TextDecoder().decode(sequenceArray.subarray(0, 4));
+      const headerChunk = parseText(sequenceArray.subarray(0, 4));
       if( headerChunk != "MThd" ) {
         alert(`Invalid MIDI file format`);
         return undefined;
@@ -919,7 +930,7 @@ const PianoKeyboard = class {
           if( !tracksArray ) { // No more track
             return undefined;
           }
-          const trackChunk = new TextDecoder().decode(tracksArray.subarray(0, 4))
+          const trackChunk = parseText(tracksArray.subarray(0, 4))
           if( trackChunk != "MTrk" ) {
             console.error(`Track ${index}/${numberOfTracks}: Invalid MIDI track chunk '${trackChunk}' - Not 'MTrk'`);
           }
