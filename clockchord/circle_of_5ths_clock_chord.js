@@ -1000,7 +1000,10 @@ const PianoKeyboard = class {
           chord.clear();
         }
         if( "text" in event ) {
-          textElement.textContent = event.text;
+          const { text } = event;
+          if( midiSequence.title != text ) {
+            textElement.textContent = text;
+          }
         }
         // Meta event must not be sent to MIDI port
       } else {
