@@ -210,16 +210,19 @@
 	#midi_sequencer {
 		width: 410px;
 		margin-top: 8px;
-		padding: 8px;
+		padding: 0px 8px;
 		border: 1px solid;
 		border-radius: 8px;
 	}
-	#midi_sequence .controller {
+	#midi_sequencer > *, #midi_sequence > * {
 		margin-top: 8px;
 	}
-	#song_text {
+	#midi_sequencer > *:last-child {
 		margin-top: 8px;
 		margin-bottom: 8px;
+	}
+	.grayout {
+		color: #808080;
 	}
 	#midi_file_select_button {
 		width: auto;
@@ -271,13 +274,6 @@
   </div>
   <div id="midi_sequencer">
     <div id="midi_sequence">
-      <div>
-        <span id="tempo">
-          <img width="16" src="image/note4.svg" alt="BPM"/>=
-          <span id="bpm"></span>
-        </span>
-        <span id="song_title"></span>
-      </div>
       <div class="controller">
         <button id="top">
           <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
@@ -287,6 +283,15 @@
         </button>
         <input type="range" id="time_position"></input>
       </div>
+      <div>
+        <span id="time_signature" class="grayout">4/4</span>
+        <span id="key" class="grayout">Key: C</span>
+        <span id="tempo" class="grayout">
+          <img width="16" src="image/note4.svg" alt="BPM"/>=
+          <span id="bpm"></span>
+        </span>
+      </div>
+      <div id="song_title"></div>
       <div id="song_text"></div>
     </div>
     <div id="midi_file_selecter">

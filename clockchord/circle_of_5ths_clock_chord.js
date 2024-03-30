@@ -824,6 +824,18 @@ const PianoKeyboard = class {
                       nextByteArray,
                     };
                   }
+                case 0x58:
+                  return {
+                    deltaTime,
+                    metaType,
+                    timeSignature: {
+                      numerator: data[0],
+                      denominator: 1 << data[1],
+                      clocksPerTick: data[2],
+                      noteted32ndsPerQuarter: data[3],
+                    },
+                    nextByteArray,
+                  };
                 case 0x59:
                   {
                     const sf = data[0];
@@ -868,9 +880,6 @@ const PianoKeyboard = class {
               }
             }
             case 0xF0: { // System Exclusive
-              // IMPORTANT:
-              // SysEx on MIDI port has no data length, and recognized end of data by EOX (End Of eXclusive) 0xF7,
-              // but SysEx on Standard MIDI File HAS DATA LENGTH, so don't miss it !!
               const {
                 value: length,
                 length: lengthLength,
@@ -924,6 +933,7 @@ const PianoKeyboard = class {
       const tracks = [];
       const keySignatures = [];
       const tempos = [];
+      const timeSignatures = [];
       let tickLength = 0;
       Array.from({ length: numberOfTracks }).reduce(
         (tracksArray, _, index) => {
@@ -957,6 +967,8 @@ const PianoKeyboard = class {
               keySignatures.push(event);
             } else if( "tempo" in event ) {
               tempos.push(event);
+            } else if( "timeSignature" in event ) {
+              timeSignatures.push(event);
             }
             runningStatus = event.data?.[0];
             byteArray = nextByteArray;
@@ -982,6 +994,7 @@ const PianoKeyboard = class {
         tickLength,
         keySignatures,
         tempos,
+        timeSignatures,
         tracks,
       };
       const title = tracks.find((track) => track.title?.length)?.title
@@ -994,10 +1007,19 @@ const PianoKeyboard = class {
       if( "metaType" in event ) { // Meta event
         if ( "tempo" in event ) {
           changeTempo(event.tempo);
+          tempoElement.classList.remove("grayout");
         }
         if( "keySignature" in event ) {
-          this.toneIndicatorCanvas.keySignature.value = event.keySignature;
+          const hour = event.keySignature;
+          this.toneIndicatorCanvas.keySignature.value = hour;
+          keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
+          keyElement.classList.remove("grayout");
           chord.clear();
+        }
+        if( "timeSignature" in event ) {
+          const { numerator, denominator } = event.timeSignature;
+          timeSignatureElement.textContent = `${numerator}/${denominator}`;
+          timeSignatureElement.classList.remove("grayout");
         }
         if( "text" in event ) {
           const { text } = event;
@@ -1023,6 +1045,9 @@ const PianoKeyboard = class {
     const playPauseButton = document.getElementById("play_pause");
     const playPauseIcon = document.getElementById("play_pause_icon");
     const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
+    const timeSignatureElement = document.getElementById("time_signature");
+    const keyElement = document.getElementById("key");
+    const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const textElement = document.getElementById("song_text");
@@ -1049,6 +1074,11 @@ const PianoKeyboard = class {
         midiSequencerElement.prepend(midiSequenceElement);
         titleElement.textContent = midiSequence.title ?? "";
         changeTempo(DEFAULT_TEMPO);
+        [
+          tempoElement,
+          keyElement,
+          timeSignatureElement,
+        ].forEach((element) => element.classList.add("grayout"));
         setTickPosition(0);
         tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
         const darkModeSelect = document.getElementById("dark_mode_select");
@@ -1085,6 +1115,7 @@ const PianoKeyboard = class {
         const lastEvent = midiSequence?.[name].findLast((event) => event.tick <= tick);
         lastEvent && doEvent(lastEvent);
       }
+      doLastEventIn("timeSignatures");
       doLastEventIn("keySignatures");
       doLastEventIn("tempos");
       midiSequence?.tracks.forEach((track, index) => {
@@ -1331,18 +1362,22 @@ const Music = class {
       Music.DOUBLE_SHARP
     ][Math.trunc((hour + 15) / 7)]
   ];
-  static keySignatureTextAt = hour => {
-    if( ! hour ) return '';
-    const n = Math.abs(hour);
-    const fs = hour < 0 ? Music.FLAT : Music.SHARP;
-    return n == 1 ? fs : (n > 2 ? n : fs) + fs;
-  };
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
+  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 == 0;
   static normalizeHourAsKey = hour => {
     while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
     return hour;
   };
-  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 == 0;
+  static keySignatureTextAt = hour => {
+    if( ! hour ) return '';
+    const n = Math.abs(hour);
+    const fs = hour < 0 ? Music.FLAT : Music.SHARP;
+    if( n == 1 ) return fs;
+    return `${n > 2 ? n : fs}${fs}`;
+  };
+  static keyTextOf = (hour, minor) => {
+    return minor ? `${Music.majorPitchNameAt(hour + 3).join('')}m` : Music.majorPitchNameAt(hour).join('');
+  };
 }
 
 const CircleOfFifthsClock = class {
@@ -1461,8 +1496,8 @@ const CircleOfFifthsClock = class {
       const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
-      const majorTextAt = h => Music.majorPitchNameAt(h).join('');
-      const minorTextAt = h => Music.majorPitchNameAt(h+3).join('')+'m';
+      const majorTextAt = h => Music.keyTextOf(h, false);
+      const minorTextAt = h => Music.keyTextOf(h, true);
       context.textAlign = "center";
       context.textBaseline = "middle";
       for( let hour = -5; hour <= 6; hour++ ) {
