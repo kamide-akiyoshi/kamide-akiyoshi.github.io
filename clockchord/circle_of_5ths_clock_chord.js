@@ -762,6 +762,7 @@ const PianoKeyboard = class {
         return new TextDecoder("sjis").decode(byteArray);
       }
     };
+    const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
     const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
     const parseVariableLengthValue = (byteArray, offset=0) => {
       const maxOffset = offset + 4;
@@ -775,24 +776,28 @@ const PianoKeyboard = class {
       }
       return { value, length: currentOffset - offset };
     };
-    const parseMidiEvent = (byteArray, runningStatus) => {
+    const parseMidiEvent = (byteArray, tick, runningStatus) => {
       const {
-        value: deltaTime, // Ticks
+        value: deltaTime,
         length: top,
       } = parseVariableLengthValue(byteArray);
-      const statusOmitted = !(byteArray[top] & 0x80);
-      const status = statusOmitted ? runningStatus : byteArray[top];
+      const event = {
+        tick: tick + deltaTime,
+      };
+      const topByte = byteArray[top];
+      const statusOmitted = !(topByte & 0x80);
+      const status = statusOmitted ? runningStatus : topByte;
       const eventStart = statusOmitted ? top : top + 1;
       let eventEnd = eventStart;
       switch(status & 0xF0) {
-        case 0xC0: // Program Change
-        case 0xD0: // Channel Pressure
-          eventEnd++;
-          break;
         case 0xF0:
           switch(status) {
             case 0xFF: { // Meta event
-              const metaType = byteArray[eventStart];
+              const metaType = event.metaType = byteArray[eventStart];
+              if( metaType == 0x2F ) {
+                event.eot = true; // End Of Track
+                return event;
+              }
               const lengthStart = eventStart + 1;
               const {
                 value: length,
@@ -800,84 +805,41 @@ const PianoKeyboard = class {
               } = parseVariableLengthValue(byteArray, lengthStart);
               const dataStart = lengthStart + lengthLength;
               const dataEnd = dataStart + length;
-              const data = byteArray.subarray(dataStart, dataEnd);
-              if( metaType == 0x2F || dataEnd >= byteArray.length ) {
-                return {
-                  deltaTime,
-                  metaType,
-                  eot: true, // End Of Track
-                };
+              if( dataEnd >= byteArray.length ) { // No more data
+                event.eot = true; // End Of Track
+                return event;
               }
-              const nextByteArray = byteArray.subarray(dataEnd, byteArray.length);
+              const data = byteArray.subarray(dataStart, dataEnd);
+              event.nextByteArray = byteArray.subarray(dataEnd, byteArray.length);
               switch(metaType) {
                 case 0x51:
-                  {
-                    const microsecondsPerQuarter = parseBigEndian(data);
-                    const bpm = 60000000 / microsecondsPerQuarter;
-                    return {
-                      deltaTime,
-                      metaType,
-                      tempo: {
-                        microsecondsPerQuarter,
-                        bpm,
-                      },
-                      nextByteArray,
-                    };
-                  }
+                  event.tempo = {
+                    microsecondsPerQuarter: parseBigEndian(data),
+                  };
+                  event.tempo.bpm = 60000000 / event.tempo.microsecondsPerQuarter;
+                  break;
                 case 0x58:
-                  return {
-                    deltaTime,
-                    metaType,
-                    timeSignature: {
-                      numerator: data[0],
-                      denominator: 1 << data[1],
-                      clocksPerTick: data[2],
-                      noteted32ndsPerQuarter: data[3],
-                    },
-                    nextByteArray,
+                  event.timeSignature = {
+                    numerator: data[0],
+                    denominator: 1 << data[1],
+                    clocksPerTick: data[2],
+                    noteted32ndsPerQuarter: data[3],
                   };
+                  break;
                 case 0x59:
-                  {
-                    const sf = data[0];
-                    return {
-                      deltaTime,
-                      metaType,
-                      keySignature: (sf & 0x80) ? sf - 0x100 : sf,
-                      minor: data[1] == 1,
-                      nextByteArray,
-                    };
-                  }
-                case 0x20:
-                  return {
-                    deltaTime,
-                    metaType,
-                    channelPrefix: data[0],
-                    nextByteArray,
-                  };
-                case 0x21:
-                  return {
-                    deltaTime,
-                    metaType,
-                    portPrefix: data[0],
-                    nextByteArray,
-                  };
+                  event.keySignature = parseSignedByte(data[0]);
+                  event.minor = data[1] == 1;
+                  break;
+                case 0x20: event.channelPrefix = data[0]; break;
+                case 0x21: event.portPrefix = data[0]; break;
                 default:
+                  event.metaData = data;
                   if( metaType > 0 && metaType < 0x10 ) {
-                    return {
-                      deltaTime,
-                      metaType,
-                      metaData: data,
-                      text: parseText(data),
-                      nextByteArray,
-                    };
+                    event.text = parseText(data);
                   }
-                  return {
-                    deltaTime,
-                    metaType,
-                    metaData: data,
-                    nextByteArray,
-                  };
+                  break;
               }
+              return event;
             }
             case 0xF0: { // System Exclusive
               const {
@@ -886,11 +848,11 @@ const PianoKeyboard = class {
               } = parseVariableLengthValue(byteArray, eventStart);
               const sysExDataStart = eventStart + lengthLength;
               eventEnd = sysExDataStart + length;
-              return {
-                deltaTime,
-                systemExclusive: byteArray.subarray(sysExDataStart, eventEnd),
-                nextByteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
-              };
+              event.systemExclusive = byteArray.subarray(sysExDataStart, eventEnd);
+              if( eventEnd < byteArray.length ) {
+                event.nextByteArray = byteArray.subarray(eventEnd, byteArray.length);
+              }
+              return event;
             }
             case 0xF2: // Song Position
               eventEnd++;
@@ -904,17 +866,22 @@ const PianoKeyboard = class {
               break;
           }
           break;
+        case 0xC0: // Program Change
+        case 0xD0: // Channel Pressure
+          eventEnd++;
+          break;
         default: // Other Channel Message
           eventEnd += 2;
           break;
       }
-      return {
-        deltaTime,
-        data: statusOmitted ?
-          [status, ...byteArray.subarray(eventStart, eventEnd)] :
-          byteArray.subarray(eventStart - 1, eventEnd),
-        nextByteArray: eventEnd < byteArray.length ? byteArray.subarray(eventEnd, byteArray.length) : undefined,
-      };
+      event.data = statusOmitted
+        ? [status, ...byteArray.subarray(eventStart, eventEnd)]
+        : byteArray.subarray(eventStart - 1, eventEnd)
+      ;
+      if( eventEnd < byteArray.length ) {
+        event.nextByteArray = byteArray.subarray(eventEnd, byteArray.length);
+      }
+      return event;
     };
     const parseMidiSequence = (sequenceArray) => {
       const headerChunk = parseText(sequenceArray.subarray(0, 4));
@@ -922,19 +889,21 @@ const PianoKeyboard = class {
         alert(`Invalid MIDI file format`);
         return undefined;
       }
+      const sequence = {
+        tickLength: 0,
+        tracks: [],
+        keySignatures: [],
+        tempos: [],
+        timeSignatures: [],
+      };
       const headerLength = parseBigEndian(sequenceArray.subarray(4, 8));
-      const midiFormat = parseBigEndian(sequenceArray.subarray(8, 10));
+      sequence.midiFormat = parseBigEndian(sequenceArray.subarray(8, 10));
       const numberOfTracks = parseBigEndian(sequenceArray.subarray(10, 12));
       if( sequenceArray[12] & 0x80 ) {
         alert(`Warning: SMTPE resolution not supported`);
       }
-      const ticksPerQuarter = parseBigEndian(sequenceArray.subarray(12, 14));
+      sequence.ticksPerQuarter = parseBigEndian(sequenceArray.subarray(12, 14));
       const tracksArray = sequenceArray.subarray(8 + headerLength, sequenceArray.length);
-      const tracks = [];
-      const keySignatures = [];
-      const tempos = [];
-      const timeSignatures = [];
-      let tickLength = 0;
       Array.from({ length: numberOfTracks }).reduce(
         (tracksArray, _, index) => {
           if( !tracksArray ) { // No more track
@@ -948,15 +917,13 @@ const PianoKeyboard = class {
           const nextTrackTop = 8 + trackLength;
           let byteArray = tracksArray.subarray(8, nextTrackTop);
           const events = [];
-          let runningStatus;
           let tick = 0;
+          let runningStatus;
           while(byteArray) {
             const {
               nextByteArray,
-              deltaTime,
               ...event
-            } = parseMidiEvent(byteArray, runningStatus);
-            event.tick = (tick += deltaTime);
+            } = parseMidiEvent(byteArray, tick, runningStatus);
             events.push(event);
             if( event.metaType === 3 ) { // Sequence/Track name
               const name = event.text;
@@ -964,19 +931,19 @@ const PianoKeyboard = class {
                 events.title = name;
               }
             } else if( "keySignature" in event ) {
-              keySignatures.push(event);
+              sequence.keySignatures.push(event);
             } else if( "tempo" in event ) {
-              tempos.push(event);
+              sequence.tempos.push(event);
             } else if( "timeSignature" in event ) {
-              timeSignatures.push(event);
+              sequence.timeSignatures.push(event);
             }
-            runningStatus = event.data?.[0];
             byteArray = nextByteArray;
+            tick = event.tick;
+            runningStatus = event.data?.[0];
           }
-          tracks.push(events);
-          const trackTickLength = events[events.length - 1]?.tick ?? 0;
-          if( trackTickLength > tickLength ) {
-            tickLength = trackTickLength;
+          sequence.tracks.push(events);
+          if( tick > sequence.tickLength ) {
+            sequence.tickLength = tick;
           }
           if( nextTrackTop >= tracksArray.length ) { // No more track
             return undefined;
@@ -986,21 +953,11 @@ const PianoKeyboard = class {
         tracksArray
       );
       const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
-      keySignatures.sort(ascendingByTick);
-      tempos.sort(ascendingByTick);
-      const sequence = {
-        midiFormat,
-        ticksPerQuarter,
-        tickLength,
-        keySignatures,
-        tempos,
-        timeSignatures,
-        tracks,
-      };
-      const title = tracks.find((track) => track.title?.length)?.title
-      if( title ) {
-        sequence.title = title;
-      }
+      sequence.keySignatures.sort(ascendingByTick);
+      sequence.tempos.sort(ascendingByTick);
+      sequence.timeSignatures.sort(ascendingByTick);
+      const title = sequence.tracks.find((track) => track.title?.length)?.title
+      if( title ) sequence.title = title;
       return sequence;
     };
     const doEvent = (event) => {
@@ -1029,16 +986,15 @@ const PianoKeyboard = class {
         }
         // Meta event must not be sent to MIDI port
       } else {
-        const { data } = event;
-        if( data ) {
-          handleMidiMessage(data);
+        if( event.data ) {
+          handleMidiMessage(event.data);
         }
       }
     }
     const midiFileInput = document.getElementById("midi_file");
     const midiFileDropZone = document.getElementById("midi_sequencer");
     const midiFileSelectButton = document.getElementById("midi_file_select_button");
-    const midiFileName = document.getElementById("midi_file_name");
+    const midiFileNameElement = document.getElementById("midi_file_name");
     const midiSequenceElement = document.getElementById("midi_sequence");
     const midiSequencerElement = midiSequenceElement.parentElement;
     const topButton = document.getElementById("top");
@@ -1051,12 +1007,27 @@ const PianoKeyboard = class {
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const textElement = document.getElementById("song_text");
+    const darkModeSelect = document.getElementById("dark_mode_select");
     midiSequencerElement.removeChild(midiSequenceElement);
     let midiSequence;
-    const DEFAULT_TEMPO = {
-      microsecondsPerQuarter: 500000,
-      bpm: 120,
-    };
+    const setMidiSequence = (seq) => {
+      midiSequence = seq;
+      textElement.textContent = "";
+      titleElement.textContent = midiSequence.title ?? "";
+      changeTempo();
+      [
+        tempoElement,
+        keyElement,
+        timeSignatureElement,
+      ].forEach((element) => element.classList.add("grayout"));
+      tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
+      if( darkModeSelect.value == "light" ) {
+        darkModeSelect.value = "dark";
+        darkModeSelect.dispatchEvent(new Event("change"));
+      }
+      setTickPosition(0);
+      midiSequencerElement.prepend(midiSequenceElement);
+    }
     const loadMidiFile = (file) => {
       if( !file ) {
         return;
@@ -1068,24 +1039,8 @@ const PianoKeyboard = class {
         if( !seq ) {
           return;
         }
-        midiSequence = seq;
-        midiFileName.textContent = (midiSequence.file = file).name;
-        textElement.textContent = "";
-        midiSequencerElement.prepend(midiSequenceElement);
-        titleElement.textContent = midiSequence.title ?? "";
-        changeTempo(DEFAULT_TEMPO);
-        [
-          tempoElement,
-          keyElement,
-          timeSignatureElement,
-        ].forEach((element) => element.classList.add("grayout"));
-        setTickPosition(0);
-        tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
-        const darkModeSelect = document.getElementById("dark_mode_select");
-        if( darkModeSelect.value == "light" ) {
-          darkModeSelect.value = "dark";
-          darkModeSelect.dispatchEvent(new Event("change"));
-        }
+        midiFileNameElement.textContent = (seq.file = file).name;
+        setMidiSequence(seq);
       });
       reader.readAsArrayBuffer(file);
     };
@@ -1147,17 +1102,18 @@ const PianoKeyboard = class {
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
     const changeTempo = (tempo) => {
-      const { microsecondsPerQuarter, bpm } = tempo;
+      const { microsecondsPerQuarter, bpm } = tempo ?? {
+        microsecondsPerQuarter: 500000,
+        bpm: 120,
+      };
       bpmElement.textContent = Math.floor(bpm);
       const ticksPerMicroseconds = midiSequence.ticksPerQuarter / microsecondsPerQuarter;
       ticksPerInterval = ticksPerMicroseconds * 1000 * INTERVAL_MILLI_SEC;
     };
     let intervalId;
-    if( tickPositionSlider ) {
-      tickPositionSlider.addEventListener("change", (event) => {
-        !intervalId && setTickPosition(parseInt(event.target.value));
-      });
-    }
+    tickPositionSlider?.addEventListener("change", (event) => {
+      !intervalId && setTickPosition(parseInt(event.target.value));
+    });
     const pause = () => {
       clearInterval(intervalId);
       intervalId = undefined;
@@ -1170,41 +1126,37 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Play";
       }
     };
-    if( topButton ) {
-      topButton.addEventListener('click', () => setTickPosition(0));
-    }
-    const togglePlay = () => {
-      if( intervalId ) {
-        pause();
-        return;
-      }
-      if( !midiSequence ) return;
+    const play = () => {
+      if( !midiSequence || intervalId ) return;
       const { tickLength, tracks } = midiSequence;
-      intervalId = setInterval(() => {
-        tickPositionSlider && (tickPositionSlider.value = tickPosition);
-        tracks.forEach((events, index) => {
-          while(true) {
-            const event = events[events.currentEventIndex];
-            if( !event || event.tick > tickPosition ) {
-              break;
-            }
-            doEvent(event);
-            events.currentEventIndex++;
+      intervalId = setInterval(
+        () => {
+          if( tickPositionSlider ) {
+            tickPositionSlider.value = tickPosition;
           }
-        });
-        tickPosition += ticksPerInterval;
-        if( tickPosition > tickLength ) {
-          pause();
-        }
-      }, INTERVAL_MILLI_SEC);
+          tracks.forEach((events) => {
+            while(true) {
+              const event = events[events.currentEventIndex];
+              if( !event || event.tick > tickPosition ) {
+                break;
+              }
+              doEvent(event);
+              events.currentEventIndex++;
+            }
+          });
+          if( (tickPosition += ticksPerInterval) > tickLength ) {
+            pause();
+          }
+        },
+        INTERVAL_MILLI_SEC
+      );
       if( playPauseIcon ) {
         playPauseIcon.src = "image/pause-button-svgrepo-com.svg";
         playPauseIcon.alt = "Pause";
       }
     };
-    if( playPauseButton ) {
-      playPauseButton.addEventListener('click', togglePlay);
-    }
+    topButton?.addEventListener('click', () => setTickPosition(0));
+    playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
   };
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
