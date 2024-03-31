@@ -1066,14 +1066,17 @@ const PianoKeyboard = class {
       pause();
       tickPosition = tick;
       tickPositionSlider && (tickPositionSlider.value = tick);
-      const doLastEventIn = (name) => {
-        const lastEvent = midiSequence?.[name].findLast((event) => event.tick <= tick);
+      if( !midiSequence ) {
+        return;
+      }
+      const doLastEvent = (array) => {
+        const lastEvent = array.findLast((event) => event.tick <= tick);
         lastEvent && doEvent(lastEvent);
       }
-      doLastEventIn("timeSignatures");
-      doLastEventIn("keySignatures");
-      doLastEventIn("tempos");
-      midiSequence?.tracks.forEach((track, index) => {
+      doLastEvent(midiSequence.timeSignatures);
+      doLastEvent(midiSequence.keySignatures);
+      doLastEvent(midiSequence.tempos);
+      midiSequence.tracks.forEach((track, index) => {
         if( tick === 0 ) {
           // Top
           track.currentEventIndex = 0;
