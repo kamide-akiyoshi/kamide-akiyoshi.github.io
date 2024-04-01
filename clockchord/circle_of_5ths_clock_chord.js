@@ -750,6 +750,7 @@ const PianoKeyboard = class {
     const {
       handleMidiMessage,
       chord,
+      toneIndicatorCanvas,
     } = this;
     const textDecoders = {};
     const parseText = (byteArray) => {
@@ -960,6 +961,7 @@ const PianoKeyboard = class {
       if( title ) sequence.title = title;
       return sequence;
     };
+    let lastTimeSignatureEvent;
     const doEvent = (event) => {
       if( "metaType" in event ) { // Meta event
         if ( "tempo" in event ) {
@@ -968,7 +970,7 @@ const PianoKeyboard = class {
         }
         if( "keySignature" in event ) {
           const hour = event.keySignature;
-          this.toneIndicatorCanvas.keySignature.value = hour;
+          toneIndicatorCanvas.keySignature.value = hour;
           keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
           keyElement.classList.remove("grayout");
           chord.clear();
@@ -977,6 +979,7 @@ const PianoKeyboard = class {
           const { numerator, denominator } = event.timeSignature;
           timeSignatureElement.textContent = `${numerator}/${denominator}`;
           timeSignatureElement.classList.remove("grayout");
+          lastTimeSignatureEvent = event;
         }
         if( "text" in event ) {
           const { text } = event;
@@ -1002,6 +1005,7 @@ const PianoKeyboard = class {
     const playPauseIcon = document.getElementById("play_pause_icon");
     const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
     const timeSignatureElement = document.getElementById("time_signature");
+    const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
@@ -1020,6 +1024,8 @@ const PianoKeyboard = class {
         keyElement,
         timeSignatureElement,
       ].forEach((element) => element.classList.add("grayout"));
+      keyElement.textContent = `Key:${Music.keyTextOf(0)}`;
+      timeSignatureElement.textContent = "4/4";
       tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
       if( darkModeSelect.value == "light" ) {
         darkModeSelect.value = "dark";
@@ -1066,6 +1072,7 @@ const PianoKeyboard = class {
       pause();
       tickPosition = tick;
       tickPositionSlider && (tickPositionSlider.value = tick);
+      setBeatAt(tick);
       if( !midiSequence ) {
         return;
       }
@@ -1102,6 +1109,55 @@ const PianoKeyboard = class {
         track.currentEventIndex = mid;
       });
     };
+    let beat = 0;
+    const setBeatAt = (tick) => {
+      if( !lastTimeSignatureEvent ) return;
+      const {
+        tick: lastTick,
+        timeSignature: {
+          numerator,
+          denominator,
+        },
+      } = lastTimeSignatureEvent ?? {
+        tick: 0,
+        timeSignature: {
+          numerator: 4,
+          denominator: 4,
+        }
+      };
+      const { ticksPerQuarter } = midiSequence;
+      const ticksPerBeat = ticksPerQuarter * (4 / denominator);
+      const newBeat = Math.floor((tick - lastTick) / ticksPerBeat) % numerator;
+      if( beat != newBeat ) {
+        beat = newBeat;
+        if( beatCanvas ) {
+          const context = beatCanvas.getContext("2d");
+          const { width, height, dial } = toneIndicatorCanvas;
+          const center = dial.center;
+          const startAngle = - Math.PI / 2;
+          const endAngle = startAngle - 2 * Math.PI * (numerator - beat) / numerator;
+          context.clearRect(0, 0, width, height);
+          context.fillStyle = "#808080";
+          context.beginPath();
+          context.arc(
+            center.x,
+            center.y,
+            dial.borderRadius[0] * width * 3 / 4,
+            startAngle,
+            endAngle,
+            true
+          );
+          context.arc(
+            center.x,
+            center.y,
+            dial.borderRadius[0] * width / 2,
+            endAngle,
+            startAngle,
+          );
+          context.fill();
+        }
+      }
+    };
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
     const changeTempo = (tempo) => {
@@ -1114,9 +1170,6 @@ const PianoKeyboard = class {
       ticksPerInterval = ticksPerMicroseconds * 1000 * INTERVAL_MILLI_SEC;
     };
     let intervalId;
-    tickPositionSlider?.addEventListener("change", (event) => {
-      !intervalId && setTickPosition(parseInt(event.target.value));
-    });
     const pause = () => {
       clearInterval(intervalId);
       intervalId = undefined;
@@ -1147,6 +1200,7 @@ const PianoKeyboard = class {
               events.currentEventIndex++;
             }
           });
+          setBeatAt(tickPosition);
           if( (tickPosition += ticksPerInterval) > tickLength ) {
             pause();
           }
@@ -1160,6 +1214,9 @@ const PianoKeyboard = class {
     };
     topButton?.addEventListener('click', () => setTickPosition(0));
     playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
+    tickPositionSlider?.addEventListener("change", (event) => {
+      !intervalId && setTickPosition(parseInt(event.target.value));
+    });
   };
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
