@@ -753,15 +753,21 @@ const PianoKeyboard = class {
       toneIndicatorCanvas,
     } = this;
     const textDecoders = {};
+    const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
     const parseText = (byteArray) => {
+      let text;
+      let encoding;
       try {
-        const encoding = Encoding.detect(byteArray) || "utf-8";
-        const decoder = textDecoders[encoding] ?? (textDecoders[encoding] = new TextDecoder(encoding));
-        return decoder.decode(byteArray);
+        encoding = Encoding.detect(byteArray) || "sjis";
+        text = decoderOf(encoding).decode(byteArray);
       } catch(error) {
-        console.error(error);
-        return new TextDecoder("sjis").decode(byteArray);
+        const defaultEncoding = "sjis";
+        text = decoderOf(defaultEncoding).decode(byteArray);
+        console.warn(
+          `Failed to decode as "${encoding}", so force "${defaultEncoding}", and decoded to "${text}" from the source data:`,
+          byteArray, error);
       }
+      return text;
     };
     const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
     const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
