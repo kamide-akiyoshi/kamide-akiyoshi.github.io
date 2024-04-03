@@ -1032,7 +1032,7 @@ const PianoKeyboard = class {
         keyElement,
         timeSignatureElement,
       ].forEach((element) => element.classList.add("grayout"));
-      keyElement.textContent = `Key:${Music.keyTextOf(0)}`;
+      keyElement.textContent = `Key:${Music.keyTextOf()}`;
       timeSignatureElement.textContent = "4/4";
       tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
       if( darkModeSelect.value == "light" ) {
@@ -1397,7 +1397,8 @@ const Music = class {
     return `${n > 2 ? n : fs}${fs}`;
   };
   static keyTextOf = (hour, minor) => {
-    return minor ? `${Music.majorPitchNameAt(hour + 3).join('')}m` : Music.majorPitchNameAt(hour).join('');
+    const textAt = (hour) => Music.majorPitchNameAt(hour ?? 0).join('');
+    return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
 }
 
@@ -1517,8 +1518,6 @@ const CircleOfFifthsClock = class {
       const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
       const fontWeightAt = h => h === 0 ?'bold':'normal';
-      const majorTextAt = h => Music.keyTextOf(h, false);
-      const minorTextAt = h => Music.keyTextOf(h, true);
       context.textAlign = "center";
       context.textBaseline = "middle";
       for( let hour = -5; hour <= 6; hour++ ) {
@@ -1555,8 +1554,8 @@ const CircleOfFifthsClock = class {
         // Text
         const drawText = (text, r) => context.fillText(text, center.x + r*x, center.y + r*y);
         const keySignatureText = hour ? Music.keySignatureTextAt(hour) : dial.keySignatureTextAt0 ;
-        const majorText = majorTextAt(hour);
-        const minorText = minorTextAt(hour);
+        const majorText = Music.keyTextOf(hour);
+        const minorText = Music.keyTextOf(hour, true);
         context.fillStyle = textColorAt(relativeHour);
         const fontWeight = fontWeightAt(relativeHour);
         context.font = sizeToFont(11, fontWeight);
@@ -1572,8 +1571,8 @@ const CircleOfFifthsClock = class {
           context.font = sizeToFont(11, enharmonicFontWeight);
           drawText(Music.keySignatureTextAt(enharmonicHour), 0.45);
           context.font = sizeToFont(14, enharmonicFontWeight);
-          drawText(majorTextAt(enharmonicHour), 0.33);
-          drawText(minorTextAt(enharmonicHour), 0.19);
+          drawText(Music.keyTextOf(enharmonicHour), 0.33);
+          drawText(Music.keyTextOf(enharmonicHour, true), 0.19);
         } else {
           drawText(keySignatureText, 0.465);
           if( Math.abs(relativeHour) > 4 ) {
@@ -1583,8 +1582,8 @@ const CircleOfFifthsClock = class {
             const enharmonicHour = hour - 12 * Math.sign(relativeHour);
             const enharmonicRelativeHour = enharmonicHour - selectedHour;
             context.fillStyle = textColorAt(enharmonicRelativeHour);
-            drawText(majorTextAt(enharmonicHour), 0.33);
-            drawText(minorTextAt(enharmonicHour), 0.19);
+            drawText(Music.keyTextOf(enharmonicHour), 0.33);
+            drawText(Music.keyTextOf(enharmonicHour, true), 0.19);
           } else {
             context.font = sizeToFont(19, fontWeight);
             drawText(majorText, 0.36);
