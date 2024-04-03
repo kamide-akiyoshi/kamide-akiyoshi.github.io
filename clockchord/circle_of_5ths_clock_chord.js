@@ -1396,8 +1396,8 @@ const Music = class {
     if( n == 1 ) return fs;
     return `${n > 2 ? n : fs}${fs}`;
   };
-  static keyTextOf = (hour, minor) => {
-    const textAt = (hour) => Music.majorPitchNameAt(hour ?? 0).join('');
+  static keyTextOf = (hour = 0, minor) => {
+    const textAt = (hour) => Music.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
 }
