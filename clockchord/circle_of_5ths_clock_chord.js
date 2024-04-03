@@ -751,6 +751,7 @@ const PianoKeyboard = class {
       handleMidiMessage,
       chord,
       toneIndicatorCanvas,
+      selectedMidiOutputPorts,
     } = this;
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
@@ -997,6 +998,7 @@ const PianoKeyboard = class {
       } else {
         if( event.data ) {
           handleMidiMessage(event.data);
+          selectedMidiOutputPorts.forEach((port) => port.send(event.data));
         }
       }
     }
