@@ -359,8 +359,10 @@ const PianoKeyboard = class {
           break;
         case 0xB0: // Control Change
           if( data[0] == 0x78 ) { // All Sound Off
-            chord.stop();
-            toneIndicatorCanvas.allSoundOff();
+            if( data[1] == 0 ) { // Must be 0
+              chord.stop();
+              toneIndicatorCanvas.allSoundOff();
+            }
           }
           break;
       }
@@ -1187,7 +1189,7 @@ const PianoKeyboard = class {
       intervalId = undefined;
       for( let status = 0xB0; status < 0xC0; status++ ) {
         // Send All Sound Off to all MIDI channel
-        sendMidiMessage([status, 0x78]);
+        sendMidiMessage([status, 0x78, 0]);
       }
       if( playPauseIcon ) {
         playPauseIcon.src = "image/play-button-svgrepo-com.svg";
