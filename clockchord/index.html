@@ -311,6 +311,11 @@
   </div>
   <div>
     <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
+    <label for="midi_channel">
+      Channel
+      <select id="midi_channel">
+      </select>
+    </label>
     <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
   </div>
   <div style="margin: 4px 0">
@@ -331,21 +336,12 @@
         <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
         MIDI IN
       </span>
-      <label for="omni" title="Receive message for any MIDI channel number (except drum Ch.10)">
-        Omni
-        <input id="omni" type="checkbox" checked></input>
-      </label>
     </div>
     <div id="midi_output">
       <span>
         <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
         MIDI OUT
       </span>
-      <label for="midi_channel">
-        Channel
-        <select id="midi_channel">
-        </select>
-      </label>
     </div>
   </div>
 </div>
@@ -443,7 +439,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </p>
 <h3>MIDI IN/OUT 選択</h3>
 <p>MIDIポートを装備している場合、ポート名のチェックボックスが現れますので、接続したいポートをチェックしてください。</p>
-<p>MIDIチャンネルを選択して、MIDI OUTに出力するチャンネルを変更できます。MIDI IN の Omni チェックボックスにチェックを入れると、すべてのMIDIチャンネル（ドラムCh.10を除く）のメッセージを受信、チェックを外すと選択したMIDIチャンネルのメッセージのみを受信します。</p>
+<p>MIDIチャンネルを選択して、MIDI OUTに出力するチャンネルを変更できます。</p>
 <p><a href="https://www.g200kg.com/en/docs/webmidilink/">WebMidiLink</a>のリンクレベル0にも対応していますので、<a href="https://www.g200kg.com/websequencer/">WebSequencer</a>と接続することで、MIDI再生結果をClockChordのトーンインジケータに表示してコード進行を視覚化しながら鳴らすこともできます。
 </p>
 <p>※ MIDIの規格上、MIDIポートにメタイベントを流すことはできないので、外部のMIDIシーケンサーで再生しても調号の自動選択は働きません。

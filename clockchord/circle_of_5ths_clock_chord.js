@@ -325,18 +325,7 @@ const PianoKeyboard = class {
     if( ! window.isSecureContext ) {
       console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
     }
-    // MIDI channel selecter
     const DRUM_MIDI_CH = 9;
-    const omniCheckbox = document.getElementById('omni');
-    const chSelect = document.getElementById('midi_channel');
-    const isActiveChannel = (channel) => channel != DRUM_MIDI_CH && (omniCheckbox.checked || channel == parseInt(chSelect.value));
-    for( let ch = 0; ch < 16; ++ch ) {
-      const option = document.createElement("option");
-      option.value = ch;
-      const drumText = ch == DRUM_MIDI_CH ? " (Drum)" : "";
-      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
-      chSelect.appendChild(option);
-    }
     // MIDI message receiver
     const {
       toneIndicatorCanvas,
@@ -344,25 +333,29 @@ const PianoKeyboard = class {
       noteOn,
       noteOff,
     } = this;
-    const handleMidiMessage = (msg) => {
+    const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
       const channel = statusWithCh & 0xF;
-      if( !isActiveChannel(channel) ) {
+      if( channel == DRUM_MIDI_CH ) {
         return;
       }
       const status = statusWithCh & 0xF0;
       switch(status) {
-        case 0x90: // Note On
-          if( data[1] ) { // velocity
-            noteOn(data[0]);
-            toneIndicatorCanvas.noteOn(data[0]);
+        case 0x90:
+          if( data[1] ) { // velocity > 0
+            const noteNumber = data[0];
+            noteOn(noteNumber);
+            toneIndicatorCanvas.noteOn(noteNumber);
             chord.clear();
             break;
           }
           // fallthrough: velocity === 0 means Note Off
-        case 0x80: // Note Off
-          noteOff(data[0]);
-          toneIndicatorCanvas.noteOff(data[0]);
+        case 0x80:
+          {
+            const noteNumber = data[0];
+            noteOff(noteNumber);
+            toneIndicatorCanvas.noteOff(noteNumber);
+          }
           break;
         case 0xB0: // Control Change
           if( data[0] == 0x78 ) { // All Sound Off
@@ -372,7 +365,6 @@ const PianoKeyboard = class {
           break;
       }
     };
-    this.handleMidiMessage = handleMidiMessage;
     // Listen WebMidiLink
     window.addEventListener('message', event => {
       const msg = event.data.split(",");
@@ -383,6 +375,15 @@ const PianoKeyboard = class {
           break;
       }
     });
+    // MIDI OUT channel selecter
+    const chSelect = document.getElementById('midi_channel');
+    for( let ch = 0; ch < 16; ++ch ) {
+      const option = document.createElement("option");
+      option.value = ch;
+      const drumText = ch == DRUM_MIDI_CH ? " (Drum)" : "";
+      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
+      chSelect.appendChild(option);
+    }
     // MIDI message sender
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
