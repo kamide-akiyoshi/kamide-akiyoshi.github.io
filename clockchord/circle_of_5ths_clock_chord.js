@@ -968,6 +968,10 @@ const PianoKeyboard = class {
       if( title ) sequence.title = title;
       return sequence;
     };
+    const sendMidiMessage = (data) => {
+      handleMidiMessage(data);
+      selectedMidiOutputPorts.forEach((port) => port.send(data));
+    };
     let lastTimeSignatureEvent;
     const doEvent = (event) => {
       if( "metaType" in event ) { // Meta event
@@ -996,10 +1000,8 @@ const PianoKeyboard = class {
         }
         // Meta event must not be sent to MIDI port
       } else {
-        if( event.data ) {
-          handleMidiMessage(event.data);
-          selectedMidiOutputPorts.forEach((port) => port.send(event.data));
-        }
+        const { data } = event;
+        if( data ) sendMidiMessage(data);
       }
     }
     const midiFileInput = document.getElementById("midi_file");
@@ -1184,7 +1186,7 @@ const PianoKeyboard = class {
       intervalId = undefined;
       for( let status = 0xB0; status < 0xC0; status++ ) {
         // Send All Sound Off to all MIDI channel
-        handleMidiMessage([status, 0x78]);
+        sendMidiMessage([status, 0x78]);
       }
       if( playPauseIcon ) {
         playPauseIcon.src = "image/play-button-svgrepo-com.svg";
