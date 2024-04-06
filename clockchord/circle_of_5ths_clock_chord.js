@@ -1603,16 +1603,16 @@ const CircleOfFifthsClock = class {
     parameter: {
       hour: {
         getValueAt: time => time.getHours(), valuePerTurn: 12,
-        length: 0.25, width: 9, colorKey: "hour",
+        length: 0.25, width: 1/40, colorKey: "hour",
       },
       minute: {
         getValueAt: time => time.getMinutes(), valuePerTurn: 60,
-        length: 0.4, width: 7, colorKey: "minute",
+        length: 0.4, width: 7/400, colorKey: "minute",
       },
       second: {
         getValueAt: time => time.getSeconds(), valuePerTurn: 60,
-        length: 0.45, width: 1, colorKey: "second",
-        tail: {length: -0.12, width: 3}, center: {radius: 7}
+        length: 0.45, width: 1/400, colorKey: "second",
+        tail: {length: -0.12, width: 3/400}, center: {radius: 7/400}
       },
     },
     clear() {
@@ -1626,11 +1626,12 @@ const CircleOfFifthsClock = class {
     draw: () => {
       const { hands, dial } = this;
       const { center } = hands;
+      const { width } = dial.canvas;
       const drawHand = (context, hand) => {
         const color = dial.themeColors[dial.theme].hand[hand.colorKey];
         context.beginPath();
         context.moveTo( center.x, center.y );
-        context.lineWidth = hand.width;
+        context.lineWidth = hand.width * width;
         context.lineCap = 'round';
         context.lineTo( center.x + hand.x, center.y + hand.y );
         context.strokeStyle = color;
@@ -1638,7 +1639,7 @@ const CircleOfFifthsClock = class {
         hand.tail && drawHand(context, hand.tail);
         if( hand.center ) {
           context.beginPath();
-          context.arc(center.x, center.y, hand.center.radius, 0, 2 * Math.PI);
+          context.arc(center.x, center.y, hand.center.radius * width, 0, 2 * Math.PI);
           context.fillStyle = color;
           context.fill();
         }
