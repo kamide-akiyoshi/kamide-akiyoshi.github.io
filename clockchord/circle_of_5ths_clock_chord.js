@@ -1525,7 +1525,7 @@ const CircleOfFifthsClock = class {
       const fontWeightAt = h => h === 0 ?'bold':'normal';
       context.textAlign = "center";
       context.textBaseline = "middle";
-      const rDot = width / 100;
+      const rDot = width / 120;
       const rSmallDot = width / 200;
       for( let hour = -5; hour <= 6; hour++ ) {
         const t = hour * Math.PI / 6;
@@ -1554,7 +1554,7 @@ const CircleOfFifthsClock = class {
             yy = center.dy(tt);
           }
           context.beginPath();
-          context.arc( center.x + r0*xx, center.y + r0*yy, i ? rDot : rSmallDot, 0, 2 * Math.PI );
+          context.arc( center.x + r0*xx, center.y + r0*yy, i ? rSmallDot : rDot, 0, 2 * Math.PI );
           context.fill();
         }
         // Text
