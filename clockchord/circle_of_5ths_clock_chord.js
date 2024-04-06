@@ -1431,7 +1431,7 @@ const CircleOfFifthsClock = class {
         indicator: ['blue', 'firebrick', 'darkorange'],
       },
       dark: {
-        foreground: '#808080',
+        foreground: '#C0C0C0',
         grayoutForeground: '#404040',
         background: {
           donut: ['#102030', '#301020', '#302000'],
