@@ -523,54 +523,41 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const draw5th = (hour, radiusIndex) => {
-      const startRadius = borderRadius[radiusIndex];
-      drawRadial(
-        majorDirections[hour],
-        startRadius,
-        startRadius + (borderRadius[radiusIndex + 1] - startRadius) / 4
-      );
-    };
+    const average2 = (cr, r) => (cr + r) / 2;
+    const shortRadiusesOf = (rs) => [
+      rs[0],
+      rs[0] + (rs[1] - rs[0]) / 4,
+    ];
+    const sus4Radiuses = [borderRadius[2], borderRadius[3] - 0.005];
+    const sus4CenterRadius = sus4Radiuses.reduce(average2);
+    const majorRadiuses = borderRadius.slice(1, 3);
+    const majorShortRadiuses = shortRadiusesOf(majorRadiuses);
+    const minorRadiuses = borderRadius.slice(0, 2);
+    const minorCenterRadius = minorRadiuses.reduce(average2);
+    const minorShortRadiuses = shortRadiusesOf(minorRadiuses);
     const drawSus4 = (hour, fifthHour, rootColor, sus4Color, fifthColor) => {
       const dir = majorDirections[hour];
       const fifthDir = majorDirections[fifthHour];
-      const inner = borderRadius[2];
-      const outer = borderRadius[3] - 0.005;
-      context.strokeStyle = rootColor;
-      drawRadial(dir, inner, outer);
-      context.strokeStyle = fifthColor;
-      drawRadial(fifthDir, inner, outer);
-      context.strokeStyle = sus4Color;
-      drawArc(inner, dir, fifthDir);
-      drawArc(outer, dir, fifthDir);
+      context.strokeStyle = rootColor;  drawRadial(dir, ...sus4Radiuses);
+      context.strokeStyle = fifthColor; drawRadial(fifthDir, ...sus4Radiuses);
+      context.strokeStyle = sus4Color;  sus4Radiuses.forEach((r) => drawArc(r, dir, fifthDir));
     };
+    const drawAug = (startHour, endHour) => {
+      const startDir = majorDirections[startHour];
+      const endDir = majorDirections[endHour];
+      drawRadial(startDir.center, ...sus4Radiuses);
+      drawArc(sus4CenterRadius, startDir, endDir);
+    };
+    const tritoneArcArgs = [0.03 * width, 0, 2 * Math.PI];
     const drawTritone = (hour) => {
-      const minorCenter = (borderRadius[1] + borderRadius[0]) / 2;
       const direction = majorDirections[hour].center;
       context.beginPath();
       context.arc(
-        center.x + minorCenter * direction.dx,
-        center.y + minorCenter * direction.dy,
-        0.03 * width,
-        0, 2 * Math.PI
+        center.x + minorCenterRadius * direction.dx,
+        center.y + minorCenterRadius * direction.dy,
+        ...tritoneArcArgs
       );
       context.stroke();
-    };
-    const drawAug = (startHour, endHour) => {
-      const inner = borderRadius[2];
-      const outer = borderRadius[3];
-      const startDir = majorDirections[startHour];
-      const endDir = majorDirections[endHour];
-      drawRadial(
-        startDir.center,
-        inner,
-        outer
-      );
-      drawArc(
-        (inner + outer) / 2,
-        startDir,
-        endDir
-      );
     };
     const draw = (hour) => {
       const hour1ccw = hour ? hour - 1 : 11;
@@ -579,18 +566,12 @@ const PianoKeyboard = class {
       const hour3 = hour + (hour < 9 ? 3 : -9);
       const hour1 = hour < 11 ? hour + 1 : 0;
       context.lineWidth = 3;
-      context.strokeStyle = getColorOf(hour, 8); drawRadial(
-        majorDirections[hour],
-        borderRadius[1],
-        borderRadius[2]
-      );
-      context.strokeStyle = getColorOf(hour, 11); drawRadial(
-        majorDirections[hour3ccw],
-        borderRadius[0],
-        borderRadius[1]
-      );
-      context.strokeStyle = getColorOf(hour1, 8); draw5th(hour1, 1);
-      context.strokeStyle = getColorOf(hour1, 11); draw5th(hour2ccw, 0);
+      // Major root/5th radial
+      context.strokeStyle = getColorOf(hour, 8); drawRadial(majorDirections[hour], ...majorRadiuses);
+      context.strokeStyle = getColorOf(hour1, 8); drawRadial(majorDirections[hour1], ...majorShortRadiuses);
+      // Minor root/5th radial
+      context.strokeStyle = getColorOf(hour, 11); drawRadial(majorDirections[hour3ccw], ...minorRadiuses);
+      context.strokeStyle = getColorOf(hour1, 11); drawRadial(majorDirections[hour2ccw], ...minorShortRadiuses);
       const hour4 = hour + (hour < 8 ? 4 : -8);
       if( toneIndicating[hour4] ) { // root:hour + major3rd:hour4
         const directions = [
