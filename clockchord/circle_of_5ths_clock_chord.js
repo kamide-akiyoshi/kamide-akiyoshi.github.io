@@ -500,6 +500,7 @@ const PianoKeyboard = class {
       };
     });
     const context = canvas.getContext("2d");
+    // Primitive drawers
     const drawRadial = (direction, startRadius, endRadius) => {
       context.beginPath();
       context.moveTo(
@@ -523,18 +524,36 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const average2 = (cr, r) => (cr + r) / 2;
-    const shortRadiusesOf = (rs) => [
-      rs[0],
-      rs[0] + (rs[1] - rs[0]) / 4,
-    ];
-    const sus4Radiuses = [borderRadius[2], borderRadius[3] - 0.005];
-    const sus4CenterRadius = sus4Radiuses.reduce(average2);
+    const drawBassArc = (radius, direction) => {
+      const da = direction.arc;
+      context.beginPath();
+      context.arc(
+        center.x,
+        center.y,
+        radius * width,
+        da.bassAngle,
+        da.bassEndAngle
+      );
+      context.stroke();
+    };
+    // For best performance, Pre-calculate frequently accessed radiuses
+    const average2 = (a, b) => (a + b) / 2;
+    const radiusOf = (rs, n) => rs[0] + (rs[1] - rs[0]) / n;
+    const shortRadiusesOf = (rs) => [rs[0], radiusOf(rs, 4)];
+    const bassRadiusOf = (rs) => inner + (outer - inner) / 5;
+    //minor
+    const minorRadiuses = borderRadius.slice(0, 2);
+    const minorShortRadiuses = shortRadiusesOf(minorRadiuses);
+    const minorCenterRadius = minorRadiuses.reduce(average2);
+    const minorBassRadius = radiusOf(minorRadiuses, 5);
+    // major
     const majorRadiuses = borderRadius.slice(1, 3);
     const majorShortRadiuses = shortRadiusesOf(majorRadiuses);
-    const minorRadiuses = borderRadius.slice(0, 2);
-    const minorCenterRadius = minorRadiuses.reduce(average2);
-    const minorShortRadiuses = shortRadiusesOf(minorRadiuses);
+    const majorBassRadius = radiusOf(majorRadiuses, 5);
+    // sus4
+    const sus4Radiuses = [borderRadius[2], borderRadius[3] - 0.005];
+    const sus4CenterRadius = sus4Radiuses.reduce(average2);
+    // drawers
     const drawSus4 = (hour, fifthHour, rootColor, sus4Color, fifthColor) => {
       const dir = majorDirections[hour];
       const fifthDir = majorDirections[fifthHour];
@@ -675,25 +694,11 @@ const PianoKeyboard = class {
         drawTritone(hour3);
       }
     };
-    const drawBassArc = (radiusIndex, direction) => {
-      const inner = borderRadius[radiusIndex];
-      const outer = borderRadius[radiusIndex + 1];
-      const radius = inner + (outer - inner) / 5;
-      context.beginPath();
-      context.arc(
-        center.x,
-        center.y,
-        radius * width,
-        direction.arc.bassAngle,
-        direction.arc.bassEndAngle
-      );
-      context.stroke();
-    };
     const drawBass = (hour) => {
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
       context.lineWidth = 5;
-      context.strokeStyle = getColorOf(hour, 8); drawBassArc(1, majorDirections[hour]);
-      context.strokeStyle = getColorOf(hour, 11); drawBassArc(0, majorDirections[hour3ccw]);
+      context.strokeStyle = getColorOf(hour, 8); drawBassArc(majorBassRadius, majorDirections[hour]);
+      context.strokeStyle = getColorOf(hour, 11); drawBassArc(minorBassRadius, majorDirections[hour3ccw]);
     };
     const redrawAll = () => {
       context.clearRect(0, 0, width, height);
