@@ -230,6 +230,12 @@
 	#time_position {
 		width: 320px;
 	}
+	#lyrics {
+		font-size: 120%;
+		width: 410px;
+		margin-top: 8px;
+		text-align: center;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -261,6 +267,7 @@
     <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
     <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
   </div>
+  <div id="lyrics"></div>
   <div id="button_container">
     <div class="shift_button_line">
       <div id="button_major7th" class="shift_button">M7</div>
@@ -291,6 +298,7 @@
           <img width="16" src="image/note4.svg" alt="BPM"/>=
           <span id="bpm"></span>
         </span>
+        <span id="song_marker"></span>
       </div>
       <div id="song_title"></div>
       <div id="song_text"></div>

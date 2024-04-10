@@ -892,6 +892,8 @@ const PianoKeyboard = class {
         keySignatures: [],
         tempos: [],
         timeSignatures: [],
+        lyrics: [],
+        markers: [],
       };
       const headerLength = parseBigEndian(sequenceArray.subarray(4, 8));
       sequence.midiFormat = parseBigEndian(sequenceArray.subarray(8, 10));
@@ -927,13 +929,12 @@ const PianoKeyboard = class {
               if( name?.length ) {
                 events.title = name;
               }
-            } else if( "keySignature" in event ) {
-              sequence.keySignatures.push(event);
-            } else if( "tempo" in event ) {
-              sequence.tempos.push(event);
-            } else if( "timeSignature" in event ) {
-              sequence.timeSignatures.push(event);
             }
+            else if( event.metaType === 5 ) sequence.lyrics.push(event);
+            else if( event.metaType === 6 ) sequence.markers.push(event);
+            else if( "keySignature" in event ) sequence.keySignatures.push(event);
+            else if( "tempo" in event ) sequence.tempos.push(event);
+            else if( "timeSignature" in event ) sequence.timeSignatures.push(event);
             byteArray = nextByteArray;
             tick = event.tick;
             runningStatus = event.data?.[0];
@@ -950,9 +951,13 @@ const PianoKeyboard = class {
         tracksArray
       );
       const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
-      sequence.keySignatures.sort(ascendingByTick);
-      sequence.tempos.sort(ascendingByTick);
-      sequence.timeSignatures.sort(ascendingByTick);
+      [
+        "keySignatures",
+        "tempos",
+        "timeSignatures",
+        "lyrics",
+        "markers",
+      ].forEach((key) => sequence[key].sort(ascendingByTick))
       const title = sequence.tracks.find((track) => track.title?.length)?.title
       if( title ) sequence.title = title;
       return sequence;
@@ -982,8 +987,12 @@ const PianoKeyboard = class {
           lastTimeSignatureEvent = event;
         }
         if( "text" in event ) {
-          const { text } = event;
-          if( midiSequence.title != text ) {
+          const { text, metaType } = event;
+          if( metaType == 5 ) {
+            lyricsElement.textContent = text;
+          } else if( metaType == 6 ) {
+            markerElement.textContent = text?.length ? `Marker: ${text}` : "";
+          } else if( midiSequence.title != text ) {
             textElement.textContent = text;
           }
         }
@@ -1009,6 +1018,8 @@ const PianoKeyboard = class {
     const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
+    const markerElement = document.getElementById("song_marker");
+    const lyricsElement = document.getElementById("lyrics");
     const textElement = document.getElementById("song_text");
     const darkModeSelect = document.getElementById("dark_mode_select");
     midiSequencerElement.removeChild(midiSequenceElement);
@@ -1016,6 +1027,8 @@ const PianoKeyboard = class {
     const setMidiSequence = (seq) => {
       midiSequence = seq;
       textElement.textContent = "";
+      lyricsElement.textContent = "";
+      markerElement.textContent = "";
       titleElement.textContent = midiSequence.title ?? "";
       changeTempo();
       [
@@ -1082,6 +1095,8 @@ const PianoKeyboard = class {
       doLastEvent(midiSequence.timeSignatures);
       doLastEvent(midiSequence.keySignatures);
       doLastEvent(midiSequence.tempos);
+      lyricsElement.textContent = ""; doLastEvent(midiSequence.lyrics);
+      markerElement.textContent = ""; doLastEvent(midiSequence.markers);
       midiSequence.tracks.forEach((track, index) => {
         if( tick === 0 ) {
           // Top
