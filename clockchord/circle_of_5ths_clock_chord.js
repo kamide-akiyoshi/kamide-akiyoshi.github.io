@@ -554,16 +554,12 @@ const PianoKeyboard = class {
     const sus4Radiuses = [borderRadius[2], borderRadius[3] - 0.005];
     const sus4CenterRadius = sus4Radiuses.reduce(average2);
     // drawers
-    const drawSus4 = (hour, fifthHour, rootColor, sus4Color, fifthColor) => {
-      const dir = majorDirections[hour];
-      const fifthDir = majorDirections[fifthHour];
+    const drawSus4 = (dir, fifthDir, rootColor, sus4Color, fifthColor) => {
       context.strokeStyle = rootColor;  drawRadial(dir, ...sus4Radiuses);
       context.strokeStyle = fifthColor; drawRadial(fifthDir, ...sus4Radiuses);
       context.strokeStyle = sus4Color;  sus4Radiuses.forEach((r) => drawArc(r, dir, fifthDir));
     };
-    const drawAug = (startHour, endHour) => {
-      const startDir = majorDirections[startHour];
-      const endDir = majorDirections[endHour];
+    const drawAug = (startDir, endDir) => {
       drawRadial(startDir.center, ...sus4Radiuses);
       drawArc(sus4CenterRadius, startDir, endDir);
     };
@@ -582,64 +578,58 @@ const PianoKeyboard = class {
       const hour1ccw = hour ? hour - 1 : 11;
       const hour2ccw = hour + (hour < 2 ? 10 : -2);
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
+      const hour4ccw = hour + (hour < 4 ? 8 : -4);
+      const hour6 = hour + (hour < 6 ? 6 : -6);
+      const hour4 = hour + (hour < 8 ? 4 : -8);
       const hour3 = hour + (hour < 9 ? 3 : -9);
       const hour1 = hour < 11 ? hour + 1 : 0;
       context.lineWidth = 3;
       // Major root/5th radial
-      context.strokeStyle = getColorOf(hour, 8); drawRadial(majorDirections[hour], ...majorRadiuses);
+      context.strokeStyle = getColorOf(hour,  8); drawRadial(majorDirections[hour], ...majorRadiuses);
       context.strokeStyle = getColorOf(hour1, 8); drawRadial(majorDirections[hour1], ...majorShortRadiuses);
       // Minor root/5th radial
-      context.strokeStyle = getColorOf(hour, 11); drawRadial(majorDirections[hour3ccw], ...minorRadiuses);
+      context.strokeStyle = getColorOf(hour,  11); drawRadial(majorDirections[hour3ccw], ...minorRadiuses);
       context.strokeStyle = getColorOf(hour1, 11); drawRadial(majorDirections[hour2ccw], ...minorShortRadiuses);
-      const hour4 = hour + (hour < 8 ? 4 : -8);
-      if( toneIndicating[hour4] ) { // root:hour + major3rd:hour4
+      // Major 3rd CW
+      if( toneIndicating[hour4] ) {
         const directions = [
           majorDirections[hour],
           majorDirections[hour1],
         ];
-        if( toneIndicating[hour3] ) { // root:hour3 + minor3rd:hour + 5th:hour4
-          context.strokeStyle = getColorOf(hour, 8);
+        context.strokeStyle = getColorOf(hour4, 11);
+        drawArc(borderRadius[1], ...directions);
+        if( toneIndicating[hour3] ) { // root:hour3 + minor3rd:hour + 5th:hour4 = minor chord
+          context.strokeStyle = getColorOf(hour, 8); // minor3rd
           drawArc(borderRadius[0], ...directions);
-          drawArc(borderRadius[1], ...directions);
-        } else {
-          context.strokeStyle = getColorOf(hour4, 11);
-          drawArc(borderRadius[1], ...directions);
-          if( toneIndicating[hour1] ) { // + 5th:hour1
-            drawArc(borderRadius[2], ...directions);
-          }
+        } else if( toneIndicating[hour1] ) { // root:hour + major3rd:hour4 + 5th:hour1 = major chord
+          drawArc(borderRadius[2], ...directions);
+        }
+        if( toneIndicating[hour4ccw] ) { // Augumented chords
+          const hour5 = hour + (hour < 7 ? 5 : -7);
+          // Augumented 5th (#5th, 8 hours CW / 4 hours CCW) color
+          context.strokeStyle = getColorOf(hour4ccw, 12); drawAug(...directions);
+          context.strokeStyle = getColorOf(hour,     12); drawAug(majorDirections[hour4], majorDirections[hour5]);
+          context.strokeStyle = getColorOf(hour4,    12); drawAug(majorDirections[hour4ccw], majorDirections[hour3ccw]);
         }
       }
-      const hour4ccw = hour + (hour < 4 ? 8 : -4);
-      if( toneIndicating[hour4ccw] ) { // root:hour4ccw + major3rd:hour
+      // Major 3rd CCW
+      if( toneIndicating[hour4ccw] ) {
         const directions = [
           majorDirections[hour4ccw],
           majorDirections[hour3ccw],
         ];
-        if( toneIndicating[hour1ccw] ) { // root:hour1ccw + minor3rd:hour4ccw + 5th:hour
-          context.strokeStyle = getColorOf(hour4ccw, 8);
+        context.strokeStyle = getColorOf(hour, 11);
+        drawArc(borderRadius[1], ...directions);
+        if( toneIndicating[hour1ccw] ) { // root:hour1ccw + minor3rd:hour4ccw + 5th:hour = minor chord
+          context.strokeStyle = getColorOf(hour4ccw, 8); // minor3rd
           drawArc(borderRadius[0], ...directions);
-          drawArc(borderRadius[1], ...directions);
-        } else {
-          context.strokeStyle = getColorOf(hour, 11);
-          drawArc(borderRadius[1], ...directions);
-          if( toneIndicating[hour3ccw] ) { // + 5th:hour3ccw
-            drawArc(borderRadius[2], ...directions);
-          }
-        }
-        if( toneIndicating[hour4] ) { // Augumented
-          // root:hour4ccw + major3rd:hour + aug5th:hour4
-          context.strokeStyle = getColorOf(hour4, 12);
-          drawAug(hour4ccw, hour3ccw);
-          // root:hour + major3rd:hour4 + aug5th:hour4ccw
-          context.strokeStyle = getColorOf(hour4ccw, 12);
-          drawAug(hour, hour1);
-          // root:hour4 + major3rd:hour4ccw + aug5th:hour
-          context.strokeStyle = getColorOf(hour, 12);
-          drawAug(hour4, hour + (hour < 7 ? 5 : -7));
+        } else if( toneIndicating[hour3ccw] ) { // root:hour4ccw + major3rd:hour + 5th:hour3ccw = major chord
+          drawArc(borderRadius[2], ...directions);
         }
       }
-      if( toneIndicating[hour1] ) { // root:hour + 5th:hour1
-        if( toneIndicating[hour3ccw] ) { // + minor3rd:hour3ccw
+      // Parfect 5th CW (= Parfect 4th CCW)
+      if( toneIndicating[hour1] ) {
+        if( toneIndicating[hour3ccw] ) { // root:hour + minor3rd:hour3ccw + 5th:hour1 = minor chord
           context.strokeStyle = getColorOf(hour3ccw, 8);
           drawArc(
             borderRadius[0],
@@ -647,28 +637,29 @@ const PianoKeyboard = class {
             majorDirections[hour2ccw]
           );
         }
-        if( toneIndicating[hour1ccw] ) { // + sus4:hour1ccw
+        if( toneIndicating[hour1ccw] ) { // root:hour + sus4:hour1ccw + 5th:hour1 = sus4 chord
           drawSus4(
-            hour,
-            hour1,
+            majorDirections[hour],
+            majorDirections[hour1],
             getColorOf(hour, 8),
             getColorOf(hour1ccw, 7),
             getColorOf(hour1, 8)
           );
         }
         const hour2 = hour + (hour < 10 ? 2 : -10);
-        if( toneIndicating[hour2] ) { // root:hour1 + sus4:hour + 5th:hour2
+        if( toneIndicating[hour2] ) { // root:hour1 + sus4:hour + 5th:hour2 = sus4 chord
           drawSus4(
-            hour1,
-            hour2,
+            majorDirections[hour1],
+            majorDirections[hour2],
             getColorOf(hour1, 8),
             getColorOf(hour, 7),
             getColorOf(hour2, 8)
           );
         }
       }
-      if( toneIndicating[hour1ccw] ) { // root:hour1ccw + 5th:hour
-        if( toneIndicating[hour3] ) { // + major3rd:hour3
+      // Parfect 5th CCW (= Parfect 4th CW)
+      if( toneIndicating[hour1ccw] ) {
+        if( toneIndicating[hour3] ) { // root:hour1ccw + major3rd:hour3 + 5th:hour = major chord
           context.strokeStyle = getColorOf(hour3, 11);
           drawArc(
             borderRadius[2],
@@ -676,22 +667,20 @@ const PianoKeyboard = class {
             majorDirections[hour]
           );
         }
-        if( toneIndicating[hour2ccw] ) { // root:hour1ccw + sus4:hour2ccw + 5th:hour
+        if( toneIndicating[hour2ccw] ) { // root:hour1ccw + sus4:hour2ccw + 5th:hour = sus4 chord
           drawSus4(
-            hour1ccw,
-            hour,
+            majorDirections[hour1ccw],
+            majorDirections[hour],
             getColorOf(hour1ccw, 8),
             getColorOf(hour2ccw, 7),
             getColorOf(hour, 8)
           );
         }
       }
-      const hour6 = hour + (hour < 6 ? 6 : -6);
       if( toneIndicating[hour6] ) { // Tritone
-        context.strokeStyle = getColorOf(hour6, 7);
-        drawTritone(hour3ccw);
-        context.strokeStyle = getColorOf(hour, 7);
-        drawTritone(hour3);
+        // Diminished 5th (b5th, 6 hour CW/CCW) color
+        context.strokeStyle = getColorOf(hour6, 7); drawTritone(hour3ccw);
+        context.strokeStyle = getColorOf(hour,  7); drawTritone(hour3);
       }
     };
     const drawBass = (hour) => {
