@@ -729,6 +729,8 @@ const PianoKeyboard = class {
     } = this;
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
+    const hasValidChunk = (byteArray, validChunk) =>
+      decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length)) == validChunk;
     const parseText = (byteArray) => {
       let text;
       let encoding;
@@ -759,13 +761,12 @@ const PianoKeyboard = class {
       return { value, length: currentOffset - offset };
     };
     const parseMidiEvent = (byteArray, tick, runningStatus) => {
+      const event = { tick };
       const {
         value: deltaTime,
         length: top,
       } = parseVariableLengthValue(byteArray);
-      const event = {
-        tick: tick + deltaTime,
-      };
+      event.tick += deltaTime;
       const topByte = byteArray[top];
       const statusOmitted = !(topByte & 0x80);
       const status = statusOmitted ? runningStatus : topByte;
@@ -774,7 +775,7 @@ const PianoKeyboard = class {
       switch(status & 0xF0) {
         case 0xF0:
           switch(status) {
-            case 0xFF: { // Meta event
+            case 0xFF: { // Meta Event
               const metaType = event.metaType = byteArray[eventStart];
               if( metaType == 0x2F ) {
                 event.eot = true; // End Of Track
@@ -823,6 +824,8 @@ const PianoKeyboard = class {
               }
               return event;
             }
+            // System Common Message
+            case 0xF7: // System Exclusive (splited)
             case 0xF0: { // System Exclusive
               const {
                 value: length,
@@ -837,14 +840,20 @@ const PianoKeyboard = class {
               return event;
             }
             case 0xF2: // Song Position
-              eventEnd++;
-              // fallthrough
+              eventEnd += 2;
+              break;
             case 0xF1: // Quarter Frame
             case 0xF3: // Song Select
               eventEnd++;
               break;
-            case 0xF6: // Tune Request
-            default: // Undefined
+            // case 0xF4: // Undefined
+            // case 0xF5: // Undefined
+            // case 0xF6: // Tune Request
+            //
+            // System Realtime Message
+            // 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
+            //
+            default:
               break;
           }
           break;
@@ -865,14 +874,19 @@ const PianoKeyboard = class {
       }
       return event;
     };
-    const parseMidiSequence = (sequenceArray) => {
-      const headerChunk = parseText(sequenceArray.subarray(0, 4));
-      if( headerChunk != "MThd" ) {
+    const parseMidiSequence = (sequenceByteArray) => {
+      if( !hasValidChunk(sequenceByteArray, "MThd") ) {
         alert(`Invalid MIDI file format`);
         return undefined;
       }
+      if( sequenceByteArray[12] & 0x80 ) {
+        alert(`Warning: SMTPE resolution not supported`);
+      }
+      const startTracks = 8 + parseBigEndian(sequenceByteArray.subarray(4, 8));
       const sequence = {
+        midiFormat: parseBigEndian(sequenceByteArray.subarray(8, 10)),
         tickLength: 0,
+        ticksPerQuarter: parseBigEndian(sequenceByteArray.subarray(12, 14)),
         tracks: [],
         keySignatures: [],
         tempos: [],
@@ -880,26 +894,18 @@ const PianoKeyboard = class {
         lyrics: [],
         markers: [],
       };
-      const headerLength = parseBigEndian(sequenceArray.subarray(4, 8));
-      sequence.midiFormat = parseBigEndian(sequenceArray.subarray(8, 10));
-      const numberOfTracks = parseBigEndian(sequenceArray.subarray(10, 12));
-      if( sequenceArray[12] & 0x80 ) {
-        alert(`Warning: SMTPE resolution not supported`);
-      }
-      sequence.ticksPerQuarter = parseBigEndian(sequenceArray.subarray(12, 14));
-      const tracksArray = sequenceArray.subarray(8 + headerLength, sequenceArray.length);
-      Array.from({ length: numberOfTracks }).reduce(
-        (tracksArray, _, index) => {
-          if( !tracksArray ) { // No more track
+      Array.from({
+        length: parseBigEndian(sequenceByteArray.subarray(10, 12))
+      }).reduce(
+        (tracksByteArray, _, index) => {
+          if( !tracksByteArray ) { // No more track
             return undefined;
           }
-          const trackChunk = parseText(tracksArray.subarray(0, 4))
-          if( trackChunk != "MTrk" ) {
+          if( !hasValidChunk(tracksByteArray, "MTrk") ) {
             console.error(`Track ${index}/${numberOfTracks}: Invalid MIDI track chunk '${trackChunk}' - Not 'MTrk'`);
           }
-          const trackLength = parseBigEndian(tracksArray.subarray(4, 8));
-          const nextTrackTop = 8 + trackLength;
-          let byteArray = tracksArray.subarray(8, nextTrackTop);
+          const startNextTrack = 8 + parseBigEndian(tracksByteArray.subarray(4, 8));
+          let byteArray = tracksByteArray.subarray(8, startNextTrack);
           const events = [];
           let tick = 0;
           let runningStatus;
@@ -928,12 +934,12 @@ const PianoKeyboard = class {
           if( tick > sequence.tickLength ) {
             sequence.tickLength = tick;
           }
-          if( nextTrackTop >= tracksArray.length ) { // No more track
+          if( startNextTrack >= tracksByteArray.length ) { // No more track
             return undefined;
           }
-          return tracksArray.subarray(nextTrackTop, tracksArray.length);
+          return tracksByteArray.subarray(startNextTrack, tracksByteArray.length);
         },
-        tracksArray
+        sequenceByteArray.subarray(startTracks, sequenceByteArray.length)
       );
       const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
       [
