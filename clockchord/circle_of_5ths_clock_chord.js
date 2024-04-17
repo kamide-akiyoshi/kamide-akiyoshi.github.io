@@ -729,8 +729,14 @@ const PianoKeyboard = class {
     } = this;
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
-    const hasValidChunk = (byteArray, validChunk) =>
-      decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length)) == validChunk;
+    const hasValidChunk = (byteArray, validChunk) => {
+      const chunk = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length));
+      if( chunk != validChunk ) {
+        console.error(`Invalid chunk '${chunk}' - Valid chunk is: '${validChunk}'`);
+        return false;
+      }
+      return true;
+    };
     const parseText = (byteArray) => {
       let text;
       let encoding;
@@ -876,7 +882,9 @@ const PianoKeyboard = class {
     };
     const parseMidiSequence = (sequenceByteArray) => {
       if( !hasValidChunk(sequenceByteArray, "MThd") ) {
-        alert(`Invalid MIDI file format`);
+        const errorMessage = `Invalid MIDI file format`;
+        console.error(errorMessage);
+        alert(errorMessage);
         return undefined;
       }
       if( sequenceByteArray[12] & 0x80 ) {
@@ -897,12 +905,12 @@ const PianoKeyboard = class {
       Array.from({
         length: parseBigEndian(sequenceByteArray.subarray(10, 12))
       }).reduce(
-        (tracksByteArray, _, index) => {
+        (tracksByteArray, _) => {
           if( !tracksByteArray ) { // No more track
             return undefined;
           }
           if( !hasValidChunk(tracksByteArray, "MTrk") ) {
-            console.error(`Track ${index}/${numberOfTracks}: Invalid MIDI track chunk '${trackChunk}' - Not 'MTrk'`);
+            console.warn(`Invalid MIDI track chunk`);
           }
           const startNextTrack = 8 + parseBigEndian(tracksByteArray.subarray(4, 8));
           let byteArray = tracksByteArray.subarray(8, startNextTrack);
