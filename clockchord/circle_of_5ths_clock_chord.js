@@ -775,13 +775,12 @@ const PianoKeyboard = class {
       event.tick += deltaTime;
       const topByte = byteArray[top];
       const statusOmitted = !(topByte & 0x80);
-      const status = statusOmitted ? runningStatus : topByte;
-      const eventStart = statusOmitted ? top : top + 1;
+      const [status, eventStart] = statusOmitted ? [runningStatus, top] : [topByte, top + 1];
       let eventEnd = eventStart;
       switch(status & 0xF0) {
         case 0xF0:
           switch(status) {
-            case 0xFF: { // Meta Event
+            case 0xFF: { // Meta Event (Only for sequencer, Not for MIDI port)
               const metaType = event.metaType = byteArray[eventStart];
               if( metaType == 0x2F ) {
                 event.eot = true; // End Of Track
@@ -845,36 +844,45 @@ const PianoKeyboard = class {
               }
               return event;
             }
+            // 2 bytes data
             case 0xF2: // Song Position
               eventEnd += 2;
               break;
+            // 1 byte data
             case 0xF1: // Quarter Frame
             case 0xF3: // Song Select
               eventEnd++;
               break;
-            // case 0xF4: // Undefined
-            // case 0xF5: // Undefined
+            // 0 byte data
             // case 0xF6: // Tune Request
             //
+            // case 0xF4: // Undefined
+            // case 0xF5: // Undefined
+            //
             // System Realtime Message
-            // 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
+            // case 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
             //
             default:
               break;
           }
           break;
-        case 0xC0: // Program Change
-        case 0xD0: // Channel Pressure
+        // 1 byte data
+        case 0xC0: // Program Change (Program#)
+        case 0xD0: // Channel Pressure (PressureValue)
           eventEnd++;
           break;
-        default: // Other Channel Message
+        // 2 bytes data
+        // case 0xE0: // Pitch Bend Change (7-bit Little Endian: -8192 ... +8191)
+        // case 0x80: // Note Off (NoteNumber, Velocity)
+        // case 0x90: // Note On (NoteNumber, Velocity)
+        // case 0xA0: // Polyphonic Key Pressure (NoteNumber, PressureValue)
+        // case 0xB0: // Control Change (Control#, Value)
+        default:
           eventEnd += 2;
           break;
       }
-      event.data = statusOmitted
-        ? [status, ...byteArray.subarray(eventStart, eventEnd)]
-        : byteArray.subarray(eventStart - 1, eventEnd)
-      ;
+      const data = byteArray.subarray(top, eventEnd)
+      event.data = statusOmitted ? [runningStatus, ...data] : data;
       if( eventEnd < byteArray.length ) {
         event.nextByteArray = byteArray.subarray(eventEnd, byteArray.length);
       }
@@ -905,7 +913,7 @@ const PianoKeyboard = class {
       Array.from({
         length: parseBigEndian(sequenceByteArray.subarray(10, 12))
       }).reduce(
-        (tracksByteArray, _) => {
+        (tracksByteArray) => {
           if( !tracksByteArray ) { // No more track
             return undefined;
           }
