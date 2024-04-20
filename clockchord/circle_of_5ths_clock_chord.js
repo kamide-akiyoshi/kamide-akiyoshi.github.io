@@ -782,8 +782,7 @@ const PianoKeyboard = class {
           switch(status) {
             case 0xFF: { // Meta Event (Only for sequencer, Not for MIDI port)
               const metaType = event.metaType = byteArray[eventStart];
-              if( metaType == 0x2F ) {
-                event.eot = true; // End Of Track
+              if( metaType == 0x2F ) { // End Of Track
                 return event;
               }
               const lengthStart = eventStart + 1;
@@ -794,7 +793,6 @@ const PianoKeyboard = class {
               const dataStart = lengthStart + lengthLength;
               const dataEnd = dataStart + length;
               if( dataEnd >= byteArray.length ) { // No more data
-                event.eot = true; // End Of Track
                 return event;
               }
               const data = byteArray.subarray(dataStart, dataEnd);
@@ -804,7 +802,6 @@ const PianoKeyboard = class {
                   event.tempo = {
                     microsecondsPerQuarter: parseBigEndian(data),
                   };
-                  event.tempo.bpm = 60000000 / event.tempo.microsecondsPerQuarter;
                   break;
                 case 0x58:
                   event.timeSignature = {
@@ -816,15 +813,14 @@ const PianoKeyboard = class {
                   break;
                 case 0x59:
                   event.keySignature = parseSignedByte(data[0]);
-                  event.minor = data[1] == 1;
+                  if( data[1] == 1 ) event.minor = true;
                   break;
-                case 0x20: event.channelPrefix = data[0]; break;
-                case 0x21: event.portPrefix = data[0]; break;
                 default:
-                  event.metaData = data;
                   if( metaType > 0 && metaType < 0x10 ) {
                     event.text = parseText(data);
+                    break;
                   }
+                  event.metaData = data;
                   break;
               }
               return event;
@@ -1183,13 +1179,9 @@ const PianoKeyboard = class {
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
     const changeTempo = (tempo) => {
-      const { microsecondsPerQuarter, bpm } = tempo ?? {
-        microsecondsPerQuarter: 500000,
-        bpm: 120,
-      };
-      bpmElement.textContent = Math.floor(bpm);
-      const ticksPerMicroseconds = midiSequence.ticksPerQuarter / microsecondsPerQuarter;
-      ticksPerInterval = ticksPerMicroseconds * 1000 * INTERVAL_MILLI_SEC;
+      const uspq = tempo?.microsecondsPerQuarter ?? 500000;
+      bpmElement.textContent = Math.floor(60000000 / uspq);
+      ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
     };
     let intervalId;
     const pause = () => {
