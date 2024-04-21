@@ -754,91 +754,63 @@ const PianoKeyboard = class {
     };
     const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
     const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
-    const parseVariableLengthValue = (byteArray, offset=0) => {
-      const maxOffset = offset + 4;
-      let currentOffset = offset;
+    const parseVariableLengthValue = (byteArray) => {
       let value = 0;
-      while(currentOffset < maxOffset) {
-        const b = byteArray[currentOffset++];
+      let valueLength = 0;
+      while(valueLength < 4) {
+        const b = byteArray[valueLength++];
         value <<= 7;
         value += (b & 0x7F);
         if( (b & 0x80) == 0 ) break;
       }
-      return { value, length: currentOffset - offset };
+      return {
+        value,
+        byteArray: byteArray.subarray(valueLength),
+      };
     };
-    const parseMidiEvent = (byteArray, tick, runningStatus) => {
-      const event = { tick };
+    const parseVariableLengthData = (byteArray) => {
       const {
-        value: deltaTime,
-        length: top,
+        value: length,
+        byteArray: valuesByteArray,
       } = parseVariableLengthValue(byteArray);
-      event.tick += deltaTime;
-      const topByte = byteArray[top];
+      const out = {
+        data: valuesByteArray.subarray(0, length),
+      };
+      if( length < valuesByteArray.length ) {
+        out.byteArray = valuesByteArray.subarray(length);
+      }
+      return out;
+    };
+    const parseMidiEvent = (byteArray, event, runningStatus) => {
+      const topByte = byteArray[0];
       const statusOmitted = !(topByte & 0x80);
-      const [status, eventStart] = statusOmitted ? [runningStatus, top] : [topByte, top + 1];
+      const [status, eventStart] = statusOmitted ? [runningStatus, 0] : [topByte, 1];
       let eventEnd = eventStart;
       switch(status & 0xF0) {
         case 0xF0:
           switch(status) {
-            case 0xFF: { // Meta Event (Only for sequencer, Not for MIDI port)
+            // Meta Event (Only for sequencer, Not for MIDI port)
+            case 0xFF: {
               const metaType = event.metaType = byteArray[eventStart];
               if( metaType == 0x2F ) { // End Of Track
-                return event;
+                return undefined;
               }
-              const lengthStart = eventStart + 1;
               const {
-                value: length,
-                length: lengthLength,
-              } = parseVariableLengthValue(byteArray, lengthStart);
-              const dataStart = lengthStart + lengthLength;
-              const dataEnd = dataStart + length;
-              if( dataEnd >= byteArray.length ) { // No more data
-                return event;
-              }
-              const data = byteArray.subarray(dataStart, dataEnd);
-              event.nextByteArray = byteArray.subarray(dataEnd, byteArray.length);
-              switch(metaType) {
-                case 0x51:
-                  event.tempo = {
-                    microsecondsPerQuarter: parseBigEndian(data),
-                  };
-                  break;
-                case 0x58:
-                  event.timeSignature = {
-                    numerator: data[0],
-                    denominator: 1 << data[1],
-                    clocksPerTick: data[2],
-                    noteted32ndsPerQuarter: data[3],
-                  };
-                  break;
-                case 0x59:
-                  event.keySignature = parseSignedByte(data[0]);
-                  if( data[1] == 1 ) event.minor = true;
-                  break;
-                default:
-                  if( metaType > 0 && metaType < 0x10 ) {
-                    event.text = parseText(data);
-                    break;
-                  }
-                  event.metaData = data;
-                  break;
-              }
-              return event;
+                data,
+                byteArray: nextByteArray,
+              } = parseVariableLengthData(byteArray.subarray(eventStart + 1));
+              event.metaData = data;
+              return nextByteArray;
             }
             // System Common Message
             case 0xF7: // System Exclusive (splited)
             case 0xF0: { // System Exclusive
               const {
-                value: length,
-                length: lengthLength,
-              } = parseVariableLengthValue(byteArray, eventStart);
-              const sysExDataStart = eventStart + lengthLength;
-              eventEnd = sysExDataStart + length;
-              event.systemExclusive = byteArray.subarray(sysExDataStart, eventEnd);
-              if( eventEnd < byteArray.length ) {
-                event.nextByteArray = byteArray.subarray(eventEnd, byteArray.length);
-              }
-              return event;
+                data,
+                byteArray: nextByteArray,
+              } = parseVariableLengthData(byteArray.subarray(eventStart));
+              event.systemExclusive = data;
+              return nextByteArray;
             }
             // 2 bytes data
             case 0xF2: // Song Position
@@ -877,12 +849,9 @@ const PianoKeyboard = class {
           eventEnd += 2;
           break;
       }
-      const data = byteArray.subarray(top, eventEnd)
+      const data = byteArray.subarray(0, eventEnd)
       event.data = statusOmitted ? [runningStatus, ...data] : data;
-      if( eventEnd < byteArray.length ) {
-        event.nextByteArray = byteArray.subarray(eventEnd, byteArray.length);
-      }
-      return event;
+      return eventEnd < byteArray.length ? byteArray.subarray(eventEnd) : undefined;
     };
     const parseMidiSequence = (sequenceByteArray) => {
       if( !hasValidChunk(sequenceByteArray, "MThd") ) {
@@ -921,30 +890,55 @@ const PianoKeyboard = class {
           const events = [];
           let tick = 0;
           let runningStatus;
-          while(byteArray) {
+          while(true) {
             const {
-              nextByteArray,
-              ...event
-            } = parseMidiEvent(byteArray, tick, runningStatus);
+              value: deltaTime,
+              byteArray: eventByteArray,
+            } = parseVariableLengthValue(byteArray);
+            const event = {
+              tick: tick += deltaTime,
+            };
             events.push(event);
+            const nextByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
             if( "metaType" in event ) {
-              switch(event.metaType) { // Sequence/Track name
+              const { metaType, metaData: data } = event;
+              if( metaType > 0 && metaType < 0x10 ) {
+                event.text = parseText(data);
+                delete event.data;
+              }
+              switch(metaType) {
                 case 3:
-                  {
-                    const name = event.text;
-                    if( name?.length ) events.title = name;
-                  }
+                  // Sequence/Track name
+                  if( event.text ) events.title = event.text;
                   break;
                 case 5: sequence.lyrics.push(event); break;
                 case 6: sequence.markers.push(event); break;
-                case 0x51: sequence.tempos.push(event); break;
-                case 0x58: sequence.timeSignatures.push(event); break;
-                case 0x59: sequence.keySignatures.push(event); break;
+                case 0x51:
+                  sequence.tempos.push(event);
+                  event.tempo = { microsecondsPerQuarter: parseBigEndian(data) };
+                  delete event.data;
+                  break;
+                case 0x58:
+                  sequence.timeSignatures.push(event);
+                  event.timeSignature = {
+                    numerator: data[0],
+                    denominator: 1 << data[1],
+                    clocksPerTick: data[2],
+                    noteted32ndsPerQuarter: data[3],
+                  };
+                  delete event.data;
+                  break;
+                case 0x59:
+                  sequence.keySignatures.push(event);
+                  event.keySignature = parseSignedByte(data[0]);
+                  if( data[1] == 1 ) event.minor = true;
+                  delete event.data;
+                  break;
               }
             }
-            byteArray = nextByteArray;
-            tick = event.tick;
+            if( !nextByteArray ) break;
             runningStatus = event.data?.[0];
+            byteArray = nextByteArray;
           }
           sequence.tracks.push(events);
           if( tick > sequence.tickLength ) {
@@ -953,9 +947,9 @@ const PianoKeyboard = class {
           if( startNextTrack >= tracksByteArray.length ) { // No more track
             return undefined;
           }
-          return tracksByteArray.subarray(startNextTrack, tracksByteArray.length);
+          return tracksByteArray.subarray(startNextTrack);
         },
-        sequenceByteArray.subarray(startTracks, sequenceByteArray.length)
+        sequenceByteArray.subarray(startTracks)
       );
       const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
       [
@@ -965,7 +959,7 @@ const PianoKeyboard = class {
         "lyrics",
         "markers",
       ].forEach((key) => sequence[key].sort(ascendingByTick))
-      const title = sequence.tracks.find((track) => track.title?.length)?.title
+      const title = sequence.tracks.find((track) => track.title)?.title
       if( title ) sequence.title = title;
       return sequence;
     };
@@ -980,7 +974,7 @@ const PianoKeyboard = class {
           lyricsElement.textContent = event.text;
           break;
         case 6:
-          markerElement.textContent = event.text?.length ? `Marker: ${event.text}` : "";
+          markerElement.textContent = event.text ? `Marker: ${event.text}` : "";
           break;
         case 0x51:
           changeTempo(event.tempo.microsecondsPerQuarter);
