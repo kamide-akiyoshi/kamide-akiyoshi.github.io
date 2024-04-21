@@ -927,17 +927,21 @@ const PianoKeyboard = class {
               ...event
             } = parseMidiEvent(byteArray, tick, runningStatus);
             events.push(event);
-            if( event.metaType === 3 ) { // Sequence/Track name
-              const name = event.text;
-              if( name?.length ) {
-                events.title = name;
+            if( "metaType" in event ) {
+              switch(event.metaType) { // Sequence/Track name
+                case 3:
+                  {
+                    const name = event.text;
+                    if( name?.length ) events.title = name;
+                  }
+                  break;
+                case 5: sequence.lyrics.push(event); break;
+                case 6: sequence.markers.push(event); break;
+                case 0x51: sequence.tempos.push(event); break;
+                case 0x58: sequence.timeSignatures.push(event); break;
+                case 0x59: sequence.keySignatures.push(event); break;
               }
             }
-            else if( event.metaType === 5 ) sequence.lyrics.push(event);
-            else if( event.metaType === 6 ) sequence.markers.push(event);
-            else if( "keySignature" in event ) sequence.keySignatures.push(event);
-            else if( "tempo" in event ) sequence.tempos.push(event);
-            else if( "timeSignature" in event ) sequence.timeSignatures.push(event);
             byteArray = nextByteArray;
             tick = event.tick;
             runningStatus = event.data?.[0];
@@ -970,41 +974,43 @@ const PianoKeyboard = class {
       selectedMidiOutputPorts.forEach((port) => port.send(data));
     };
     let lastTimeSignatureEvent;
-    const doEvent = (event) => {
-      if( "metaType" in event ) { // Meta event
-        if ( "tempo" in event ) {
-          changeTempo(event.tempo);
+    const doMetaEvent = (event) => {
+      switch(event.metaType) {
+        case 5:
+          lyricsElement.textContent = event.text;
+          break;
+        case 6:
+          markerElement.textContent = event.text?.length ? `Marker: ${event.text}` : "";
+          break;
+        case 0x51:
+          changeTempo(event.tempo.microsecondsPerQuarter);
           tempoElement.classList.remove("grayout");
-        }
-        if( "keySignature" in event ) {
-          const hour = event.keySignature;
-          toneIndicatorCanvas.keySignature.value = hour;
-          keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
-          keyElement.classList.remove("grayout");
-          chord.clear();
-        }
-        if( "timeSignature" in event ) {
-          const { numerator, denominator } = event.timeSignature;
-          timeSignatureElement.textContent = `${numerator}/${denominator}`;
-          timeSignatureElement.classList.remove("grayout");
-          lastTimeSignatureEvent = event;
-        }
-        if( "text" in event ) {
-          const { text, metaType } = event;
-          if( metaType == 5 ) {
-            lyricsElement.textContent = text;
-          } else if( metaType == 6 ) {
-            markerElement.textContent = text?.length ? `Marker: ${text}` : "";
-          } else if( midiSequence.title != text ) {
-            textElement.textContent = text;
+          break;
+        case 0x58:
+          {
+            const { numerator, denominator } = event.timeSignature;
+            timeSignatureElement.textContent = `${numerator}/${denominator}`;
+            timeSignatureElement.classList.remove("grayout");
+            lastTimeSignatureEvent = event;
           }
-        }
-        // Meta event must not be sent to MIDI port
-      } else {
-        const { data } = event;
-        if( data ) sendMidiMessage(data);
+          break;
+        case 0x59:
+          {
+            const hour = event.keySignature;
+            toneIndicatorCanvas.keySignature.value = hour;
+            keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
+            keyElement.classList.remove("grayout");
+            chord.clear();
+          }
+          break;
+        default:
+          if( "text" in event ) {
+            const { text } = event;
+            if( midiSequence.title != text ) textElement.textContent = text;
+          }
+          break;
       }
-    }
+    };
     const midiFileInput = document.getElementById("midi_file");
     const midiFileDropZone = document.getElementById("midi_sequencer");
     const midiFileSelectButton = document.getElementById("midi_file_select_button");
@@ -1033,14 +1039,21 @@ const PianoKeyboard = class {
       lyricsElement.textContent = "";
       markerElement.textContent = "";
       titleElement.textContent = midiSequence.title ?? "";
-      changeTempo();
+      lastTimeSignatureEvent = {
+        tick: 0,
+        timeSignature: {
+          numerator: 4,
+          denominator: 4,
+        }
+      };
+      changeTempo(500000);
       [
         tempoElement,
         keyElement,
         timeSignatureElement,
       ].forEach((element) => element.classList.add("grayout"));
-      keyElement.textContent = `Key:${Music.keyTextOf()}`;
       timeSignatureElement.textContent = "4/4";
+      keyElement.textContent = `Key:${Music.keyTextOf()}`;
       tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
       if( darkModeSelect.value == "light" ) {
         darkModeSelect.value = "dark";
@@ -1091,15 +1104,15 @@ const PianoKeyboard = class {
       if( !midiSequence ) {
         return;
       }
-      const doLastEvent = (array) => {
+      const doLastMetaEvent = (array) => {
         const lastEvent = array.findLast((event) => event.tick <= tick);
-        lastEvent && doEvent(lastEvent);
+        lastEvent && doMetaEvent(lastEvent);
       }
-      doLastEvent(midiSequence.timeSignatures);
-      doLastEvent(midiSequence.keySignatures);
-      doLastEvent(midiSequence.tempos);
-      lyricsElement.textContent = ""; doLastEvent(midiSequence.lyrics);
-      markerElement.textContent = ""; doLastEvent(midiSequence.markers);
+      doLastMetaEvent(midiSequence.timeSignatures);
+      doLastMetaEvent(midiSequence.keySignatures);
+      doLastMetaEvent(midiSequence.tempos);
+      lyricsElement.textContent = ""; doLastMetaEvent(midiSequence.lyrics);
+      markerElement.textContent = ""; doLastMetaEvent(midiSequence.markers);
       midiSequence.tracks.forEach((track, index) => {
         if( tick === 0 ) {
           // Top
@@ -1128,22 +1141,14 @@ const PianoKeyboard = class {
     };
     let beat = 0;
     const setBeatAt = (tick) => {
-      if( !lastTimeSignatureEvent ) return;
       const {
         tick: lastTick,
         timeSignature: {
           numerator,
           denominator,
         },
-      } = lastTimeSignatureEvent ?? {
-        tick: 0,
-        timeSignature: {
-          numerator: 4,
-          denominator: 4,
-        }
-      };
-      const { ticksPerQuarter } = midiSequence;
-      const ticksPerBeat = ticksPerQuarter * (4 / denominator);
+      } = lastTimeSignatureEvent;
+      const ticksPerBeat = midiSequence.ticksPerQuarter * (4 / denominator);
       const newBeat = Math.floor((tick - lastTick) / ticksPerBeat) % numerator;
       if( beat != newBeat ) {
         beat = newBeat;
@@ -1178,8 +1183,7 @@ const PianoKeyboard = class {
     };
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
-    const changeTempo = (tempo) => {
-      const uspq = tempo?.microsecondsPerQuarter ?? 500000;
+    const changeTempo = (uspq) => {
       bpmElement.textContent = Math.floor(60000000 / uspq);
       ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
     };
@@ -1201,23 +1205,24 @@ const PianoKeyboard = class {
       const { tickLength, tracks } = midiSequence;
       intervalId = setInterval(
         () => {
-          if( tickPositionSlider ) {
-            tickPositionSlider.value = tickPosition;
-          }
+          if( tickPositionSlider ) tickPositionSlider.value = tickPosition;
           tracks.forEach((events) => {
             while(true) {
               const event = events[events.currentEventIndex];
               if( !event || event.tick > tickPosition ) {
                 break;
               }
-              doEvent(event);
+              if( "metaType" in event ) {
+                doMetaEvent(event); // NOTE: Meta event must not be sent to MIDI port
+              } else {
+                const { data } = event;
+                if( data ) sendMidiMessage(data);
+              }
               events.currentEventIndex++;
             }
           });
           setBeatAt(tickPosition);
-          if( (tickPosition += ticksPerInterval) > tickLength ) {
-            pause();
-          }
+          if( (tickPosition += ticksPerInterval) > tickLength ) pause();
         },
         INTERVAL_MILLI_SEC
       );
