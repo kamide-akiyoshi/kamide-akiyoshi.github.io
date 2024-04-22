@@ -729,7 +729,7 @@ const PianoKeyboard = class {
     } = this;
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
-    const hasValidChunk = (byteArray, validChunk) => {
+    const hasValidChunkId = (byteArray, validChunk) => {
       const chunk = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length));
       if( chunk != validChunk ) {
         console.error(`Invalid chunk '${chunk}' - Valid chunk is: '${validChunk}'`);
@@ -854,20 +854,16 @@ const PianoKeyboard = class {
       return eventEnd < byteArray.length ? byteArray.subarray(eventEnd) : undefined;
     };
     const parseMidiSequence = (sequenceByteArray) => {
-      if( !hasValidChunk(sequenceByteArray, "MThd") ) {
+      if( !hasValidChunkId(sequenceByteArray, "MThd") ) {
         const errorMessage = `Invalid MIDI file format`;
         console.error(errorMessage);
         alert(errorMessage);
         return undefined;
       }
-      if( sequenceByteArray[12] & 0x80 ) {
-        alert(`Warning: SMTPE resolution not supported`);
-      }
-      const startTracks = 8 + parseBigEndian(sequenceByteArray.subarray(4, 8));
+      const headerChunkSize = parseBigEndian(sequenceByteArray.subarray(4, 8));
       const sequence = {
-        midiFormat: parseBigEndian(sequenceByteArray.subarray(8, 10)),
+        formatType: parseBigEndian(sequenceByteArray.subarray(8, 10)),
         tickLength: 0,
-        ticksPerQuarter: parseBigEndian(sequenceByteArray.subarray(12, 14)),
         tracks: [],
         keySignatures: [],
         tempos: [],
@@ -875,18 +871,27 @@ const PianoKeyboard = class {
         lyrics: [],
         markers: [],
       };
-      Array.from({
-        length: parseBigEndian(sequenceByteArray.subarray(10, 12))
-      }).reduce(
+      const numberOfTrack = parseBigEndian(sequenceByteArray.subarray(10, 12));
+      const timeDivisionArray = sequenceByteArray.subarray(12, 14);
+      if( timeDivisionArray[0] & 0x80 ) {
+        alert(`Warning: SMPTE resolution not supported`);
+        sequence.framesPerSec = timeDivisionArray[0] & 0x7F;
+        sequence.ticksPerFrame = timeDivisionArray[1];
+      } else {
+        sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
+      }
+      const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
+      Array.from({ length: numberOfTrack }).reduce(
         (tracksByteArray) => {
           if( !tracksByteArray ) { // No more track
             return undefined;
           }
-          if( !hasValidChunk(tracksByteArray, "MTrk") ) {
+          if( !hasValidChunkId(tracksByteArray, "MTrk") ) {
             console.warn(`Invalid MIDI track chunk`);
           }
-          const startNextTrack = 8 + parseBigEndian(tracksByteArray.subarray(4, 8));
-          let byteArray = tracksByteArray.subarray(8, startNextTrack);
+          const trackChunkSize = parseBigEndian(tracksByteArray.subarray(4, 8));
+          const nextTrackTop = 8 + trackChunkSize;
+          let trackByteArray = tracksByteArray.subarray(8, nextTrackTop);
           const events = [];
           let tick = 0;
           let runningStatus;
@@ -894,17 +899,15 @@ const PianoKeyboard = class {
             const {
               value: deltaTime,
               byteArray: eventByteArray,
-            } = parseVariableLengthValue(byteArray);
-            const event = {
-              tick: tick += deltaTime,
-            };
-            events.push(event);
-            const nextByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
+            } = parseVariableLengthValue(trackByteArray);
+            tick += deltaTime;
+            const event = { tick }
+            trackByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
             if( "metaType" in event ) {
-              const { metaType, metaData: data } = event;
+              const { metaType, metaData } = event;
               if( metaType > 0 && metaType < 0x10 ) {
-                event.text = parseText(data);
-                delete event.data;
+                event.text = parseText(metaData);
+                delete event.metaData;
               }
               switch(metaType) {
                 case 3:
@@ -915,41 +918,36 @@ const PianoKeyboard = class {
                 case 6: sequence.markers.push(event); break;
                 case 0x51:
                   sequence.tempos.push(event);
-                  event.tempo = { microsecondsPerQuarter: parseBigEndian(data) };
-                  delete event.data;
+                  event.tempo = { microsecondsPerQuarter: parseBigEndian(metaData) };
+                  delete event.metaData;
                   break;
                 case 0x58:
                   sequence.timeSignatures.push(event);
                   event.timeSignature = {
-                    numerator: data[0],
-                    denominator: 1 << data[1],
-                    clocksPerTick: data[2],
-                    noteted32ndsPerQuarter: data[3],
+                    numerator: metaData[0],
+                    denominator: 1 << metaData[1],
+                    clocksPerTick: metaData[2],
+                    noteted32ndsPerQuarter: metaData[3],
                   };
-                  delete event.data;
+                  delete event.metaData;
                   break;
                 case 0x59:
                   sequence.keySignatures.push(event);
-                  event.keySignature = parseSignedByte(data[0]);
-                  if( data[1] == 1 ) event.minor = true;
-                  delete event.data;
+                  event.keySignature = parseSignedByte(metaData[0]);
+                  if( metaData[1] == 1 ) event.minor = true;
+                  delete event.metaData;
                   break;
               }
             }
-            if( !nextByteArray ) break;
+            events.push(event);
+            if( !trackByteArray ) break;
             runningStatus = event.data?.[0];
-            byteArray = nextByteArray;
           }
           sequence.tracks.push(events);
-          if( tick > sequence.tickLength ) {
-            sequence.tickLength = tick;
-          }
-          if( startNextTrack >= tracksByteArray.length ) { // No more track
-            return undefined;
-          }
-          return tracksByteArray.subarray(startNextTrack);
+          if( tick > sequence.tickLength ) sequence.tickLength = tick;
+          return nextTrackTop < tracksByteArray.length ? tracksByteArray.subarray(nextTrackTop) : undefined;
         },
-        sequenceByteArray.subarray(startTracks)
+        tracksByteArray
       );
       const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
       [
