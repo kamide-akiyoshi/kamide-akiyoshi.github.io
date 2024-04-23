@@ -849,8 +849,8 @@ const PianoKeyboard = class {
           eventEnd += 2;
           break;
       }
-      const data = byteArray.subarray(0, eventEnd)
-      event.data = statusOmitted ? [runningStatus, ...data] : data;
+      event.data = byteArray.subarray(0, eventEnd);
+      if( statusOmitted ) event.data = [runningStatus, ...event.data];
       return eventEnd < byteArray.length ? byteArray.subarray(eventEnd) : undefined;
     };
     const parseMidiSequence = (sequenceByteArray) => {
