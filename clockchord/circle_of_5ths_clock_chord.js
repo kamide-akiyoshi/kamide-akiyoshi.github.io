@@ -763,95 +763,82 @@ const PianoKeyboard = class {
         value += (b & 0x7F);
         if( (b & 0x80) == 0 ) break;
       }
-      return {
-        value,
-        byteArray: byteArray.subarray(valueLength),
-      };
+      return [value, byteArray.subarray(valueLength)];
     };
     const parseVariableLengthData = (byteArray) => {
-      const {
-        value: length,
-        byteArray: valuesByteArray,
-      } = parseVariableLengthValue(byteArray);
-      const out = {
-        data: valuesByteArray.subarray(0, length),
-      };
-      if( length < valuesByteArray.length ) {
-        out.byteArray = valuesByteArray.subarray(length);
-      }
+      const [length, valuesByteArray] = parseVariableLengthValue(byteArray);
+      const out = [valuesByteArray.subarray(0, length)];
+      length < valuesByteArray.length && out.push(valuesByteArray.subarray(length));
       return out;
+    };
+    const parseMetaEvent = (byteArray, event) => {
+      if( (event.metaType = byteArray[0]) == 0x2F ) {
+        return undefined; // End Of Track
+      }
+      const [data, nextByteArray] = parseVariableLengthData(byteArray.subarray(1));
+      event.metaData = data;
+      return nextByteArray;
+    };
+    const parseSystemExclusive = (byteArray, event) => {
+      const [data, nextByteArray] = parseVariableLengthData(byteArray);
+      event.systemExclusive = data;
+      return nextByteArray;
+    };
+    const parseFixedLengthEvent = (byteArray, event, length) => {
+      event.data = byteArray.subarray(0, length);
+      return length < byteArray.length ? byteArray.subarray(length) : undefined;
     };
     const parseMidiEvent = (byteArray, event, runningStatus) => {
       const topByte = byteArray[0];
       const statusOmitted = !(topByte & 0x80);
-      const [status, eventStart] = statusOmitted ? [runningStatus, 0] : [topByte, 1];
-      let eventEnd = eventStart;
+      const status = statusOmitted ? runningStatus : topByte;
+      let dataLength;
       switch(status & 0xF0) {
         case 0xF0:
           switch(status) {
-            // Meta Event (Only for sequencer, Not for MIDI port)
-            case 0xFF: {
-              const metaType = event.metaType = byteArray[eventStart];
-              if( metaType == 0x2F ) { // End Of Track
-                return undefined;
-              }
-              const {
-                data,
-                byteArray: nextByteArray,
-              } = parseVariableLengthData(byteArray.subarray(eventStart + 1));
-              event.metaData = data;
-              return nextByteArray;
-            }
+            //
+            // Meta Event: Only for sequencer, Not for MIDI port
+            case 0xFF: return parseMetaEvent(byteArray.subarray(1), event);
+            //
             // System Common Message
             case 0xF7: // System Exclusive (splited)
-            case 0xF0: { // System Exclusive
-              const {
-                data,
-                byteArray: nextByteArray,
-              } = parseVariableLengthData(byteArray.subarray(eventStart));
-              event.systemExclusive = data;
-              return nextByteArray;
-            }
-            // 2 bytes data
-            case 0xF2: // Song Position
-              eventEnd += 2;
-              break;
-            // 1 byte data
-            case 0xF1: // Quarter Frame
-            case 0xF3: // Song Select
-              eventEnd++;
-              break;
-            // 0 byte data
-            // case 0xF6: // Tune Request
-            //
-            // case 0xF4: // Undefined
-            // case 0xF5: // Undefined
-            //
-            // System Realtime Message
-            // case 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
-            //
-            default:
-              break;
+            case 0xF0: // System Exclusive
+              return parseSystemExclusive(byteArray.subarray(1), event);
+            case 0xF2: // Song Position (0xF2, LSB, MSB)
+              return parseFixedLengthEvent(byteArray, event, 3);
+            case 0xF1: // Quarter Frame (0xF1, timecode)
+            case 0xF3: // Song Select (0xF3, song#)
+              return parseFixedLengthEvent(byteArray, event, 2);
+            default: // Status byte only
+              // 0xF6: Tune Request
+              // 0xF4: Undefined
+              // 0xF5: Undefined
+              //
+              // System Realtime Message
+              // 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
+              //
+              return parseFixedLengthEvent(byteArray, event, 1);
           }
           break;
-        // 1 byte data
-        case 0xC0: // Program Change (Program#)
-        case 0xD0: // Channel Pressure (PressureValue)
-          eventEnd++;
+        case 0xC0: // Program Change (0xC0, Program#)
+        case 0xD0: // Channel Pressure (0xD0, PressureValue)
+          dataLength = 2;
           break;
-        // 2 bytes data
         // case 0xE0: // Pitch Bend Change (7-bit Little Endian: -8192 ... +8191)
         // case 0x80: // Note Off (NoteNumber, Velocity)
         // case 0x90: // Note On (NoteNumber, Velocity)
         // case 0xA0: // Polyphonic Key Pressure (NoteNumber, PressureValue)
         // case 0xB0: // Control Change (Control#, Value)
         default:
-          eventEnd += 2;
+          dataLength = 3;
           break;
       }
-      event.data = byteArray.subarray(0, eventEnd);
-      if( statusOmitted ) event.data = [runningStatus, ...event.data];
-      return eventEnd < byteArray.length ? byteArray.subarray(eventEnd) : undefined;
+      if( statusOmitted ) {
+        const length = dataLength - 1;
+        event.data = [status, ...byteArray.subarray(0, length)];
+        return length < byteArray.length ? byteArray.subarray(length) : undefined;
+      }
+      return parseFixedLengthEvent(byteArray, event, dataLength);
     };
     const parseMidiSequence = (sequenceByteArray) => {
       if( !hasValidChunkId(sequenceByteArray, "MThd") ) {
@@ -896,12 +883,9 @@ const PianoKeyboard = class {
           let tick = 0;
           let runningStatus;
           while(true) {
-            const {
-              value: deltaTime,
-              byteArray: eventByteArray,
-            } = parseVariableLengthValue(trackByteArray);
+            const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
             tick += deltaTime;
-            const event = { tick }
+            const event = { tick };
             trackByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
             if( "metaType" in event ) {
               const { metaType, metaData } = event;
