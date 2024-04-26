@@ -805,10 +805,12 @@ const PianoKeyboard = class {
             case 0xF0: // System Exclusive
               return parseSystemExclusive(byteArray.subarray(1), event);
             case 0xF2: // Song Position (0xF2, LSB, MSB)
-              return parseFixedLengthEvent(byteArray, event, 3);
+              dataLength = 3;
+              break;
             case 0xF1: // Quarter Frame (0xF1, timecode)
             case 0xF3: // Song Select (0xF3, song#)
-              return parseFixedLengthEvent(byteArray, event, 2);
+              dataLength = 2;
+              break;
             default: // Status byte only
               // 0xF6: Tune Request
               // 0xF4: Undefined
@@ -817,9 +819,10 @@ const PianoKeyboard = class {
               // System Realtime Message
               // 0xF8...0xFE (0xFF: Reset - Not for MIDI file)
               //
-              return parseFixedLengthEvent(byteArray, event, 1);
+              dataLength = 1;
+              break;
           }
-          break;
+          return parseFixedLengthEvent(byteArray, event, dataLength);
         case 0xC0: // Program Change (0xC0, Program#)
         case 0xD0: // Channel Pressure (0xD0, PressureValue)
           dataLength = 2;
@@ -834,9 +837,9 @@ const PianoKeyboard = class {
           break;
       }
       if( statusOmitted ) {
-        const length = dataLength - 1;
-        event.data = [status, ...byteArray.subarray(0, length)];
-        return length < byteArray.length ? byteArray.subarray(length) : undefined;
+        const nextByteArray = parseFixedLengthEvent(byteArray, event, dataLength - 1);
+        event.data = [runningStatus, ...event.data];
+        return nextByteArray;
       }
       return parseFixedLengthEvent(byteArray, event, dataLength);
     };
