@@ -776,7 +776,30 @@ const PianoKeyboard = class {
         return undefined; // End Of Track
       }
       const [data, nextByteArray] = parseVariableLengthData(byteArray.subarray(1));
-      event.metaData = data;
+      switch(event.metaType) {
+        case 0x51:
+          event.tempo = { microsecondsPerQuarter: parseBigEndian(data) };
+          break;
+        case 0x58:
+          event.timeSignature = {
+            numerator: data[0],
+            denominator: 1 << data[1],
+            clocksPerTick: data[2],
+            noteted32ndsPerQuarter: data[3],
+          };
+          break;
+        case 0x59:
+          event.keySignature = parseSignedByte(data[0]);
+          if( data[1] == 1 ) event.minor = true;
+          break;
+        default:
+          if( event.metaType > 0 && event.metaType < 0x10 ) {
+            event.text = parseText(data);
+            break;
+          }
+          event.metaData = data;
+          break;
+      }
       return nextByteArray;
     };
     const parseSystemExclusive = (byteArray, event) => {
@@ -889,44 +912,21 @@ const PianoKeyboard = class {
             const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
             tick += deltaTime;
             const event = { tick };
+            events.push(event);
             trackByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
             if( "metaType" in event ) {
-              const { metaType, metaData } = event;
-              if( metaType > 0 && metaType < 0x10 ) {
-                event.text = parseText(metaData);
-                delete event.metaData;
-              }
-              switch(metaType) {
+              switch(event.metaType) {
                 case 3:
                   // Sequence/Track name
                   if( event.text ) events.title = event.text;
                   break;
                 case 5: sequence.lyrics.push(event); break;
                 case 6: sequence.markers.push(event); break;
-                case 0x51:
-                  sequence.tempos.push(event);
-                  event.tempo = { microsecondsPerQuarter: parseBigEndian(metaData) };
-                  delete event.metaData;
-                  break;
-                case 0x58:
-                  sequence.timeSignatures.push(event);
-                  event.timeSignature = {
-                    numerator: metaData[0],
-                    denominator: 1 << metaData[1],
-                    clocksPerTick: metaData[2],
-                    noteted32ndsPerQuarter: metaData[3],
-                  };
-                  delete event.metaData;
-                  break;
-                case 0x59:
-                  sequence.keySignatures.push(event);
-                  event.keySignature = parseSignedByte(metaData[0]);
-                  if( metaData[1] == 1 ) event.minor = true;
-                  delete event.metaData;
-                  break;
+                case 0x51: sequence.tempos.push(event); break;
+                case 0x58: sequence.timeSignatures.push(event); break;
+                case 0x59: sequence.keySignatures.push(event); break;
               }
             }
-            events.push(event);
             if( !trackByteArray ) break;
             runningStatus = event.data?.[0];
           }
