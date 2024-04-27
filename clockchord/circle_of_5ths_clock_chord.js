@@ -991,7 +991,7 @@ const PianoKeyboard = class {
       }
     };
     const midiFileInput = document.getElementById("midi_file");
-    const midiFileDropZone = document.getElementById("midi_sequencer");
+    const midiFileDropZone = document.getElementsByTagName("body")[0];
     const midiFileSelectButton = document.getElementById("midi_file_select_button");
     const midiFileNameElement = document.getElementById("midi_file_name");
     const midiSequenceElement = document.getElementById("midi_sequence");
