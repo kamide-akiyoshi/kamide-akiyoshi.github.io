@@ -158,8 +158,13 @@ const PianoKeyboard = class {
           this.chordClassLists.push(cl);
         }
       }
+      this.toneIndicatorCanvas.noteOn(noteNumber);
     }
     return key;
+  };
+  manualNoteOn = (noteNumber, orderInChord) => {
+    this.selectedMidiOutputPorts.noteOn(noteNumber);
+    this.noteOn(noteNumber, orderInChord);
   };
   noteOff = noteNumber => {
     const key = this.pianoKeys[noteNumber];
@@ -167,8 +172,13 @@ const PianoKeyboard = class {
       key.voice?.release(() => { delete key.voice; });
       key.element?.classList.remove('pressed');
       this.pressedNoteNumbers.delete(noteNumber);
+      this.toneIndicatorCanvas.noteOff(noteNumber);
     }
     return key;
+  };
+  manualNoteOff = noteNumber => {
+    this.selectedMidiOutputPorts.noteOff(noteNumber);
+    this.noteOff(noteNumber);
   };
   leftEnd = {
     set note(n) {
@@ -232,11 +242,15 @@ const PianoKeyboard = class {
       this.clearButtonCanvas();
     },
     stop: () => {
-      this.pressedNoteNumbers.forEach(noteNumber => {
-        this.selectedMidiOutputPorts.noteOff(noteNumber);
-        this.noteOff(noteNumber);
-        this.toneIndicatorCanvas.noteOff(noteNumber);
-      });
+      const {
+        chord,
+        manualNoteOff,
+        pressedNoteNumbers,
+      } = this;
+      pressedNoteNumbers.forEach(manualNoteOff);
+      // TODO: "touchmove"
+      chord.buttonCanvas.removeEventListener("mousemove", chord.handleMouseMove);
+      delete this.chordNotes;
     },
     selectButtonCanvas: () => {
       const { chord } = this;
@@ -258,8 +272,6 @@ const PianoKeyboard = class {
       const {
         leftEnd,
         chord,
-        selectedMidiOutputPorts,
-        toneIndicatorCanvas,
       } = this;
       const {
         hour,
@@ -284,9 +296,7 @@ const PianoKeyboard = class {
       let i = 0;
       const noteOn = n => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
-        selectedMidiOutputPorts.noteOn(noteNumber);
-        this.noteOn(noteNumber, ++i);
-        toneIndicatorCanvas.noteOn(noteNumber);
+        this.manualNoteOn(noteNumber, ++i);
       };
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
@@ -317,6 +327,26 @@ const PianoKeyboard = class {
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
       selectButtonCanvas();
+      // TODO: "touchmove"
+      chord.buttonCanvas.addEventListener("mousemove", chord.handleMouseMove);
+    },
+    handleMouseMove: (event) => {
+      const {
+        chord,
+        manualNoteOff,
+        manualNoteOn,
+        pressedNoteNumbers,
+      } = this;
+      const chordNotes = (this.chordNotes ??= [...pressedNoteNumbers]);
+      const { movementX, movementY } = event;
+      if( movementX ** 2 + movementY ** 2 < 16 ) {
+        return;
+      }
+      const i = chordNotes.currentIndex ?? 0;
+      const noteNumber = this.chordNotes[i];
+      manualNoteOff(noteNumber);
+      manualNoteOn(noteNumber, i + 1);
+      chordNotes.currentIndex = i >= chordNotes.length - 1 ? 0 : i + 1;
     },
   };
   setupMidi = () => {
@@ -343,10 +373,9 @@ const PianoKeyboard = class {
       switch(status) {
         case 0x90:
           if( data[1] ) { // velocity > 0
+            chord.clear();
             const noteNumber = data[0];
             noteOn(noteNumber);
-            toneIndicatorCanvas.noteOn(noteNumber);
-            chord.clear();
             break;
           }
           // fallthrough: velocity === 0 means Note Off
@@ -354,7 +383,6 @@ const PianoKeyboard = class {
           {
             const noteNumber = data[0];
             noteOff(noteNumber);
-            toneIndicatorCanvas.noteOff(noteNumber);
           }
           break;
         case 0xB0: // Control Change
@@ -1243,16 +1271,8 @@ const PianoKeyboard = class {
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
       const { pianoKeys } = this;
-      const noteOn = noteNumber => {
-        this.selectedMidiOutputPorts.noteOn(noteNumber);
-        this.noteOn(noteNumber);
-        toneIndicatorCanvas.noteOn(noteNumber);
-      };
-      const noteOff = noteNumber => {
-        this.selectedMidiOutputPorts.noteOff(noteNumber);
-        this.noteOff(noteNumber);
-        toneIndicatorCanvas.noteOff(noteNumber);
-      };
+      const noteOn = this.manualNoteOn;
+      const noteOff = this.manualNoteOff;
       const [
         whiteKeyElement,
         blackKeyElement,
