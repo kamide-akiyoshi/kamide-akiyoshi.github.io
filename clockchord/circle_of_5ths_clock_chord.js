@@ -337,15 +337,13 @@ const PianoKeyboard = class {
         pressedNoteNumbers,
       } = this;
       const chordNotes = (this.chordNotes ??= [...pressedNoteNumbers]);
-      const { movementX, movementY } = event;
-      if( movementX ** 2 + movementY ** 2 < 12 ) {
+      const { clientX, clientY } = event;
+      const { lastX, lastY } = chordNotes;
+      if( (clientX - lastX) ** 2 + (clientY - lastY) ** 2 < 256 ) {
         return;
       }
-      const ts = event.timeStamp;
-      if( ts < chordNotes.lastTimeStamp + 30 ) {
-        return;
-      }
-      chordNotes.lastTimeStamp = ts;
+      chordNotes.lastX = clientX;
+      chordNotes.lastY = clientY;
       const i = chordNotes.currentIndex ?? 0;
       const noteNumber = this.chordNotes[i];
       manualNoteOff(noteNumber);
