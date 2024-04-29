@@ -329,6 +329,7 @@ const PianoKeyboard = class {
       selectButtonCanvas();
       chord.buttonCanvas.addEventListener(chord.moveEventName, chord.handleMouseMove);
     },
+    // Handler to watch chord strumming
     handleMouseMove: (event) => {
       const {
         chord,
@@ -337,7 +338,10 @@ const PianoKeyboard = class {
         pressedNoteNumbers,
       } = this;
       const chordNotes = (this.chordNotes ??= [...pressedNoteNumbers]);
-      const { pageX: x, pageY: y } = event;
+      const {
+        clientX: x,
+        clientY: y,
+      } = event.changedTouches?.[0] ?? event;
       const { lastX, lastY } = chordNotes;
       if( (x - lastX) ** 2 + (y - lastY) ** 2 < 256 ) {
         return;
@@ -1882,7 +1886,7 @@ const CircleOfFifthsClock = class {
           return;
         default:
       	  {
-            const touched = (typeof event.changedTouches !== 'undefined') ? event.changedTouches[0] : event;
+            const touched = event.changedTouches?.[0] ?? event;
             const canvas = touched.target;
             const rect = canvas.getBoundingClientRect();
             const x = ( touched.clientX - (rect.left + rect.right)/2 ) / canvas.width;
