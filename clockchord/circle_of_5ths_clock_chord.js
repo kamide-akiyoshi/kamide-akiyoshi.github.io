@@ -528,8 +528,8 @@ const PianoKeyboard = class {
         },
         arc: {
           angle       : diffToAngle(-3.5),
-          bassAngle   : diffToAngle(-3.2),
-          bassEndAngle: diffToAngle(-2.8),
+          bassAngle   : diffToAngle(-3.3),
+          bassEndAngle: diffToAngle(-2.7),
         },
       };
     });
@@ -715,7 +715,7 @@ const PianoKeyboard = class {
     };
     const drawBass = (hour) => {
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
-      context.lineWidth = 5;
+      context.lineWidth = 7;
       context.strokeStyle = getColorOf(hour, 8); drawBassArc(majorBassRadius, majorDirections[hour]);
       context.strokeStyle = getColorOf(hour, 11); drawBassArc(minorBassRadius, majorDirections[hour3ccw]);
     };
