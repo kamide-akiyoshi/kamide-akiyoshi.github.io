@@ -343,7 +343,7 @@ const PianoKeyboard = class {
         clientY: y,
       } = event.changedTouches?.[0] ?? event;
       const { lastX, lastY } = chordNotes;
-      if( (x - lastX) ** 2 + (y - lastY) ** 2 < 256 ) {
+      if( (x - lastX) ** 2 + (y - lastY) ** 2 < 324 ) {
         return;
       }
       chordNotes.lastX = x;
