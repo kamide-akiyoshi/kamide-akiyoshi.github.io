@@ -195,6 +195,7 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
+    moveEventName: typeof window.ontouchstart === 'undefined' ? "mousemove" : "touchmove",
     setup() {
       const createLabelEntry = id => {
         const label = document.getElementById(id);
@@ -248,8 +249,7 @@ const PianoKeyboard = class {
         pressedNoteNumbers,
       } = this;
       pressedNoteNumbers.forEach(manualNoteOff);
-      // TODO: "touchmove"
-      chord.buttonCanvas.removeEventListener("mousemove", chord.handleMouseMove);
+      chord.buttonCanvas.removeEventListener(chord.moveEventName, chord.handleMouseMove);
       delete this.chordNotes;
     },
     selectButtonCanvas: () => {
@@ -327,8 +327,7 @@ const PianoKeyboard = class {
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
       selectButtonCanvas();
-      // TODO: "touchmove"
-      chord.buttonCanvas.addEventListener("mousemove", chord.handleMouseMove);
+      chord.buttonCanvas.addEventListener(chord.moveEventName, chord.handleMouseMove);
     },
     handleMouseMove: (event) => {
       const {
