@@ -1885,15 +1885,16 @@ const CircleOfFifthsClock = class {
           event.preventDefault();
           return;
         default:
-      	  {
-            const touched = event.changedTouches?.[0] ?? event;
-            const canvas = touched.target;
-            const rect = canvas.getBoundingClientRect();
-            const x = ( touched.clientX - (rect.left + rect.right)/2 ) / canvas.width;
-            const y = ( touched.clientY - (rect.top + rect.bottom)/2 ) / canvas.height;
+          if( ! chord ) {
+            event.preventDefault();
+            return;
+          } else {
+            const { target: canvas, clientX, clientY } = event.changedTouches?.[0] ?? event;
+            const { left, right, top, bottom } = canvas.getBoundingClientRect();
+            const x = ( clientX - (left + right) / 2 ) / canvas.width;
+            const y = ( clientY - (top + bottom) / 2 ) / canvas.height;
             const r = Math.sqrt( x ** 2 + y ** 2 );
             if( ! dial.has(r) ) return;
-            if( ! chord ) { event.preventDefault(); return; }
             canvas.focus();
             chord.offset3rd = dial.toOffset3rd(r);
             chord.hour = Math.round( Math.atan2(x, -y) * 6 / Math.PI );
