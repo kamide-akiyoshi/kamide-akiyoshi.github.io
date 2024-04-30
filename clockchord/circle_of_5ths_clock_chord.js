@@ -339,20 +339,27 @@ const PianoKeyboard = class {
       } = this;
       const chordNotes = (this.chordNotes ??= [...pressedNoteNumbers]);
       const {
-        clientX: x,
-        clientY: y,
+        target: canvas,
+        clientX,
+        clientY,
       } = event.changedTouches?.[0] ?? event;
-      const { lastX, lastY } = chordNotes;
-      if( (x - lastX) ** 2 + (y - lastY) ** 2 < 324 ) {
-        return;
+      const { left, right, top, bottom } = canvas.getBoundingClientRect();
+      const x = ( clientX - (left + right) / 2 ) / canvas.width;
+      const y = ( clientY - (top + bottom) / 2 ) / canvas.height;
+      const hour = Math.atan2(x, -y) * 6 / Math.PI;
+      const diffHour = hour - chordNotes.lastHour;
+      if( Math.abs(diffHour) < 0.2 ) return;
+      chordNotes.lastHour = hour;
+      let currentIndex = chordNotes.currentIndex + (diffHour < 0 ? -1 : 1);
+      if ( isNaN(currentIndex) || currentIndex >= chordNotes.length ) {
+        currentIndex = 0;
+      } else if ( currentIndex < 0 ) {
+        currentIndex = chordNotes.length - 1;
       }
-      chordNotes.lastX = x;
-      chordNotes.lastY = y;
-      const i = chordNotes.currentIndex ?? 0;
-      const noteNumber = this.chordNotes[i];
+      const noteNumber = this.chordNotes[currentIndex];
       manualNoteOff(noteNumber);
-      manualNoteOn(noteNumber, i + 1);
-      chordNotes.currentIndex = i >= chordNotes.length - 1 ? 0 : i + 1;
+      manualNoteOn(noteNumber, currentIndex + 1);
+      chordNotes.currentIndex = currentIndex;
     },
   };
   setupMidi = () => {
