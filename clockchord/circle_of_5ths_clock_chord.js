@@ -347,14 +347,14 @@ const PianoKeyboard = class {
         clientY,
       } = event.changedTouches?.[0] ?? event;
       const { left, right, top, bottom } = canvas.getBoundingClientRect();
-      const x = ( clientX - (left + right) / 2 ) / canvas.width;
-      const y = ( clientY - (top + bottom) / 2 ) / canvas.height;
-      const hour = Math.atan2(x, -y) * 6 / Math.PI;
+      const x = ( clientX - (left + right) / 2 );
+      const y = ( clientY - (top + bottom) / 2 );
+      const hourAngle = Math.atan2(x, -y);
       const { notes } = chord;
-      const diffHour = hour - notes.lastHour;
-      if( Math.abs(diffHour) < 0.2 ) return;
-      notes.lastHour = hour;
-      let currentIndex = notes.currentIndex + (diffHour < 0 ? -1 : 1);
+      const diffHourAngle = hourAngle - chord.lastHourAngle;
+      if( Math.abs(diffHourAngle) < Math.PI / 15 ) return;
+      chord.lastHourAngle = hourAngle;
+      let currentIndex = notes.currentIndex + (diffHourAngle < 0 ? -1 : 1);
       if ( isNaN(currentIndex) || currentIndex >= notes.length ) {
         currentIndex = 0;
       } else if ( currentIndex < 0 ) {
@@ -1907,7 +1907,7 @@ const CircleOfFifthsClock = class {
             if( ! dial.has(r) ) return;
             canvas.focus();
             chord.offset3rd = dial.toOffset3rd(r);
-            chord.hour = Math.round( Math.atan2(x, -y) * 6 / Math.PI );
+            chord.hour = Math.round( (chord.lastHourAngle = Math.atan2(x, -y)) * 6 / Math.PI );
           }
           break;
       }
