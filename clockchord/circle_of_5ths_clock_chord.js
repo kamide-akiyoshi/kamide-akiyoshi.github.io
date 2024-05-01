@@ -147,11 +147,7 @@ const PianoKeyboard = class {
       if( element ) {
         const cl = element.classList;
         cl.add('pressed');
-        if( orderInChord ) {
-          cl.add('chord');
-          orderInChord == 1 && cl.add('root');
-          this.chord.classLists.push(cl);
-        }
+        orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
       }
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
@@ -215,6 +211,11 @@ const PianoKeyboard = class {
       chord.classLists.clear = () => {
         while( chord.classLists.length ) chord.classLists.pop().remove('chord', 'root');
       };
+      chord.classLists.add = (classList, root) => {
+        classList.add('chord');
+        root && classList.add('root');
+        chord.classLists.push(classList);
+      }
     },
     clearButtonCanvas: () => {
       const { buttonCanvas } = this.chord;
