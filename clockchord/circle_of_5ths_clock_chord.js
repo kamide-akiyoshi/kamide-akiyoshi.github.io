@@ -137,13 +137,8 @@ const PianoKeyboard = class {
     }
   );
   pressedNoteNumbers = new Set();
-  chordClassLists = [];
   noteOn = (noteNumber, orderInChord) => {
-    if( ! orderInChord || orderInChord == 1 ) {
-      while( this.chordClassLists.length ) {
-        this.chordClassLists.pop().remove('chord', 'root');
-      }
-    }
+    !orderInChord && this.chord.classLists.clear();
     const key = this.pianoKeys[noteNumber];
     if( key ) {
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
@@ -155,7 +150,7 @@ const PianoKeyboard = class {
         if( orderInChord ) {
           cl.add('chord');
           orderInChord == 1 && cl.add('root');
-          this.chordClassLists.push(cl);
+          this.chord.classLists.push(cl);
         }
       }
       this.toneIndicatorCanvas.noteOn(noteNumber);
@@ -195,6 +190,7 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
+    classLists: [],
     moveEventName: typeof window.ontouchstart === 'undefined' ? "mousemove" : "touchmove",
     setup() {
       const createLabelEntry = id => {
@@ -212,9 +208,13 @@ const PianoKeyboard = class {
           },
         };
       };
-      this.label = createLabelEntry('chord');
-      this.dialCenterLabel = createLabelEntry('center_chord');
-      this.keySignatureSetButton = document.getElementById('setkey');
+      const chord = this;
+      chord.label = createLabelEntry('chord');
+      chord.dialCenterLabel = createLabelEntry('center_chord');
+      chord.keySignatureSetButton = document.getElementById('setkey');
+      chord.classLists.clear = () => {
+        while( chord.classLists.length ) chord.classLists.pop().remove('chord', 'root');
+      };
     },
     clearButtonCanvas: () => {
       const { buttonCanvas } = this.chord;
@@ -225,22 +225,25 @@ const PianoKeyboard = class {
       }
     },
     clear() {
+      const chord = this;
       const {
         label,
         dialCenterLabel,
         keySignatureSetButton,
-      } = this;
+        clearButtonCanvas,
+      } = chord;
       label?.detach();
       dialCenterLabel?.detach();
-      delete this.hour;
-      delete this.rootPitchName;
-      delete this.rootPitchNumber;
-      delete this.offset3rd;
-      delete this.offset5th;
-      delete this.offset7th;
-      delete this.add9th;
+      delete chord.hour;
+      delete chord.rootPitchName;
+      delete chord.rootPitchNumber;
+      delete chord.offset3rd;
+      delete chord.offset5th;
+      delete chord.offset7th;
+      delete chord.add9th;
+      delete chord.notes;
       keySignatureSetButton.style.visibility = 'hidden';
-      this.clearButtonCanvas();
+      clearButtonCanvas();
     },
     stop: () => {
       const {
@@ -250,7 +253,6 @@ const PianoKeyboard = class {
       } = this;
       pressedNoteNumbers.forEach(manualNoteOff);
       chord.buttonCanvas.removeEventListener(chord.moveEventName, chord.handleMouseMove);
-      delete this.chordNotes;
     },
     selectButtonCanvas: () => {
       const { chord } = this;
@@ -287,6 +289,7 @@ const PianoKeyboard = class {
         stop,
         clearButtonCanvas,
         selectButtonCanvas,
+        classLists,
       } = chord;
       stop();
       clearButtonCanvas();
@@ -298,11 +301,13 @@ const PianoKeyboard = class {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
         this.manualNoteOn(noteNumber, ++i);
       };
+      classLists.clear();
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + offset3rd);
       noteOn(rootPitchNumber + 7 + offset5th);
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
+      chord.notes = [...this.pressedNoteNumbers];
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
       if( label || dialCenterLabel ) {
@@ -335,9 +340,7 @@ const PianoKeyboard = class {
         chord,
         manualNoteOff,
         manualNoteOn,
-        pressedNoteNumbers,
       } = this;
-      const chordNotes = (this.chordNotes ??= [...pressedNoteNumbers]);
       const {
         target: canvas,
         clientX,
@@ -347,19 +350,19 @@ const PianoKeyboard = class {
       const x = ( clientX - (left + right) / 2 ) / canvas.width;
       const y = ( clientY - (top + bottom) / 2 ) / canvas.height;
       const hour = Math.atan2(x, -y) * 6 / Math.PI;
-      const diffHour = hour - chordNotes.lastHour;
+      const { notes } = chord;
+      const diffHour = hour - notes.lastHour;
       if( Math.abs(diffHour) < 0.2 ) return;
-      chordNotes.lastHour = hour;
-      let currentIndex = chordNotes.currentIndex + (diffHour < 0 ? -1 : 1);
-      if ( isNaN(currentIndex) || currentIndex >= chordNotes.length ) {
+      notes.lastHour = hour;
+      let currentIndex = notes.currentIndex + (diffHour < 0 ? -1 : 1);
+      if ( isNaN(currentIndex) || currentIndex >= notes.length ) {
         currentIndex = 0;
       } else if ( currentIndex < 0 ) {
-        currentIndex = chordNotes.length - 1;
+        currentIndex = notes.length - 1;
       }
-      const noteNumber = this.chordNotes[currentIndex];
+      const noteNumber = notes[notes.currentIndex = currentIndex];
       manualNoteOff(noteNumber);
       manualNoteOn(noteNumber, currentIndex + 1);
-      chordNotes.currentIndex = currentIndex;
     },
   };
   setupMidi = () => {
