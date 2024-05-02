@@ -187,7 +187,6 @@ const PianoKeyboard = class {
   };
   chord = {
     classLists: [],
-    moveEventName: typeof window.ontouchstart === 'undefined' ? "mousemove" : "touchmove",
     setup() {
       const createLabelEntry = id => {
         const label = document.getElementById(id);
@@ -217,21 +216,13 @@ const PianoKeyboard = class {
         chord.classLists.push(classList);
       }
     },
-    clearButtonCanvas: () => {
-      const { buttonCanvas } = this.chord;
-      if( buttonCanvas ) {
-        const context = buttonCanvas.getContext("2d");
-        const { width, height } = buttonCanvas;
-        context.clearRect(0, 0, width, height);
-      }
-    },
-    clear() {
-      const chord = this;
+    clear: () => {
+      const { chord } = this;
       const {
         label,
         dialCenterLabel,
         keySignatureSetButton,
-        clearButtonCanvas,
+        buttonCanvas,
       } = chord;
       label?.detach();
       dialCenterLabel?.detach();
@@ -244,7 +235,7 @@ const PianoKeyboard = class {
       delete chord.add9th;
       delete chord.notes;
       keySignatureSetButton.style.visibility = 'hidden';
-      clearButtonCanvas();
+      buttonCanvas.clearChord();
     },
     stop: () => {
       const {
@@ -253,23 +244,7 @@ const PianoKeyboard = class {
         pressedNoteNumbers,
       } = this;
       pressedNoteNumbers.forEach(manualNoteOff);
-      chord.buttonCanvas.removeEventListener(chord.moveEventName, chord.handleMouseMove);
-    },
-    selectButtonCanvas: () => {
-      const { chord } = this;
-      const { dial, buttonCanvas, hour } = chord;
-      const centerXY = [
-        dial.center.x,
-        dial.center.y,
-      ];
-      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[chord.offset3rd + i] * buttonCanvas.width);
-      const [startAngle, endAngle] = [3.5, 2.5].map(dh => (hour - dh) / 6 * Math.PI);
-      const context = buttonCanvas.getContext("2d");
-      context.beginPath();
-      context.fillStyle = "#80808080";
-      context.arc(...centerXY, innerRadius, startAngle, endAngle);
-      context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
-      context.fill();
+      chord.buttonCanvas.disableStrum(chord);
     },
     start: () => {
       const {
@@ -288,12 +263,10 @@ const PianoKeyboard = class {
         offset7th,
         add9th,
         stop,
-        clearButtonCanvas,
-        selectButtonCanvas,
+        buttonCanvas,
         classLists,
       } = chord;
       stop();
-      clearButtonCanvas();
       if( !hour && hour !== 0 ) return;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
@@ -309,6 +282,8 @@ const PianoKeyboard = class {
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
       chord.notes = [...this.pressedNoteNumbers];
+      buttonCanvas.selectChord(chord);
+      buttonCanvas.enableStrum(chord);
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
       if( label || dialCenterLabel ) {
@@ -332,8 +307,6 @@ const PianoKeyboard = class {
       }
       keySignatureSetButton.style.visibility = Music.enharmonicallyEquals(hour, keySignature.value) ? 'hidden' : 'visible';
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
-      selectButtonCanvas();
-      chord.buttonCanvas.addEventListener(chord.moveEventName, chord.handleMouseMove);
     },
     // Handler to watch chord strumming
     handleMouseMove: (event) => {
@@ -1270,11 +1243,11 @@ const PianoKeyboard = class {
       setupMidiSequencer,
       setupToneIndicatorCanvas,
     } = this;
+    chord.setup();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidi();
     setupMidiSequencer();
     leftEnd.reset();
-    chord.setup();
     // Mouse/Touch event names
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
@@ -1826,7 +1799,6 @@ const CircleOfFifthsClock = class {
       );
     }
     keySignature.value = 0;
-    chord.clear();
     const keyToLeftRight = (key) => [`${key}Left`, `${key}Right`];
     const shiftLikeKeys = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(keyToLeftRight);
     const createCharKeys = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
@@ -1940,6 +1912,7 @@ const CircleOfFifthsClock = class {
       chord.start();
     };
     const isSmartphone = typeof window.ontouchstart !== 'undefined';
+    const moveEventName = isSmartphone ? "touchmove" : "mousemove";
     const eventTypes = {
       disable: [
         ...(
@@ -1996,6 +1969,30 @@ const CircleOfFifthsClock = class {
         chord.stop();
       });
     }
+    canvas.clearChord = () => {
+      const context = canvas.getContext("2d");
+      const { width, height } = canvas;
+      context.clearRect(0, 0, width, height);
+    };
+    canvas.selectChord = (chord) => {
+      canvas.clearChord();
+      const { dial, buttonCanvas, hour, offset3rd } = chord;
+      const centerXY = [
+        dial.center.x,
+        dial.center.y,
+      ];
+      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[offset3rd + i] * buttonCanvas.width);
+      const [startAngle, endAngle] = [3.5, 2.5].map(dh => (hour - dh) / 6 * Math.PI);
+      const context = buttonCanvas.getContext("2d");
+      context.beginPath();
+      context.fillStyle = "#80808080";
+      context.arc(...centerXY, innerRadius, startAngle, endAngle);
+      context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
+      context.fill();
+    };
+    canvas.enableStrum = (chord) => canvas.addEventListener(moveEventName, chord.handleMouseMove);
+    canvas.disableStrum = (chord) => canvas.removeEventListener(moveEventName, chord.handleMouseMove);
+    chord.clear();
   };
 };
 
