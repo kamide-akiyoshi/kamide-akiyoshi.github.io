@@ -84,8 +84,9 @@ const SimpleSynthesizer = class {
       osc.connect(envelope);
       osc.start();
       let timeoutIdToStop;
-      return {
+      const voice = {
         attack: () => {
+          voice.isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
           const { gain } = envelope;
@@ -106,6 +107,7 @@ const SimpleSynthesizer = class {
         },
         release: stopped => {
           if( timeoutIdToStop ) return;
+          delete voice.isPressing;
           const { gain } = envelope;
           const gainValueToStop = 0.001;
           const stop = () => {
@@ -123,6 +125,7 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = setTimeout(stop, delay);
         }
       };
+      return voice;
     };
   }
 };
@@ -141,6 +144,7 @@ const PianoKeyboard = class {
     !orderInChord && this.chord.classLists.clear();
     const key = this.pianoKeys[noteNumber];
     if( key ) {
+      !key.voice?.isPressing && this.toneIndicatorCanvas.noteOn(noteNumber);
       (key.voice ??= this.synth.createVoice(key.frequency)).attack();
       this.pressedNoteNumbers.add(noteNumber);
       const { element } = key;
@@ -149,7 +153,6 @@ const PianoKeyboard = class {
         cl.add('pressed');
         orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
       }
-      this.toneIndicatorCanvas.noteOn(noteNumber);
     }
     return key;
   };
