@@ -233,7 +233,6 @@ const PianoKeyboard = class {
       delete chord.offset5th;
       delete chord.offset7th;
       delete chord.add9th;
-      delete chord.notes;
       keySignatureSetButton.style.visibility = 'hidden';
       buttonCanvas.clearChord();
     },
@@ -363,7 +362,6 @@ const PianoKeyboard = class {
       switch(status) {
         case 0x90:
           if( data[1] ) { // velocity > 0
-            chord.clear();
             const noteNumber = data[0];
             noteOn(noteNumber);
             break;
@@ -1912,18 +1910,14 @@ const CircleOfFifthsClock = class {
       chord.start();
     };
     const isSmartphone = typeof window.ontouchstart !== 'undefined';
-    const moveEventName = isSmartphone ? "touchmove" : "mousemove";
     const eventTypes = {
       disable: [
-        ...(
-          isSmartphone ? ['touchmove'] : []
-        ),
         'click',
         'dblclick',
-        'mousemove',
         'contextmenu',
         'selectstart',
       ],
+      move: isSmartphone ? "touchmove" : "mousemove",
       start: ['pointerdown', 'keydown'],
       end: ['pointerup', 'keyup', 'mouseleave']
     };
@@ -1946,7 +1940,7 @@ const CircleOfFifthsClock = class {
           delete status[id];
           event.changedTouches[0].target.classList.remove('pressed');
         });
-        eventTypes.disable.forEach(t => button.addEventListener(t, e => e.preventDefault()));
+        [...eventTypes.disable, eventTypes.move].forEach(t => button.addEventListener(t, e => e.preventDefault()));
       });
       canvas.title = "Touch the chord symbol to sound";
     } else {
@@ -1990,8 +1984,8 @@ const CircleOfFifthsClock = class {
       context.arc(...centerXY, outerRadius, endAngle, startAngle, true);
       context.fill();
     };
-    canvas.enableStrum = (chord) => canvas.addEventListener(moveEventName, chord.handleMouseMove);
-    canvas.disableStrum = (chord) => canvas.removeEventListener(moveEventName, chord.handleMouseMove);
+    canvas.enableStrum = (chord) => canvas.addEventListener(eventTypes.move, chord.handleMouseMove);
+    canvas.disableStrum = (chord) => canvas.removeEventListener(eventTypes.move, chord.handleMouseMove);
     chord.clear();
   };
 };
