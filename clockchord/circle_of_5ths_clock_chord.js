@@ -315,10 +315,12 @@ const PianoKeyboard = class {
       } = this;
       const { notes } = chord;
       let currentIndex = notes.currentIndex + direction;
-      if ( isNaN(currentIndex) || currentIndex >= notes.length ) {
-        currentIndex = 0;
-      } else if ( currentIndex < 0 ) {
-        currentIndex = notes.length - 1;
+      if( isNaN(currentIndex) ) {
+        if( direction >= 0 ) currentIndex = 0;
+        else if( direction < 0 ) currentIndex = notes.length - 1;
+      } else {
+        if ( currentIndex >= notes.length ) currentIndex = 0;
+        else if ( currentIndex < 0 ) currentIndex = notes.length - 1;
       }
       const noteNumber = notes[notes.currentIndex = currentIndex];
       manualNoteOff(noteNumber);
