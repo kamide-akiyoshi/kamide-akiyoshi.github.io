@@ -246,7 +246,7 @@ const PianoKeyboard = class {
         pressedNoteNumbers,
       } = this;
       pressedNoteNumbers.forEach(manualNoteOff);
-      chord.buttonCanvas.disableStrum(chord);
+      chord.buttonCanvas.disableStrum();
     },
     start: () => {
       const {
@@ -284,8 +284,8 @@ const PianoKeyboard = class {
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
       chord.notes = [...this.pressedNoteNumbers];
-      buttonCanvas.selectChord(chord);
-      buttonCanvas.enableStrum(chord);
+      buttonCanvas.selectChord();
+      buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
       if( label || dialCenterLabel ) {
@@ -312,11 +312,10 @@ const PianoKeyboard = class {
     },
     strum: (direction) => {
       const {
-        chord,
+        chord: { notes },
         manualNoteOff,
         manualNoteOn,
       } = this;
-      const { notes } = chord;
       let currentIndex = notes.currentIndex + direction;
       if( isNaN(currentIndex) ) {
         if( direction >= 0 ) currentIndex = 0;
@@ -985,9 +984,9 @@ const PianoKeyboard = class {
           {
             const hour = event.keySignature;
             toneIndicatorCanvas.keySignature.value = hour;
+            chord.clear(); // To hide key signature change button
             keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
             keyElement.classList.remove("grayout");
-            chord.clear();
           }
           break;
         default:
@@ -1960,16 +1959,16 @@ const CircleOfFifthsClock = class {
       const { width, height } = canvas;
       context.clearRect(0, 0, width, height);
     };
-    canvas.selectChord = (chord) => {
+    canvas.selectChord = () => {
       canvas.clearChord();
-      const { dial, buttonCanvas, hour, offset3rd } = chord;
+      const { dial, hour, offset3rd } = chord;
       const centerXY = [
         dial.center.x,
         dial.center.y,
       ];
-      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[offset3rd + i] * buttonCanvas.width);
+      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[offset3rd + i] * canvas.width);
       const [startAngle, endAngle] = [3.5, 2.5].map(dh => (hour - dh) / 6 * Math.PI);
-      const context = buttonCanvas.getContext("2d");
+      const context = canvas.getContext("2d");
       context.beginPath();
       context.fillStyle = "#80808080";
       context.arc(...centerXY, innerRadius, startAngle, endAngle);
@@ -1991,8 +1990,8 @@ const CircleOfFifthsClock = class {
       canvas.lastHourAngle = hourAngle;
       chord.strum(diffHourAngle < 0 ? -1 : 1);
     };
-    canvas.enableStrum = (chord) => canvas.addEventListener(eventTypes.move, handleMouseMove);
-    canvas.disableStrum = (chord) => canvas.removeEventListener(eventTypes.move, handleMouseMove);
+    canvas.enableStrum = () => canvas.addEventListener(eventTypes.move, handleMouseMove);
+    canvas.disableStrum = () => canvas.removeEventListener(eventTypes.move, handleMouseMove);
     chord.clear();
   };
 };
