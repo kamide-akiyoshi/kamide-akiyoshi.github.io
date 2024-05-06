@@ -19,6 +19,14 @@
 	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	dt { font-weight: bold; }
+	@media screen and (max-width: 880px) {
+		#ClockChord {
+			flex-direction: column;
+		}
+	}
+	#ClockChord {
+		display: flex;
+	}
 	.clock {
 		position: relative;
 		width: 400px; height: 400px;
@@ -85,13 +93,11 @@
 	}
 	#chordbar {
 		width: 424px;
-		height: 36px;
+		height: 50px;
 		background-color: #E0E0E0;
-		border-style: inset;
 		border-width: 1px;
 		border-color: #D0D0D0;
 		margin-top: 8px;
-		padding: 8px 0px;
 		text-align: center;
 		display: flex;
 		align-items: center;
@@ -99,11 +105,10 @@
 	}
 	#chord {
 		font-size: 170%;
-		margin-left: 20px; 
-		margin-right: 20px; 
+		margin: 8px;
+		height: 40px;
 	}
 	#pianokeyboard {
-		width: calc(30px * 7 * 2);
 		min-width: calc(30px * 7 * 2);
 		max-width: calc(30px * (7 * 10 + 5));
 		height: 160px;
@@ -209,7 +214,6 @@
 		margin-top: 2px;
 	}
 	#midi_sequencer {
-		width: 410px;
 		margin-top: 8px;
 		padding: 0px 8px;
 		border: 1px solid;
@@ -228,8 +232,11 @@
 	#midi_file_select_button {
 		width: auto;
 	}
+	#midi_sequence > .controller {
+		display: flex;
+	}
 	#time_position {
-		width: 320px;
+		width: 100%;
 	}
 	#lyrics {
 		font-size: 120%;
@@ -243,114 +250,120 @@
 <h1>五度圏時計楽器 ClockChord</h1>
 <a href="#how_to_use" style="font-size: small;">使い方/How to use</a>
 <hr/>
-<div>
-  <label for="volume" title="Volume" style="display: flex;">
-    <img src="image/speaker.svg" alt="Volume"/>
-    <input id="volume" type="range"/>
-  </label>
-  <div class="clock clock_light">
-    <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
-    <select id="keyselect" style="height: 32px;"></select>
-    <button id="enharmonic" title="Enharmonic key"></button>
-    <button id="setkey" title="Set the chord as key signature"></button>
-    <select id="dark_mode_select">
-      <option value="light" selected>Light</option>
-      <option value="dark">Dark</option>
-    </select>
-    <select id="background_mode_select">
-      <option value="donut">Donut</option>
-      <option value="pie" selected>Pie</option>
-    </select>
-    <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
-    <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px"></canvas>
-    <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
-    <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
-    <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
-    <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
-  </div>
-  <div id="lyrics"></div>
-  <div id="button_container">
-    <div class="shift_button_line">
-      <div id="button_major7th" class="shift_button">M7</div>
+<div id="ClockChord">
+  <div>
+    <label for="volume" title="Volume" style="display: flex;">
+      <img src="image/speaker.svg" alt="Volume"/>
+      <input id="volume" type="range"/>
+    </label>
+    <div class="clock clock_light">
+      <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
+      <select id="keyselect" style="height: 32px;"></select>
+      <button id="enharmonic" title="Enharmonic key"></button>
+      <button id="setkey" title="Set the chord as key signature"></button>
+      <select id="dark_mode_select">
+        <option value="light" selected>Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <select id="background_mode_select">
+        <option value="donut">Donut</option>
+        <option value="pie" selected>Pie</option>
+      </select>
+      <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
+      <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px"></canvas>
+      <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
+      <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
+      <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
+      <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
     </div>
-    <div class="shift_button_line">
-      <div id="button_add9" class="shift_button">add9</div>
-      <div id="button_7th" class="shift_button">7th</div>
-    </div>
-    <div class="shift_button_line">
-      <div id="button_flat5" class="shift_button">-5/aug</div>
-    </div>
-  </div>
-  <div id="midi_sequencer">
-    <div id="midi_sequence">
-      <div class="controller">
-        <button id="top">
-          <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
-        </button>
-        <button id="play_pause">
-          <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
-        </button>
-        <input type="range" id="time_position"></input>
+    <div id="lyrics"></div>
+    <div id="button_container">
+      <div class="shift_button_line">
+        <div id="button_major7th" class="shift_button">M7</div>
       </div>
-      <div>
-        <span id="time_signature" class="grayout">4/4</span>
-        <span id="key" class="grayout">Key: C</span>
-        <span id="tempo" class="grayout">
-          <img width="16" src="image/note4.svg" alt="BPM"/>=
-          <span id="bpm"></span>
-        </span>
-        <span id="song_marker"></span>
+      <div class="shift_button_line">
+        <div id="button_add9" class="shift_button">add9</div>
+        <div id="button_7th" class="shift_button">7th</div>
       </div>
-      <div id="song_title"></div>
-      <div id="song_text"></div>
+      <div class="shift_button_line">
+        <div id="button_flat5" class="shift_button">-5/aug</div>
+      </div>
     </div>
-    <div id="midi_file_selecter">
-      <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
-      <button id="midi_file_select_button">MIDI file</button>
-      <span id="midi_file_name">Select or drop here</span>
-    </div>
-  </div>
-  <div id="chordbar">
-    <span id="chord" title="Chord"></span>
-  </div>
-  <div id="pianokeyboard" tabindex="0">
-    <div class="whitekey"></div>
-    <div class="blackkey"></div>
-    <div class="frequency">Hz</div>
   </div>
   <div>
-    <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
-    <label for="midi_channel">
-      Channel
-      <select id="midi_channel">
-      </select>
-    </label>
-    <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
-  </div>
-  <div style="margin: 4px 0">
-    <label for="waveselect" title="wave">
-      <img id="wave" alt="wave" height="32" align="center"/>
-      <select id="waveselect" style="height: 32px;">
-      </select>
-    </label>
-    <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
-    <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
-    <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
-    <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
-    <label for="release" title="Release time">R<input id="release" type="range"/></label>
-  </div>
-  <div id="midi">
-    <div id="midi_input">
-      <span>
-        <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
-        MIDI IN
-      </span>
+    <div id="midi_sequencer">
+      <div id="midi_sequence">
+        <div class="controller">
+          <button id="top">
+            <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
+          </button>
+          <button id="play_pause">
+            <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+          </button>
+          <input type="range" id="time_position"></input>
+        </div>
+        <div>
+          <span id="time_signature" class="grayout">4/4</span>
+          <span id="key" class="grayout">Key: C</span>
+          <span id="tempo" class="grayout">
+            <img width="16" src="image/note4.svg" alt="BPM"/>=
+            <span id="bpm"></span>
+          </span>
+          <span id="song_marker"></span>
+        </div>
+        <div id="song_title"></div>
+        <div id="song_text"></div>
+      </div>
+      <div id="midi_file_selecter">
+        <input type="file" id="midi_file" accept=".mid" style="display: none;"/>
+        <button id="midi_file_select_button">MIDI file</button>
+        <span id="midi_file_name">Select or drop here</span>
+      </div>
     </div>
-    <div id="midi_output">
-      <span>
-        <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
-        MIDI OUT
-      </span>
+    <div>
+      <div id="chordbar">
+        <span id="chord" title="Chord"></span>
+      </div>
+      <div id="pianokeyboard" tabindex="0">
+        <div class="whitekey"></div>
+        <div class="blackkey"></div>
+        <div class="frequency">Hz</div>
+      </div>
+    </div>
+    <div>
+      <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
+      <label for="midi_channel">
+        Channel
+        <select id="midi_channel">
+        </select>
+      </label>
+      <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" style="font-size: small;">Frequency table</a>
+    </div>
+    <div style="margin: 4px 0">
+      <label for="waveselect" title="wave">
+        <img id="wave" alt="wave" height="32" align="center"/>
+        <select id="waveselect" style="height: 32px;">
+        </select>
+      </label>
+      <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
+      <label for="attack" title="Attack time">A<input id="attack" type="range"/></label>
+      <label for="decay" title="Decay time">D<input id="decay" type="range"/></label>
+      <label for="sustain" title="Sustain level">S<input id="sustain" type="range"/></label>
+      <label for="release" title="Release time">R<input id="release" type="range"/></label>
+    </div>
+    <div id="midi">
+      <div id="midi_input">
+        <span>
+          <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
+          MIDI IN
+        </span>
+      </div>
+      <div id="midi_output">
+        <span>
+          <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
+          MIDI OUT
+        </span>
+      </div>
     </div>
   </div>
 </div>

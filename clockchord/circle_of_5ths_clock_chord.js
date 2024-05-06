@@ -191,24 +191,24 @@ const PianoKeyboard = class {
   chord = {
     classLists: [],
     setup() {
-      const createLabelEntry = id => {
-        const label = document.getElementById(id);
-        if( !label ) return undefined;
-        const parent = label.parentNode;
+      const createDetachableElementEntry = id => {
+        const element = document.getElementById(id);
+        if( !element ) return undefined;
+        const parent = element.parentNode;
         return {
-          label,
+          element,
           attach: (text) => {
-            text && (label.innerHTML = text);
-            parent.contains(label) || parent.appendChild(label);
+            text && (element.innerHTML = text);
+            parent.contains(element) || parent.appendChild(element);
           },
           detach: () => {
-            parent.contains(label) && parent.removeChild(label);
+            parent.contains(element) && parent.removeChild(element);
           },
         };
       };
       const chord = this;
-      chord.label = createLabelEntry('chord');
-      chord.dialCenterLabel = createLabelEntry('center_chord');
+      chord.label = createDetachableElementEntry('chord');
+      chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.keySignatureSetButton = document.getElementById('setkey');
       chord.classLists.clear = () => {
         while( chord.classLists.length ) chord.classLists.pop().remove('chord', 'root');
@@ -1461,7 +1461,7 @@ const CircleOfFifthsClock = class {
         }
       };
       changeDarkClass(canvas.parentElement?.classList, 'clock_');
-      changeDarkClass(chord?.dialCenterLabel.label?.classList, 'center_chord_');
+      changeDarkClass(chord?.dialCenterLabel.element?.classList, 'center_chord_');
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const themeColor = themeColors[theme];
@@ -1942,15 +1942,15 @@ const CircleOfFifthsClock = class {
     eventTypes.start.forEach(t => canvas.addEventListener(t, e => handleEvent(e, chord)));
     eventTypes.end.forEach(t => canvas.addEventListener(t, chord.stop));
     if( chord.dialCenterLabel ) {
-      const { label } = chord.dialCenterLabel;
-      label.addEventListener('pointerdown', e => {
+      const { element } = chord.dialCenterLabel;
+      element.addEventListener('pointerdown', e => {
         chord.start();
       });
-      label.addEventListener('pointerup', e => {
+      element.addEventListener('pointerup', e => {
         canvas.focus();
         chord.stop();
       });
-      label.addEventListener('mouseleave', e => {
+      element.addEventListener('mouseleave', e => {
         chord.stop();
       });
     }
