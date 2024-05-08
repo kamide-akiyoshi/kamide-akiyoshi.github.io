@@ -1709,9 +1709,11 @@ const CircleOfFifthsClock = class {
         const pcTitle = titleElement.innerText;
         const mobileTitle = pcTitle.split(" ")[1];
         const titleMediaQuery = window.matchMedia('(max-width: 450px)');
-        titleMediaQuery.addEventListener('change', (event) => {
-          titleElement.innerText = event.matches ? mobileTitle : pcTitle;
-        });
+        const updateTitle = () => {
+          titleElement.innerText = titleMediaQuery.matches ? mobileTitle : pcTitle;
+        }
+        updateTitle();
+        titleMediaQuery.addEventListener('change', updateTitle);
       }
       const { hands, dial } = this;
       const { width, height } = hands.canvas = canvas;
