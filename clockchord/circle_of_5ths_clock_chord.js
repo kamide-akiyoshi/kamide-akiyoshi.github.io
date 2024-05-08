@@ -1799,67 +1799,51 @@ const CircleOfFifthsClock = class {
       );
     }
     keySignature.value = 0;
-    const keyToLeftRight = (key) => [`${key}Left`, `${key}Right`];
-    const shiftLikeKeys = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(keyToLeftRight);
-    const createCharKeys = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
-    const createDigitKeys = () => {
+    //
+    // PC keyboard bindings
+    const createLeftRightKeyCodes = (key) => [`${key}Left`, `${key}Right`];
+    const createCharKeyCodes = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
+    const createDigitKeyCodes = () => {
       const keys = Array.from({ length: 10 }, (_, index) => `Digit${index}`);
-      const digit0 = keys.shift();
-      keys.push(digit0);
+      keys.push(keys.shift());
       return keys;
     };
     const chordKeyBindings = Object.fromEntries(
       [
-        [
-          ...createDigitKeys(),
-          'Minus',
-          'Equal',
-        ],[
-          ...createCharKeys('QWERTYUIOP'),
-          ...keyToLeftRight('Bracket'),
-        ],[
-          ...createCharKeys('ASDFGHJKL'),
-          'Semicolon',
-          'Quote',
-          'Backslash',
-        ],
-      ].flatMap((keys, y) => keys.map((key, x) => {
-        const hour = x - 5;
-        const offset3rd = 1 - y;
-        return [key, [hour, offset3rd]];
-      }))
+        [...createDigitKeyCodes(), 'Minus', 'Equal'],
+        [...createCharKeyCodes('QWERTYUIOP'), ...createLeftRightKeyCodes('Bracket')],
+        [...createCharKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
+      ].flatMap(
+        (row, y) => row.map((code, x) => [code, [x-5, 1-y]])
+      )
     );
+    const shiftLikeKeyCodes = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(createLeftRightKeyCodes);
     const handleEvent = (event, chord) => {
       switch( event.type ) {
         case 'keydown':
-          {
-            if( event.repeat || ! chord || shiftLikeKeys.includes(event.code) ) {
-              event.preventDefault();
-              return;
-            }
-            const chordKeyBinding = chordKeyBindings[event.code];
-            if( chordKeyBinding ) {
-              [chord.hour, chord.offset3rd] = chordKeyBinding;
-              chord.hour += keySignature.value;
-            } else {
-              switch(event.code) {
-                case 'Space':
-                  event.preventDefault(); // To avoid unexpected page down
-                  // fallthrough
-                case 'Enter':
-                  chord.start();
-                  return;
-                case 'Tab':
-                  // Ignore to move focus
-                  return;
-                case 'ArrowLeft': keySignature.value-- ; event.preventDefault(); return;
-                case 'ArrowRight': keySignature.value++ ; event.preventDefault(); return;
-                case 'ArrowUp': keySignature.value -= 5 ; event.preventDefault(); return;
-                case 'ArrowDown': keySignature.value += 5 ; event.preventDefault(); return;
-                default:
-                  event.preventDefault();
-                  return;
-              }
+          if( event.repeat || ! chord || shiftLikeKeyCodes.includes(event.code) ) {
+            event.preventDefault();
+            return;
+          }
+          if( event.code in chordKeyBindings ) {
+            [chord.hour, chord.offset3rd] = chordKeyBindings[event.code];
+            chord.hour += keySignature.value;
+          } else {
+            switch(event.code) {
+              case 'Space':
+                event.preventDefault(); // To avoid unexpected page down
+                // fallthrough
+              case 'Enter':
+                chord.start();
+                return;
+              case 'Tab':
+                // Move focus (Keep default action)
+                return;
+              case 'ArrowLeft': keySignature.value-- ; event.preventDefault(); return;
+              case 'ArrowRight': keySignature.value++ ; event.preventDefault(); return;
+              case 'ArrowUp': keySignature.value -= 5 ; event.preventDefault(); return;
+              case 'ArrowDown': keySignature.value += 5 ; event.preventDefault(); return;
+              default: event.preventDefault(); return;
             }
           }
           break;
