@@ -329,7 +329,7 @@ const PianoKeyboard = class {
       manualNoteOn(noteNumber, currentIndex + 1);
     },
   };
-  setupMidi = () => {
+  setupMidiPorts = () => {
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return;
     if( ! window.isSecureContext ) {
@@ -1228,13 +1228,13 @@ const PianoKeyboard = class {
     const {
       chord,
       leftEnd,
-      setupMidi,
+      setupMidiPorts,
       setupMidiSequencer,
       setupToneIndicatorCanvas,
     } = this;
     chord.setup();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
-    setupMidi();
+    setupMidiPorts();
     setupMidiSequencer();
     leftEnd.reset();
     // Mouse/Touch event names
