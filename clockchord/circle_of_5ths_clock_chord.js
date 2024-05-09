@@ -1324,15 +1324,15 @@ const PianoKeyboard = class {
             "BracketLeft", "Equal", "BracketRight",
           ].map((code, index) => [code, index])
         ),
-        activeNoteNumbers: [],
+        activeNoteNumbers: {},
       };
       keyboard.addEventListener("keydown", e => {
         if( e.repeat ) return;
         const { activeNoteNumbers } = pcKey;
-        if( activeNoteNumbers[e.code] ) return;
-        const bindedValue = pcKey.bindings[e.code] ?? -1;
-        if( bindedValue < 0 ) return;
-        const noteNumber = bindedValue + leftEnd.noteC;
+        if( e.code in activeNoteNumbers ) return;
+        const index = pcKey.bindings[e.code] ?? -1;
+        if( index < 0 ) return;
+        const noteNumber = index + leftEnd.noteC;
         noteOn(noteNumber);
         activeNoteNumbers[e.code] = noteNumber;
         chord.clear();
