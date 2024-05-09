@@ -1307,7 +1307,6 @@ const PianoKeyboard = class {
         };
         element.addEventListener(pointerup, handleOff);
         element.addEventListener(pointerleave, handleOff);
-        // Disable context menu by clicking mouse right button
         element.addEventListener('contextmenu', e => e.preventDefault());
       });
       keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
@@ -1319,21 +1318,13 @@ const PianoKeyboard = class {
       );
       ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
       const pcKey = {
-      	bindings: {
-          KeyQ:0, Digit2:1,
-          KeyW:2, Digit3:3,
-          KeyE:4,
-          KeyR:5, Digit5:6,
-          KeyT:7, Digit6:8,
-          KeyY:9, Digit7:10,
-          KeyU:11,
-          KeyI:12, Digit9:13,
-          KeyO:14, Digit0:15,
-          KeyP:16,
-          BracketLeft:17, Equal:18,
-          BracketRight:19,
-      	},
-      	activeNoteNumbers: [],
+        bindings: Object.fromEntries(
+          [
+            ...Array.from("Q2W3ER5T6Y7UI9O0P", c => `${c < 10 ? "Digit" : "Key"}${c}`),
+            "BracketLeft", "Equal", "BracketRight",
+          ].map((code, index) => [code, index])
+        ),
+        activeNoteNumbers: [],
       };
       keyboard.addEventListener("keydown", e => {
         if( e.repeat ) return;
