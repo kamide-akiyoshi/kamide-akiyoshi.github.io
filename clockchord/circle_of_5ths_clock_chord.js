@@ -1225,10 +1225,13 @@ const PianoKeyboard = class {
   };
   setupPianoKeyboard = () => {
     const {
-      chord,
       leftEnd,
     } = this;
     leftEnd.reset();
+    const keyboard = document.getElementById('pianokeyboard');
+    if( !keyboard ) {
+      return;
+    }
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
     let pointerenter = 'mouseenter';
@@ -1237,102 +1240,102 @@ const PianoKeyboard = class {
       pointerdown = 'touchstart';
       pointerup = 'touchend';
     }
-    const keyboard = document.getElementById('pianokeyboard');
-    if( keyboard ) {
-      const { pianoKeys } = this;
-      const noteOn = this.manualNoteOn;
-      const noteOff = this.manualNoteOff;
-      const [
-        whiteKeyElement,
-        blackKeyElement,
-        frequencyElement,
-      ] = keyboard.getElementsByTagName('*');
-      const [
-        whiteKeyWidth,
-        xOffsets
-      ] = [
-        whiteKeyElement,
-        blackKeyElement
-      ].map((element, noteNumber) => {
-        pianoKeys[noteNumber].element = element;
-        const w = element.clientWidth + 2 * element.clientLeft;
-        return noteNumber ? Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour) : w;
-      });
-      let [whiteKeyLeft, hour] = [0, 6];
-      pianoKeys.forEach((pianoKey, noteNumber) => {
-        if( hour >= 5 ) { // F(5) C(6) G(7) D(8) A(9) E(10) B(11)
-          if( whiteKeyLeft ) {
-            keyboard.appendChild(pianoKey.element = whiteKeyElement.cloneNode());
-            pianoKey.element.style.left = `${whiteKeyLeft}px`;
-          }
-          if( hour == 9 ) {
-            const newFrequencyElement = frequencyElement.cloneNode();
-            newFrequencyElement.innerHTML = pianoKey.frequency;
-            newFrequencyElement.style.left = pianoKey.element.style.left;
-            keyboard.appendChild(newFrequencyElement);
-          }
-          whiteKeyLeft += whiteKeyWidth;
-          hour -= 5;
-        } else { // Gb(0) Db(1) Ab(2) Eb(3) Bb(4)
-          if( ! pianoKey.element ) {
-            keyboard.appendChild(pianoKey.element = blackKeyElement.cloneNode());
-          }
-          pianoKey.element.style.left = `${whiteKeyLeft - xOffsets[hour]}px`;
-          hour += 7;
+    const {
+      pianoKeys,
+      manualNoteOn,
+      manualNoteOff,
+      chord,
+    } = this;
+    const [
+      whiteKeyElement,
+      blackKeyElement,
+      frequencyElement,
+    ] = keyboard.getElementsByTagName('*');
+    const [
+      whiteKeyWidth,
+      xOffsets
+    ] = [
+      whiteKeyElement,
+      blackKeyElement
+    ].map((element, noteNumber) => {
+      pianoKeys[noteNumber].element = element;
+      const w = element.clientWidth + 2 * element.clientLeft;
+      return noteNumber ? Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour) : w;
+    });
+    let [whiteKeyLeft, hour] = [0, 6];
+    pianoKeys.forEach((pianoKey, noteNumber) => {
+      if( hour >= 5 ) { // F(5) C(6) G(7) D(8) A(9) E(10) B(11)
+        if( whiteKeyLeft ) {
+          keyboard.appendChild(pianoKey.element = whiteKeyElement.cloneNode());
+          pianoKey.element.style.left = `${whiteKeyLeft}px`;
         }
-        const { element } = pianoKey;
-        element.addEventListener(pointerdown, e => {
-          chord.clear();
-          noteOn(noteNumber);
-          keyboard.focus();
-          e.preventDefault();
-        });
-        element.addEventListener(pointerenter, e => {
-          if( e.buttons & 1 ) {
-            noteOn(noteNumber);
-          }
-        });
-        const handleOff = e => {
-          noteOff(noteNumber);
-        };
-        element.addEventListener(pointerup, handleOff);
-        element.addEventListener(pointerleave, handleOff);
-        element.addEventListener('contextmenu', e => e.preventDefault());
-      });
-      keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
-      keyboard.addEventListener("scroll",
-        event => {
-          const { scrollLeft, scrollWidth } = event.target;
-          leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
+        if( hour == 9 ) {
+          const newFrequencyElement = frequencyElement.cloneNode();
+          newFrequencyElement.innerHTML = pianoKey.frequency;
+          newFrequencyElement.style.left = pianoKey.element.style.left;
+          keyboard.appendChild(newFrequencyElement);
         }
-      );
-      ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
-      const pcKey = {
-        bindings: Object.fromEntries(
-          [
-            ...Array.from("Q2W3ER5T6Y7UI9O0P", c => `${c < 10 ? "Digit" : "Key"}${c}`),
-            "BracketLeft", "Equal", "BracketRight",
-          ].map((code, index) => [code, index])
-        ),
-        activeNoteNumbers: {},
-      };
-      keyboard.addEventListener("keydown", e => {
-        if( e.repeat ) return;
-        const { activeNoteNumbers } = pcKey;
-        if( e.code in activeNoteNumbers ) return;
-        const index = pcKey.bindings[e.code] ?? -1;
-        if( index < 0 ) return;
-        const noteNumber = index + leftEnd.noteC;
-        noteOn(noteNumber);
-        activeNoteNumbers[e.code] = noteNumber;
+        whiteKeyLeft += whiteKeyWidth;
+        hour -= 5;
+      } else { // Gb(0) Db(1) Ab(2) Eb(3) Bb(4)
+        if( ! pianoKey.element ) {
+          keyboard.appendChild(pianoKey.element = blackKeyElement.cloneNode());
+        }
+        pianoKey.element.style.left = `${whiteKeyLeft - xOffsets[hour]}px`;
+        hour += 7;
+      }
+      const { element } = pianoKey;
+      element.addEventListener(pointerdown, e => {
         chord.clear();
+        manualNoteOn(noteNumber);
+        keyboard.focus();
+        e.preventDefault();
       });
-      keyboard.addEventListener("keyup", e => {
-        const { activeNoteNumbers } = pcKey;
-        noteOff(activeNoteNumbers[e.code]);
-        delete activeNoteNumbers[e.code];
+      element.addEventListener(pointerenter, e => {
+        if( e.buttons & 1 ) {
+          manualNoteOn(noteNumber);
+        }
       });
-    }
+      const handleOff = e => {
+        manualNoteOff(noteNumber);
+      };
+      element.addEventListener(pointerup, handleOff);
+      element.addEventListener(pointerleave, handleOff);
+      element.addEventListener('contextmenu', e => e.preventDefault());
+    });
+    keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
+    keyboard.addEventListener("scroll",
+      event => {
+        const { scrollLeft, scrollWidth } = event.target;
+        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
+      }
+    );
+    ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
+    const pcKey = {
+      bindings: Object.fromEntries(
+        [
+          ...Array.from("Q2W3ER5T6Y7UI9O0P", c => `${c < 10 ? "Digit" : "Key"}${c}`),
+          "BracketLeft", "Equal", "BracketRight",
+        ].map((code, index) => [code, index])
+      ),
+      activeNoteNumbers: {},
+    };
+    keyboard.addEventListener("keydown", e => {
+      if( e.repeat ) return;
+      const { activeNoteNumbers } = pcKey;
+      if( e.code in activeNoteNumbers ) return;
+      const index = pcKey.bindings[e.code] ?? -1;
+      if( index < 0 ) return;
+      const noteNumber = index + leftEnd.noteC;
+      manualNoteOn(noteNumber);
+      activeNoteNumbers[e.code] = noteNumber;
+      chord.clear();
+    });
+    keyboard.addEventListener("keyup", e => {
+      const { activeNoteNumbers } = pcKey;
+      manualNoteOff(activeNoteNumbers[e.code]);
+      delete activeNoteNumbers[e.code];
+    });
   };
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
