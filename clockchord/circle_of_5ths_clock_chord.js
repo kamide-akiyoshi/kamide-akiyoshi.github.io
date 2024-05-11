@@ -1371,7 +1371,7 @@ const Music = class {
     ][Math.trunc((hour + 15) / 7)]
   ];
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
-  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 == 0;
+  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static normalizeHourAsKey = hour => {
     while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
     return hour;
@@ -1689,7 +1689,7 @@ const CircleOfFifthsClock = class {
       }
       const ksb = chord?.keySignatureSetButton;
       if( ksb ) {
-        ksb.style.visibility = Music.enharmonicallyEquals(hour, chord.hour) ? 'hidden' : 'visible';
+        ksb.style.visibility = "hour" in chord && ! Music.enharmonicallyEquals(hour, chord.hour) ? 'visible' : 'hidden';
       }
       dial.draw();
     },
