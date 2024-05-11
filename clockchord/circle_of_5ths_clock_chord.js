@@ -1223,21 +1223,12 @@ const PianoKeyboard = class {
       !intervalId && setTickPosition(parseInt(event.target.value));
     });
   };
-  constructor(toneIndicatorCanvas) {
-    this.synth = new SimpleSynthesizer();
+  setupPianoKeyboard = () => {
     const {
       chord,
       leftEnd,
-      setupMidiPorts,
-      setupMidiSequencer,
-      setupToneIndicatorCanvas,
     } = this;
-    chord.setup();
-    setupToneIndicatorCanvas(toneIndicatorCanvas);
-    setupMidiPorts();
-    setupMidiSequencer();
     leftEnd.reset();
-    // Mouse/Touch event names
     let pointerdown = 'mousedown';
     let pointerup = 'mouseup';
     let pointerenter = 'mouseenter';
@@ -1246,7 +1237,6 @@ const PianoKeyboard = class {
       pointerdown = 'touchstart';
       pointerup = 'touchend';
     }
-    // Setup piano keyboard
     const keyboard = document.getElementById('pianokeyboard');
     if( keyboard ) {
       const { pianoKeys } = this;
@@ -1343,6 +1333,21 @@ const PianoKeyboard = class {
         delete activeNoteNumbers[e.code];
       });
     }
+  };
+  constructor(toneIndicatorCanvas) {
+    this.synth = new SimpleSynthesizer();
+    const {
+      chord,
+      setupMidiPorts,
+      setupMidiSequencer,
+      setupToneIndicatorCanvas,
+      setupPianoKeyboard,
+    } = this;
+    chord.setup();
+    setupToneIndicatorCanvas(toneIndicatorCanvas);
+    setupMidiPorts();
+    setupMidiSequencer();
+    setupPianoKeyboard();
   }
 }
 
