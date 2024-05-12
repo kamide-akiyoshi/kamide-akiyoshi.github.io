@@ -1428,7 +1428,6 @@ const CircleOfFifthsClock = class {
     },
   };
   dial = {
-    backgroundMode: "donut",
     borderRadius: [0.14, 0.29, 0.42, 0.5],
     has: r => 
       r <= this.dial.borderRadius[3] &&
@@ -1736,13 +1735,11 @@ const CircleOfFifthsClock = class {
       darkModeSelect?.addEventListener('change', e => setTheme(e.target.value));
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
-      if( backgroundModeSelect ) {
-        backgroundModeSelect.addEventListener('change', e => {
-          dial.backgroundMode = e.target.value;
-          dial.draw();
-        });
-        dial.backgroundMode = backgroundModeSelect.value;
-      }
+      backgroundModeSelect?.addEventListener('change', e => {
+        dial.backgroundMode = e.target.value;
+        dial.draw();
+      });
+      dial.backgroundMode = backgroundModeSelect?.value ?? "donut";
       setSystemTheme();
       hands.moving = true;
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
