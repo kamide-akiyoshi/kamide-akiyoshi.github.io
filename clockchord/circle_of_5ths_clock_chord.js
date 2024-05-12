@@ -479,14 +479,13 @@ const PianoKeyboard = class {
   setupToneIndicatorCanvas = (canvas) => {
     const BASS_MAX_NOTE_NUMBER = 48;
     const { dial, width, height, keySignature } = this.toneIndicatorCanvas = canvas;
-    const { center, borderRadius, themeColors } = dial;
+    const { center, borderRadius } = dial;
     const toneIndicating = Array.from({ length: 12 }, () => 0);
     const bassToneIndicating = [...toneIndicating];
     const getColorOf = (hour, flatThreshold) => {
-      const { indicator } = themeColors[dial.theme];
       let offset = hour - keySignature?.value + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
       if( offset < 0 ) offset += 12; else if ( offset >= 12 ) offset -= 12;
-      return indicator[offset < 7 ? 1 : offset < flatThreshold ? 2 : 0];
+      return dial.themeColor.indicator[offset < 7 ? 1 : offset < flatThreshold ? 2 : 0];
     };
     const majorDirections = toneIndicating.map((_, hour) => {
       const diffToAngle = (diff = 0) => (hour + diff) * Math.PI / 6;
@@ -1390,47 +1389,46 @@ const Music = class {
 }
 
 const CircleOfFifthsClock = class {
-  dial = {
-    theme: "light",
-    backgroundMode: "donut",
-    themeColors: {
-      light: {
-        foreground: 'black',
-        grayoutForeground: 'gray',
-        background: {
-          donut: ['#99CCFF', '#FB99CC', '#FFFF99'],
-          pie: ['#FB99CC', '#FFFF66', '#CCFFCC', '#99CCFF'],
-        },
-        hourBorder: {
-          fine: 'rgb(0, 0, 0, 0.2)',
-          coarse: 'rgb(0, 0, 0, 0.6)',
-        },
-        hand: {
-          hour: 'rgba(0, 0, 0, 0.5)',
-          minute: 'rgba(0, 0, 0, 0.5)',
-          second: '#ff4000',
-        },
-        indicator: ['blue', 'firebrick', 'darkorange'],
+  static themeColors = {
+    light: {
+      foreground: 'black',
+      grayoutForeground: 'gray',
+      background: {
+        donut: ['#99CCFF', '#FB99CC', '#FFFF99'],
+        pie: ['#FB99CC', '#FFFF66', '#CCFFCC', '#99CCFF'],
       },
-      dark: {
-        foreground: '#C0C0C0',
-        grayoutForeground: '#404040',
-        background: {
-          donut: ['#102030', '#301020', '#302000'],
-          pie: ['#301020', '#302000', '#103010', '#102030'],
-        },
-        hourBorder: {
-          fine: 'rgb(255, 255, 255, 0.2)',
-          coarse: 'rgb(255, 255, 255, 0.6)',
-        },
-        hand: {
-          hour: 'rgba(255, 255, 255, 0.25)',
-          minute: 'rgba(255, 255, 255, 0.25)',
-          second: '#ff4000',
-        },
-        indicator: ['cyan', 'lightpink', 'yellow'],
+      hourBorder: {
+        fine: 'rgb(0, 0, 0, 0.2)',
+        coarse: 'rgb(0, 0, 0, 0.6)',
       },
+      hand: {
+        hour: 'rgba(0, 0, 0, 0.5)',
+        minute: 'rgba(0, 0, 0, 0.5)',
+        second: '#ff4000',
+      },
+      indicator: ['blue', 'firebrick', 'darkorange'],
     },
+    dark: {
+      foreground: '#C0C0C0',
+      grayoutForeground: '#404040',
+      background: {
+        donut: ['#102030', '#301020', '#302000'],
+        pie: ['#301020', '#302000', '#103010', '#102030'],
+      },
+      hourBorder: {
+        fine: 'rgb(255, 255, 255, 0.2)',
+        coarse: 'rgb(255, 255, 255, 0.6)',
+      },
+      hand: {
+        hour: 'rgba(255, 255, 255, 0.25)',
+        minute: 'rgba(255, 255, 255, 0.25)',
+        second: '#ff4000',
+      },
+      indicator: ['cyan', 'lightpink', 'yellow'],
+    },
+  };
+  dial = {
+    backgroundMode: "donut",
     borderRadius: [0.14, 0.29, 0.42, 0.5],
     has: r => 
       r <= this.dial.borderRadius[3] &&
@@ -1445,25 +1443,12 @@ const CircleOfFifthsClock = class {
       const {
         canvas,
         center,
-        themeColors,
-        theme,
+        themeColor,
         backgroundMode,
         chord,
       } = dial;
-      const changeDarkClass = (classList, classPrefix) => {
-        if( !classList ) return;
-        const newClassName = `${classPrefix}${theme}`;
-        if( !classList.contains(newClassName) ) {
-          const oldClassName = `${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`;
-          classList.remove(oldClassName);
-          classList.add(newClassName);
-        }
-      };
-      changeDarkClass(canvas.parentElement?.classList, 'clock_');
-      changeDarkClass(chord?.dialCenterLabel.element?.classList, 'center_chord_');
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const themeColor = themeColors[theme];
       const selectedHour = keySignature.value;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
@@ -1610,7 +1595,7 @@ const CircleOfFifthsClock = class {
       const { center } = hands;
       const { width } = dial.canvas;
       const drawHand = (context, hand) => {
-        const color = dial.themeColors[dial.theme].hand[hand.colorKey];
+        const color = dial.themeColor.hand[hand.colorKey];
         context.beginPath();
         context.moveTo( center.x, center.y );
         context.lineWidth = hand.width * width;
@@ -1728,27 +1713,28 @@ const CircleOfFifthsClock = class {
         osdc.width = width;
         osdc.height = height;
       }
-      const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
-      chordButtonCanvas && this.listen({
-        chordButtonCanvas,
-        toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
-      });
-      const darkModeSelect = document.getElementById('dark_mode_select');
-      if( darkModeSelect ) {
-        darkModeSelect.addEventListener('change', e => {
-          dial.theme = e.target.value;
-          dial.draw();
-          hands.draw();
-        });
-      }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const loadSystemTheme = () => {
-        dial.theme = darkModeMediaQuery.matches ? 'dark' : 'light';
-        darkModeSelect && (darkModeSelect.value = dial.theme);
+      const darkModeSelect = document.getElementById('dark_mode_select');
+      const changeDarkClass = (classList, classPrefix, theme) => {
+        if( !classList ) return;
+        const newClassName = `${classPrefix}${theme}`;
+        if( !classList.contains(newClassName) ) {
+          const oldClassName = `${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`;
+          classList.remove(oldClassName);
+          classList.add(newClassName);
+        }
+      };
+      const setTheme = (theme) => {
+        dial.themeColor = CircleOfFifthsClock.themeColors[theme];
+        darkModeSelect && (darkModeSelect.value = theme);
+        changeDarkClass(dial.canvas.parentElement?.classList, 'clock_', theme);
+        changeDarkClass(dial.chord?.dialCenterLabel.element?.classList, 'center_chord_', theme);
         dial.draw();
         hands.draw();
       };
-      darkModeMediaQuery.addEventListener('change', loadSystemTheme);
+      const setSystemTheme = () => setTheme(darkModeMediaQuery.matches ? 'dark' : 'light');
+      darkModeSelect?.addEventListener('change', e => setTheme(e.target.value));
+      darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
       if( backgroundModeSelect ) {
         backgroundModeSelect.addEventListener('change', e => {
@@ -1757,8 +1743,13 @@ const CircleOfFifthsClock = class {
         });
         dial.backgroundMode = backgroundModeSelect.value;
       }
-      loadSystemTheme();
+      setSystemTheme();
       hands.moving = true;
+      const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
+      chordButtonCanvas && this.listen({
+        chordButtonCanvas,
+        toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
+      });
     }
     window.addEventListener("load", loader);
   };
