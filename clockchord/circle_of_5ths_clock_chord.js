@@ -519,28 +519,20 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const drawArc = (radius, startDirection, endDirection) => {
+    const drawArcByAngles = (radius, ...angles) => {
       context.beginPath();
       context.arc(
         center.x,
         center.y,
         radius * width,
-        startDirection.arc.angle,
-        endDirection.arc.angle
+        ...angles
       );
       context.stroke();
-    };
+    }
+    const drawArc = (radius, ...directions) => drawArcByAngles(radius, ...directions.map(d => d.arc.angle));
     const drawBassArc = (radius, direction) => {
-      const da = direction.arc;
-      context.beginPath();
-      context.arc(
-        center.x,
-        center.y,
-        radius * width,
-        da.bassAngle,
-        da.bassEndAngle
-      );
-      context.stroke();
+      const { bassAngle: start, bassEndAngle: end } = direction.arc;
+      drawArcByAngles(radius, start, end);
     };
     // For best performance, Pre-calculate frequently accessed radiuses
     const average2 = (a, b) => (a + b) / 2;
