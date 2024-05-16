@@ -499,9 +499,8 @@ const PianoKeyboard = class {
           dy: center.dy(centerClockAngle),
         },
         arc: {
-          angle       : diffToAngle(-3.5),
-          bassAngle   : diffToAngle(-3.3),
-          bassEndAngle: diffToAngle(-2.7),
+          angle : diffToAngle(-3.5),
+          bassAngles: [diffToAngle(-3.3), diffToAngle(-2.7)],
         },
       };
     });
@@ -519,7 +518,7 @@ const PianoKeyboard = class {
       );
       context.stroke();
     };
-    const drawArcByAngles = (radius, ...angles) => {
+    const drawArc = (radius, ...angles) => {
       context.beginPath();
       context.arc(
         center.x,
@@ -529,16 +528,10 @@ const PianoKeyboard = class {
       );
       context.stroke();
     }
-    const drawArc = (radius, ...directions) => drawArcByAngles(radius, ...directions.map(d => d.arc.angle));
-    const drawBassArc = (radius, direction) => {
-      const { bassAngle: start, bassEndAngle: end } = direction.arc;
-      drawArcByAngles(radius, start, end);
-    };
     // For best performance, Pre-calculate frequently accessed radiuses
     const average2 = (a, b) => (a + b) / 2;
     const radiusOf = (rs, n) => rs[0] + (rs[1] - rs[0]) / n;
     const shortRadiusesOf = (rs) => [rs[0], radiusOf(rs, 4)];
-    const bassRadiusOf = (rs) => inner + (outer - inner) / 5;
     //minor
     const minorRadiuses = borderRadius.slice(0, 2);
     const minorShortRadiuses = shortRadiusesOf(minorRadiuses);
@@ -553,15 +546,15 @@ const PianoKeyboard = class {
     const sus4CenterRadius = sus4Radiuses.reduce(average2);
     // drawers
     const drawSus4 = (dir, fifthDir, rootColor, sus4Color, fifthColor) => {
-      context.strokeStyle = rootColor;
-      drawArc(sus4Radiuses[0], dir, fifthDir);
+      const angles = [dir.arc.angle, fifthDir.arc.angle];
+      context.strokeStyle = rootColor; drawArc(sus4Radiuses[0], ...angles);
       drawRadial(dir, ...sus4Radiuses);
-      context.strokeStyle = sus4Color; drawArc(sus4Radiuses[1], dir, fifthDir);
+      context.strokeStyle = sus4Color; drawArc(sus4Radiuses[1], ...angles);
       context.strokeStyle = fifthColor; drawRadial(fifthDir, ...sus4Radiuses);
     };
     const drawAug = (startDir, endDir) => {
       drawRadial(startDir.center, ...sus4Radiuses);
-      drawArc(sus4CenterRadius, startDir, endDir);
+      drawArc(sus4CenterRadius, startDir.arc.angle, endDir.arc.angle);
     };
     const tritoneArcArgs = [0.03 * width, 0, 2 * Math.PI];
     const drawTritone = (hour) => {
@@ -591,13 +584,14 @@ const PianoKeyboard = class {
           majorDirections[hour],
           majorDirections[hour1],
         ];
+        const arcAngles = directions.map(d => d.arc.angle);
         if( toneIndicating[hour1] ) { // root:hour + major3rd:hour4 + 5th:hour1 = major chord
-          drawArc(borderRadius[2], ...directions);
+          drawArc(borderRadius[2], ...arcAngles);
         }
         if( toneIndicating[hour3] ) { // root:hour3 + minor3rd:hour + 5th:hour4 = minor chord
-          drawArc(borderRadius[0], ...directions);
+          drawArc(borderRadius[0], ...arcAngles);
         }
-        context.strokeStyle = getColorOf(hour4, 11); drawArc(borderRadius[1], ...directions);
+        context.strokeStyle = getColorOf(hour4, 11); drawArc(borderRadius[1], ...arcAngles);
         if( toneIndicating[hour4ccw] ) { // Augumented chords
           const hour5 = hour + (hour < 7 ? 5 : -7);
           // Augumented 5th (#5th, 8 hours CW / 4 hours CCW) color
@@ -609,16 +603,16 @@ const PianoKeyboard = class {
       context.strokeStyle = getColorOf(hour, 11);
       drawRadial(majorDirections[hour3ccw], ...minorRadiuses);
       if( toneIndicating[hour4ccw] ) {
-        const directions = [
-          majorDirections[hour4ccw],
-          majorDirections[hour3ccw],
+        const arcAngles = [
+          majorDirections[hour4ccw].arc.angle,
+          majorDirections[hour3ccw].arc.angle,
         ];
-        drawArc(borderRadius[1], ...directions);
+        drawArc(borderRadius[1], ...arcAngles);
         if( toneIndicating[hour3ccw] ) { // root:hour4ccw + major3rd:hour + 5th:hour3ccw = major chord
-          context.strokeStyle = getColorOf(hour4ccw, 8); drawArc(borderRadius[2], ...directions);
+          context.strokeStyle = getColorOf(hour4ccw, 8); drawArc(borderRadius[2], ...arcAngles);
         }
         if( toneIndicating[hour1ccw] ) { // root:hour1ccw + minor3rd:hour4ccw + 5th:hour = minor chord
-          context.strokeStyle = getColorOf(hour4ccw, 8); drawArc(borderRadius[0], ...directions);
+          context.strokeStyle = getColorOf(hour4ccw, 8); drawArc(borderRadius[0], ...arcAngles);
         }
       }
       context.strokeStyle = getColorOf(hour1, 11); drawRadial(majorDirections[hour2ccw], ...minorShortRadiuses);
@@ -628,8 +622,8 @@ const PianoKeyboard = class {
           context.strokeStyle = getColorOf(hour3ccw, 8);
           drawArc(
             borderRadius[0],
-            majorDirections[hour3ccw],
-            majorDirections[hour2ccw]
+            majorDirections[hour3ccw].arc.angle,
+            majorDirections[hour2ccw].arc.angle
           );
         }
         if( toneIndicating[hour1ccw] ) { // root:hour + sus4:hour1ccw + 5th:hour1 = sus4 chord
@@ -657,8 +651,8 @@ const PianoKeyboard = class {
           context.strokeStyle = getColorOf(hour1ccw, 8);
           drawArc(
             borderRadius[2],
-            majorDirections[hour1ccw],
-            majorDirections[hour]
+            majorDirections[hour1ccw].arc.angle,
+            majorDirections[hour].arc.angle
           );
         }
         if( toneIndicating[hour2ccw] ) { // root:hour1ccw + sus4:hour2ccw + 5th:hour = sus4 chord
@@ -680,8 +674,8 @@ const PianoKeyboard = class {
     const drawBass = (hour) => {
       const hour3ccw = hour + (hour < 3 ? 9 : -3);
       context.lineWidth = 7;
-      context.strokeStyle = getColorOf(hour, 8); drawBassArc(majorBassRadius, majorDirections[hour]);
-      context.strokeStyle = getColorOf(hour, 11); drawBassArc(minorBassRadius, majorDirections[hour3ccw]);
+      context.strokeStyle = getColorOf(hour, 8);  drawArc(majorBassRadius, ...majorDirections[hour].arc.bassAngles);
+      context.strokeStyle = getColorOf(hour, 11); drawArc(minorBassRadius, ...majorDirections[hour3ccw].arc.bassAngles);
     };
     const redrawAll = () => {
       context.clearRect(0, 0, width, height);
