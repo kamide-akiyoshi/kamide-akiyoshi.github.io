@@ -1432,6 +1432,7 @@ const CircleOfFifthsClock = class {
         backgroundMode,
         chord,
       } = dial;
+      if( !themeColor ) return;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const selectedHour = keySignature.value;
@@ -1726,13 +1727,13 @@ const CircleOfFifthsClock = class {
         dial.draw();
       });
       dial.backgroundMode = backgroundModeSelect?.value ?? "donut";
-      setSystemTheme();
-      hands.moving = true;
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
       chordButtonCanvas && this.listen({
         chordButtonCanvas,
         toneIndicatorCanvas: document.getElementById('circleOfFifthsClockToneIndicatorCanvas'),
       });
+      setSystemTheme();
+      hands.moving = true;
     }
     window.addEventListener("load", loader);
   };
