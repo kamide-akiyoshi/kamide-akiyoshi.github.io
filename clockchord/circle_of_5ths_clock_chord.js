@@ -858,6 +858,11 @@ const PianoKeyboard = class {
       }
       return parseFixedLengthEvent(byteArray, event, dataLength);
     };
+    const insertEvent = (events, event) => {
+      const { tick } = event;
+      const index = events.findLastIndex((e) => e.tick <= tick);
+      events.splice((index < 0 ? 0 : index) + 1, 0, event);
+    };
     const parseMidiSequence = (sequenceByteArray) => {
       if( !hasValidChunkId(sequenceByteArray, "MThd") ) {
         const errorMessage = `Invalid MIDI file format`;
@@ -886,8 +891,9 @@ const PianoKeyboard = class {
         sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
       }
       const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
+      let hasGeneratedLyrics;
       Array.from({ length: numberOfTrack }).reduce(
-        (tracksByteArray) => {
+        (tracksByteArray, _, i) => {
           if( !tracksByteArray ) { // No more track
             return undefined;
           }
@@ -900,25 +906,51 @@ const PianoKeyboard = class {
           const events = [];
           let tick = 0;
           let runningStatus;
+          let generatedLyricsEvent;
           while(true) {
             const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
             tick += deltaTime;
             const event = { tick };
-            events.push(event);
             trackByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
             if( "metaType" in event ) {
               switch(event.metaType) {
+                case 1: // Text
+                  if( event.text.charAt(0) === '\\' ) {
+                    event.text = event.text.slice(1);
+                    event.isLyrics = true;
+                    const lastTick = events.findLast((e) => e.metaType === 1)?.tick ?? 0;
+                    generatedLyricsEvent = {
+                      ...event,
+                      tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
+                      metaType: 5,
+                    };
+                    insertEvent(events, generatedLyricsEvent);
+                    insertEvent(sequence.lyrics, generatedLyricsEvent);
+                    hasGeneratedLyrics = true;
+                    break;
+                  }
+                  if( generatedLyricsEvent ) {
+                    event.isLyrics = true;
+                    if( event.text.charAt(0) === '/' ) {
+                      event.text = event.text.replace('/', '\n');
+                    }
+                    generatedLyricsEvent.text = generatedLyricsEvent.text.concat(event.text);
+                  }
+                  break;
                 case 3:
                   // Sequence/Track name
                   if( event.text ) events.title = event.text;
                   break;
-                case 5: sequence.lyrics.push(event); break;
+                case 5:
+                  !hasGeneratedLyrics && sequence.lyrics.push(event);
+                  break;
                 case 6: sequence.markers.push(event); break;
                 case 0x51: sequence.tempos.push(event); break;
                 case 0x58: sequence.timeSignatures.push(event); break;
                 case 0x59: sequence.keySignatures.push(event); break;
               }
             }
+            !(hasGeneratedLyrics && event.metaType === 5) && events.push(event);
             if( !trackByteArray ) break;
             runningStatus = event.data?.[0];
           }
@@ -946,8 +978,10 @@ const PianoKeyboard = class {
     };
     let lastTimeSignatureEvent;
     const doMetaEvent = (event) => {
+      const { metaType } = event;
       switch(event.metaType) {
         case 5:
+          pastLyricsElement.textContent = "";
           lyricsElement.textContent = event.text;
           break;
         case 6:
@@ -976,7 +1010,12 @@ const PianoKeyboard = class {
           break;
         default:
           if( "text" in event ) {
-            const { text } = event;
+            const { text, isLyrics } = event;
+            if( lyricsElement.textContent && metaType === 1 && isLyrics ) {
+              lyricsElement.textContent = lyricsElement.textContent.slice(text.length);
+              pastLyricsElement.textContent = pastLyricsElement.textContent.concat(text);
+              break;
+            }
             if( midiSequence.title != text ) textElement.textContent = text;
           }
           break;
@@ -1000,6 +1039,7 @@ const PianoKeyboard = class {
     const titleElement = document.getElementById("song_title");
     const markerElement = document.getElementById("song_marker");
     const lyricsElement = document.getElementById("lyrics");
+    const pastLyricsElement = document.getElementById("past_lyrics");
     const textElement = document.getElementById("song_text");
     const darkModeSelect = document.getElementById("dark_mode_select");
     midiSequencerElement.removeChild(midiSequenceElement);
@@ -1008,6 +1048,7 @@ const PianoKeyboard = class {
       midiSequence = seq;
       textElement.textContent = "";
       lyricsElement.textContent = "";
+      pastLyricsElement.textContent = "";
       markerElement.textContent = "";
       titleElement.textContent = midiSequence.title ?? "";
       lastTimeSignatureEvent = {
@@ -1082,8 +1123,10 @@ const PianoKeyboard = class {
       doLastMetaEvent(midiSequence.timeSignatures);
       doLastMetaEvent(midiSequence.keySignatures);
       doLastMetaEvent(midiSequence.tempos);
-      lyricsElement.textContent = ""; doLastMetaEvent(midiSequence.lyrics);
-      markerElement.textContent = ""; doLastMetaEvent(midiSequence.markers);
+      lyricsElement.textContent = pastLyricsElement.textContext = "";
+      doLastMetaEvent(midiSequence.lyrics);
+      markerElement.textContent = "";
+      doLastMetaEvent(midiSequence.markers);
       midiSequence.tracks.forEach((track, index) => {
         if( tick === 0 ) {
           // Top

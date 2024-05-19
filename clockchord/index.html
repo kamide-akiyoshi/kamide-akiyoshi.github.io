@@ -239,11 +239,18 @@
 	#time_position {
 		width: 100%;
 	}
-	#lyrics {
+	#lyrics_box {
 		font-size: 120%;
 		width: 410px;
 		margin-top: 8px;
 		text-align: center;
+	}
+	#lyrics {
+		font-weight: bold;
+	}
+	#past_lyrics {
+		color: blue;
+		font-weight: normal;
 	}
 </style>
 </HEAD>
@@ -277,7 +284,9 @@
       <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
       <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
     </div>
-    <div id="lyrics"></div>
+    <div id="lyrics_box">
+      <span id="past_lyrics"></span><span id="lyrics"></span>
+    </div>
     <div id="button_container">
       <div class="shift_button_line">
         <div id="button_major7th" class="shift_button">M7</div>
