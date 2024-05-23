@@ -891,7 +891,7 @@ const PianoKeyboard = class {
         sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
       }
       const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
-      let hasGeneratedLyrics;
+      let hasKaraokeLyricsInMetaType;
       Array.from({ length: numberOfTrack }).reduce(
         (tracksByteArray, _, i) => {
           if( !tracksByteArray ) { // No more track
@@ -906,7 +906,24 @@ const PianoKeyboard = class {
           const events = [];
           let tick = 0;
           let runningStatus;
-          let generatedLyricsEvent;
+          let karaokeLyricsEvent;
+          const generateKaraokeLyricsEvent = (event) => {
+            const { metaType } = event;
+            const lastTick = events.findLast((e) => e.metaType === metaType)?.tick ?? 0;
+            karaokeLyricsEvent = {
+              ...event,
+              tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
+              metaType: 5,
+            };
+            insertEvent(sequence.lyrics, karaokeLyricsEvent);
+            insertEvent(events, karaokeLyricsEvent);
+            event.isLyricsFragment = true;
+            hasKaraokeLyricsInMetaType = metaType;
+          };
+          const appendToKaraokeLyricsEvent = (event) => {
+            karaokeLyricsEvent.text = karaokeLyricsEvent.text.concat(event.text);
+            event.isLyricsFragment = true;
+          };
           while(true) {
             const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
             tick += deltaTime;
@@ -917,32 +934,26 @@ const PianoKeyboard = class {
                 case 1: // Text
                   if( event.text.charAt(0) === '\\' ) {
                     event.text = event.text.slice(1);
-                    event.isLyrics = true;
-                    const lastTick = events.findLast((e) => e.metaType === 1)?.tick ?? 0;
-                    generatedLyricsEvent = {
-                      ...event,
-                      tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
-                      metaType: 5,
-                    };
-                    insertEvent(events, generatedLyricsEvent);
-                    insertEvent(sequence.lyrics, generatedLyricsEvent);
-                    hasGeneratedLyrics = true;
-                    break;
-                  }
-                  if( generatedLyricsEvent ) {
-                    event.isLyrics = true;
-                    if( event.text.charAt(0) === '/' ) {
-                      event.text = event.text.replace('/', '\n');
-                    }
-                    generatedLyricsEvent.text = generatedLyricsEvent.text.concat(event.text);
+                    generateKaraokeLyricsEvent(event);
+                  } else if( karaokeLyricsEvent ) {
+                    if( event.text.charAt(0) === '/' ) event.text = event.text.replace('/', '\n');
+                    appendToKaraokeLyricsEvent(event);
                   }
                   break;
-                case 3:
-                  // Sequence/Track name
+                case 3: // Sequence/Track name
                   if( event.text ) events.title = event.text;
                   break;
-                case 5:
-                  !hasGeneratedLyrics && sequence.lyrics.push(event);
+                case 5: // Lyrics
+                  if( hasKaraokeLyricsInMetaType !== 1 ) {
+                    if ( event.text.charAt(0) === '\n' ) {
+                      event.text = event.text.slice(1);
+                      generateKaraokeLyricsEvent(event);
+                    } else if( hasKaraokeLyricsInMetaType === 5 && karaokeLyricsEvent ) {
+                      appendToKaraokeLyricsEvent(event);
+                    } else {
+                      sequence.lyrics.push(event);
+                    }
+                  }
                   break;
                 case 6: sequence.markers.push(event); break;
                 case 0x51: sequence.tempos.push(event); break;
@@ -950,7 +961,9 @@ const PianoKeyboard = class {
                 case 0x59: sequence.keySignatures.push(event); break;
               }
             }
-            !(hasGeneratedLyrics && event.metaType === 5) && events.push(event);
+            if( !(hasKaraokeLyricsInMetaType === 1 && event.metaType === 5) ) {
+              events.push(event);
+            }
             if( !trackByteArray ) break;
             runningStatus = event.data?.[0];
           }
@@ -977,12 +990,23 @@ const PianoKeyboard = class {
       selectedMidiOutputPorts.forEach((port) => port.send(data));
     };
     let lastTimeSignatureEvent;
+    const showNewLyrics = (newLyrics) => {
+      pastLyricsElement.textContent = "";
+      lyricsElement.textContent = newLyrics;
+    };
+    const proceedLyrics = (fragment) => {
+      lyricsElement.textContent = lyricsElement.textContent.slice(fragment.length);
+      pastLyricsElement.textContent = pastLyricsElement.textContent.concat(fragment);
+    };
     const doMetaEvent = (event) => {
       const { metaType } = event;
-      switch(event.metaType) {
+      switch(metaType) {
         case 5:
-          pastLyricsElement.textContent = "";
-          lyricsElement.textContent = event.text;
+          if( event.isLyricsFragment && lyricsElement.textContent ) {
+            proceedLyrics(event.text);
+          } else {
+            showNewLyrics(event.text);
+          }
           break;
         case 6:
           markerElement.textContent = event.text ? `Marker: ${event.text}` : "";
@@ -1010,13 +1034,12 @@ const PianoKeyboard = class {
           break;
         default:
           if( "text" in event ) {
-            const { text, isLyrics } = event;
-            if( lyricsElement.textContent && metaType === 1 && isLyrics ) {
-              lyricsElement.textContent = lyricsElement.textContent.slice(text.length);
-              pastLyricsElement.textContent = pastLyricsElement.textContent.concat(text);
-              break;
+            const { text, isLyricsFragment } = event;
+            if( isLyricsFragment && lyricsElement.textContent && metaType === 1 ) {
+              proceedLyrics(text);
+            } else if( midiSequence.title != text ) {
+              textElement.textContent = text;
             }
-            if( midiSequence.title != text ) textElement.textContent = text;
           }
           break;
       }
