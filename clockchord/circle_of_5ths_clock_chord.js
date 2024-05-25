@@ -891,7 +891,7 @@ const PianoKeyboard = class {
         sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
       }
       const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
-      let hasKaraokeLyricsInMetaType;
+      let karaokeLyricsMetaType;
       Array.from({ length: numberOfTrack }).reduce(
         (tracksByteArray) => {
           if( !tracksByteArray ) { // No more track
@@ -906,23 +906,23 @@ const PianoKeyboard = class {
           const events = [];
           let tick = 0;
           let runningStatus;
-          let karaokeLyricsEvent;
-          const generateKaraokeLyricsEvent = (event) => {
-            const { metaType } = event;
-            const lastTick = events.findLast((e) => e.metaType === metaType)?.tick ?? 0;
-            karaokeLyricsEvent = {
-              ...event,
-              tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
-              metaType: 5,
-            };
-            insertEvent(sequence.lyrics, karaokeLyricsEvent);
-            insertEvent(events, karaokeLyricsEvent);
-            event.isLyricsFragment = true;
-            hasKaraokeLyricsInMetaType = metaType;
-          };
-          const appendToKaraokeLyricsEvent = (event) => {
-            karaokeLyricsEvent.text = karaokeLyricsEvent.text.concat(event.text);
-            event.isLyricsFragment = true;
+          const mergedLyrics = {
+            create: (event) => {
+              karaokeLyricsMetaType = event.metaType;
+              const lastTick = events.findLast((e) => e.metaType === karaokeLyricsMetaType)?.tick ?? 0;
+              mergedLyrics.event = {
+                ...event,
+                tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
+                metaType: 5,
+              };
+              insertEvent(sequence.lyrics, mergedLyrics.event);
+              insertEvent(events, mergedLyrics.event);
+              event.isLyricsFragment = true;
+            },
+            append: (event) => {
+              mergedLyrics.event.text = mergedLyrics.event.text.concat(event.text);
+              event.isLyricsFragment = true;
+            },
           };
           while(true) {
             const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
@@ -934,22 +934,22 @@ const PianoKeyboard = class {
                 case 1: // Text
                   if( event.text.charAt(0) === '\\' ) {
                     event.text = event.text.slice(1);
-                    generateKaraokeLyricsEvent(event);
-                  } else if( karaokeLyricsEvent ) {
+                    mergedLyrics.create(event);
+                  } else if( mergedLyrics.event ) {
                     if( event.text.charAt(0) === '/' ) event.text = event.text.replace('/', '\n');
-                    appendToKaraokeLyricsEvent(event);
+                    mergedLyrics.append(event);
                   }
                   break;
                 case 3: // Sequence/Track name
                   if( event.text ) events.title = event.text;
                   break;
                 case 5: // Lyrics
-                  if( hasKaraokeLyricsInMetaType !== 1 ) {
+                  if( karaokeLyricsMetaType !== 1 ) {
                     if ( event.text.charAt(0) === '\n' ) {
                       event.text = event.text.slice(1);
-                      generateKaraokeLyricsEvent(event);
-                    } else if( hasKaraokeLyricsInMetaType === 5 && karaokeLyricsEvent ) {
-                      appendToKaraokeLyricsEvent(event);
+                      mergedLyrics.create(event);
+                    } else if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
+                      mergedLyrics.append(event);
                     } else {
                       sequence.lyrics.push(event);
                     }
@@ -961,7 +961,7 @@ const PianoKeyboard = class {
                 case 0x59: sequence.keySignatures.push(event); break;
               }
             }
-            if( !(hasKaraokeLyricsInMetaType === 1 && event.metaType === 5) ) {
+            if( !(karaokeLyricsMetaType === 1 && event.metaType === 5) ) {
               events.push(event);
             }
             if( !trackByteArray ) break;
