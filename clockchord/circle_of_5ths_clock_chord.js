@@ -985,9 +985,13 @@ const PianoKeyboard = class {
       if( title ) sequence.title = title;
       return sequence;
     };
-    const sendMidiMessage = (data) => {
-      handleMidiMessage(data);
-      selectedMidiOutputPorts.forEach((port) => port.send(data));
+    const sendMidiMessage = (midiMessage) => {
+      handleMidiMessage(midiMessage);
+      try {
+        selectedMidiOutputPorts.forEach((port) => port.send(midiMessage));
+      } catch(e) {
+        console.error(midiMessage, e);
+      }
     };
     let lastTimeSignatureEvent;
     const showNewLyrics = (newLyrics) => {
