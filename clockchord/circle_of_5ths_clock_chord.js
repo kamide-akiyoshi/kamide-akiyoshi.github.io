@@ -893,7 +893,7 @@ const PianoKeyboard = class {
       const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
       let hasKaraokeLyricsInMetaType;
       Array.from({ length: numberOfTrack }).reduce(
-        (tracksByteArray, _, i) => {
+        (tracksByteArray) => {
           if( !tracksByteArray ) { // No more track
             return undefined;
           }
