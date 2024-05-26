@@ -907,7 +907,7 @@ const PianoKeyboard = class {
           let tick = 0;
           let runningStatus;
           const mergedLyrics = {
-            create: (event) => {
+            createEvent: (event) => {
               karaokeLyricsMetaType = event.metaType;
               const lastTick = events.findLast((e) => e.metaType === karaokeLyricsMetaType)?.tick ?? 0;
               mergedLyrics.event = {
@@ -919,7 +919,7 @@ const PianoKeyboard = class {
               insertEvent(events, mergedLyrics.event);
               event.isLyricsFragment = true;
             },
-            append: (event) => {
+            appendTextOf: (event) => {
               mergedLyrics.event.text = mergedLyrics.event.text.concat(event.text);
               event.isLyricsFragment = true;
             },
@@ -934,10 +934,10 @@ const PianoKeyboard = class {
                 case 1: // Text
                   if( event.text.charAt(0) === '\\' ) {
                     event.text = event.text.slice(1);
-                    mergedLyrics.create(event);
+                    mergedLyrics.createEvent(event);
                   } else if( mergedLyrics.event ) {
                     if( event.text.charAt(0) === '/' ) event.text = event.text.replace('/', '\n');
-                    mergedLyrics.append(event);
+                    mergedLyrics.appendTextOf(event);
                   }
                   break;
                 case 3: // Sequence/Track name
@@ -947,9 +947,9 @@ const PianoKeyboard = class {
                   if( karaokeLyricsMetaType !== 1 ) {
                     if ( event.text.charAt(0) === '\n' ) {
                       event.text = event.text.slice(1);
-                      mergedLyrics.create(event);
+                      mergedLyrics.createEvent(event);
                     } else if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
-                      mergedLyrics.append(event);
+                      mergedLyrics.appendTextOf(event);
                     } else {
                       sequence.lyrics.push(event);
                     }
