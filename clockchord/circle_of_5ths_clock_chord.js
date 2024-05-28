@@ -742,7 +742,7 @@ const PianoKeyboard = class {
           `Failed to decode as "${encoding}", so force "${defaultEncoding}", and decoded to "${text}" from the source data:`,
           byteArray, error);
       }
-      return text;
+      return text.replace(/\0/g, '');
     };
     const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
     const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
