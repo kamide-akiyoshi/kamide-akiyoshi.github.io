@@ -994,22 +994,35 @@ const PianoKeyboard = class {
       }
     };
     let lastTimeSignatureEvent;
-    const showNewLyrics = (newLyrics) => {
-      pastLyricsElement.textContent = "";
-      lyricsElement.textContent = newLyrics;
-    };
-    const proceedLyrics = (fragment) => {
-      lyricsElement.textContent = lyricsElement.textContent.slice(fragment.length);
-      pastLyricsElement.textContent = pastLyricsElement.textContent.concat(fragment);
+    const currentLyrics = {
+      element: document.getElementById("lyrics"),
+      pastElement: document.getElementById("past_lyrics"),
+      clear: () => {
+        delete currentLyrics.position;
+        delete currentLyrics.text;
+        currentLyrics.element.innerText =
+        currentLyrics.pastElement.innerText = "";
+      },
+      setText: (text) => {
+        currentLyrics.position = 0,
+        currentLyrics.pastElement.innerText = "";
+        currentLyrics.element.innerText = currentLyrics.text = text;
+      },
+      proceedText: (fragment) => {
+        const p = currentLyrics.position += fragment.length;
+        const t = currentLyrics.text;
+        currentLyrics.element.innerText = t.slice(p);
+        currentLyrics.pastElement.innerText = t.slice(0, p);
+      },
     };
     const doMetaEvent = (event) => {
       const { metaType } = event;
       switch(metaType) {
         case 5:
-          if( event.isLyricsFragment && lyricsElement.textContent ) {
-            proceedLyrics(event.text);
+          if( event.isLyricsFragment && currentLyrics.element.textContent ) {
+            currentLyrics.proceedText(event.text);
           } else {
-            showNewLyrics(event.text);
+            currentLyrics.setText(event.text);
           }
           break;
         case 6:
@@ -1039,8 +1052,8 @@ const PianoKeyboard = class {
         default:
           if( "text" in event ) {
             const { text, isLyricsFragment } = event;
-            if( isLyricsFragment && lyricsElement.textContent && metaType === 1 ) {
-              proceedLyrics(text);
+            if( isLyricsFragment && currentLyrics.element.textContent && metaType === 1 ) {
+              currentLyrics.proceedText(text);
             } else if( midiSequence.title != text ) {
               textElement.textContent = text;
             }
@@ -1065,8 +1078,6 @@ const PianoKeyboard = class {
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const markerElement = document.getElementById("song_marker");
-    const lyricsElement = document.getElementById("lyrics");
-    const pastLyricsElement = document.getElementById("past_lyrics");
     const textElement = document.getElementById("song_text");
     const darkModeSelect = document.getElementById("dark_mode_select");
     midiSequencerElement.removeChild(midiSequenceElement);
@@ -1074,8 +1085,7 @@ const PianoKeyboard = class {
     const setMidiSequence = (seq) => {
       midiSequence = seq;
       textElement.textContent = "";
-      lyricsElement.textContent = "";
-      pastLyricsElement.textContent = "";
+      currentLyrics.clear();
       markerElement.textContent = "";
       titleElement.textContent = midiSequence.title ?? "";
       lastTimeSignatureEvent = {
@@ -1150,7 +1160,7 @@ const PianoKeyboard = class {
       doLastMetaEvent(midiSequence.timeSignatures);
       doLastMetaEvent(midiSequence.keySignatures);
       doLastMetaEvent(midiSequence.tempos);
-      lyricsElement.textContent = pastLyricsElement.textContext = "";
+      currentLyrics.clear();
       doLastMetaEvent(midiSequence.lyrics);
       markerElement.textContent = "";
       doLastMetaEvent(midiSequence.markers);
