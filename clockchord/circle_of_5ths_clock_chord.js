@@ -917,11 +917,11 @@ const PianoKeyboard = class {
               };
               insertEvent(sequence.lyrics, mergedLyrics.event);
               insertEvent(events, mergedLyrics.event);
-              event.isLyricsFragment = true;
+              event.lyricsNextPosition = event.text.length;
             },
             appendTextOf: (event) => {
               mergedLyrics.event.text = mergedLyrics.event.text.concat(event.text);
-              event.isLyricsFragment = true;
+              event.lyricsNextPosition = mergedLyrics.event.text.length;
             },
           };
           while(true) {
@@ -1008,19 +1008,18 @@ const PianoKeyboard = class {
         currentLyrics.pastElement.innerText = "";
         currentLyrics.element.innerText = currentLyrics.text = text;
       },
-      proceedText: (fragment) => {
-        const p = currentLyrics.position += fragment.length;
+      proceedText: (fragment, nextPosition) => {
         const t = currentLyrics.text;
-        currentLyrics.element.innerText = t.slice(p);
-        currentLyrics.pastElement.innerText = t.slice(0, p);
+        currentLyrics.element.innerText = t.slice(nextPosition);
+        currentLyrics.pastElement.innerText = t.slice(0, nextPosition);
       },
     };
     const doMetaEvent = (event) => {
       const { metaType } = event;
       switch(metaType) {
         case 5:
-          if( event.isLyricsFragment && currentLyrics.element.textContent ) {
-            currentLyrics.proceedText(event.text);
+          if( "lyricsNextPosition" in event && currentLyrics.element.textContent ) {
+            currentLyrics.proceedText(event.text, event.lyricsNextPosition);
           } else {
             currentLyrics.setText(event.text);
           }
@@ -1051,9 +1050,9 @@ const PianoKeyboard = class {
           break;
         default:
           if( "text" in event ) {
-            const { text, isLyricsFragment } = event;
-            if( isLyricsFragment && currentLyrics.element.textContent && metaType === 1 ) {
-              currentLyrics.proceedText(text);
+            const { text } = event;
+            if( "lyricsNextPosition" in event && currentLyrics.element.textContent && metaType === 1 ) {
+              currentLyrics.proceedText(text, event.lyricsNextPosition);
             } else if( midiSequence.title != text ) {
               textElement.textContent = text;
             }
