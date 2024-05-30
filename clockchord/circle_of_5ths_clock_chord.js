@@ -1008,15 +1008,14 @@ const PianoKeyboard = class {
       element: document.getElementById("lyrics"),
       pastElement: document.getElementById("past_lyrics"),
       clear: () => {
-        delete currentLyrics.position;
         delete currentLyrics.text;
         currentLyrics.element.innerText =
         currentLyrics.pastElement.innerText = "";
       },
       setText: (text) => {
-        currentLyrics.position = 0,
+        currentLyrics.text = text;
         currentLyrics.pastElement.innerText = "";
-        currentLyrics.element.innerText = currentLyrics.text = text;
+        currentLyrics.element.innerText = text;
       },
       proceedText: (fragment, nextPosition) => {
         const t = currentLyrics.text;
