@@ -1069,27 +1069,26 @@ const PianoKeyboard = class {
           break;
       }
     };
-    const midiFileInput = document.getElementById("midi_file");
-    const midiFileDropZone = document.getElementsByTagName("body")[0];
-    const midiFileSelectButton = document.getElementById("midi_file_select_button");
+    const darkModeSelect = document.getElementById("dark_mode_select");
     const midiFileNameElement = document.getElementById("midi_file_name");
-    const midiSequenceElement = document.getElementById("midi_sequence");
-    const midiSequencerElement = midiSequenceElement.parentElement;
-    const topButton = document.getElementById("top");
-    const playPauseButton = document.getElementById("play_pause");
-    const playPauseIcon = document.getElementById("play_pause_icon");
     const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
     const timeSignatureElement = document.getElementById("time_signature");
-    const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const markerElement = document.getElementById("song_marker");
     const textElement = document.getElementById("song_text");
-    const darkModeSelect = document.getElementById("dark_mode_select");
-    midiSequencerElement.removeChild(midiSequenceElement);
     let midiSequence;
+    const midiSequenceElement = document.getElementById("midi_sequence");
+    document.getElementById("top")?.addEventListener('click', () => setTickPosition(0));
+    document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
+    const playPauseIcon = document.getElementById("play_pause_icon");
+    tickPositionSlider?.addEventListener("change", (event) => {
+      !intervalId && setTickPosition(parseInt(event.target.value));
+    });
+    const midiSequencerElement = midiSequenceElement.parentElement;
+    midiSequencerElement.removeChild(midiSequenceElement);
     const setMidiSequence = (seq) => {
       midiSequence = seq;
       textElement.textContent = "";
@@ -1135,7 +1134,9 @@ const PianoKeyboard = class {
       });
       reader.readAsArrayBuffer(file);
     };
-    midiFileSelectButton.addEventListener("click", () => {
+    const midiFileInput = document.getElementById("midi_file");
+    const midiFileDropZone = document.getElementsByTagName("body")[0];
+    document.getElementById("midi_file_select_button")?.addEventListener("click", () => {
       midiFileInput.click();
     });
     midiFileInput.addEventListener("change", () => loadMidiFile(midiFileInput.files[0]));
@@ -1199,6 +1200,7 @@ const PianoKeyboard = class {
       });
     };
     let beat = 0;
+    const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     const setBeatAt = (tick) => {
       const {
         tick: lastTick,
@@ -1290,11 +1292,6 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Pause";
       }
     };
-    topButton?.addEventListener('click', () => setTickPosition(0));
-    playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
-    tickPositionSlider?.addEventListener("change", (event) => {
-      !intervalId && setTickPosition(parseInt(event.target.value));
-    });
   };
   setupPianoKeyboard = () => {
     const {
