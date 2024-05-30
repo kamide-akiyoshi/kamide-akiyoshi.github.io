@@ -944,16 +944,26 @@ const PianoKeyboard = class {
                   if( event.text ) events.title = event.text;
                   break;
                 case 5: // Lyrics
-                  if( karaokeLyricsMetaType !== 1 ) {
-                    if ( event.text.charAt(0) === '\n' ) {
-                      event.text = event.text.slice(1);
+                  if( karaokeLyricsMetaType === 1 ) {
+                    break;
+                  }
+                  if ( event.text.charAt(0) === '\n' ) {
+                    event.text = event.text.slice(1);
+                    mergedLyrics.createEvent(event);
+                    break;
+                  }
+                  if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
+                    mergedLyrics.appendTextOf(event);
+                    break;
+                  }
+                  if( karaokeLyricsMetaType === undefined ) {
+                    const length = event.text.trim().length;
+                    if( 0 < length && length < 4 ) {
                       mergedLyrics.createEvent(event);
-                    } else if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
-                      mergedLyrics.appendTextOf(event);
-                    } else {
-                      sequence.lyrics.push(event);
+                      break;
                     }
                   }
+                  sequence.lyrics.push(event);
                   break;
                 case 6: sequence.markers.push(event); break;
                 case 0x51: sequence.tempos.push(event); break;
