@@ -63,7 +63,7 @@ const SimpleSynthesizer = class {
         setIcon(waveselect.value);
       }
     }
-    const createAmplifier = context => {
+    const createAmplifier = (context) => {
       const amp = context.createGain();
       const { gain } = amp;
       const { volume } = sliders;
@@ -73,16 +73,39 @@ const SimpleSynthesizer = class {
       amp.connect(context.destination);
       return amp;
     };
-    this.createVoice = frequency => {
+    const createNoiseBuffer = (context) => {
+      const { sampleRate } = context;
+      const length = sampleRate;
+      const noiseBuffer = new AudioBuffer({ length, sampleRate });
+      const data = noiseBuffer.getChannelData(0);
+      for( let i = 0; i < length; i++ ) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      return noiseBuffer;
+    };
+    const createNoiseNode = (context) => {
+      const buffer = this.noiseBuffer ??= createNoiseBuffer(context);
+      return new AudioBufferSourceNode(context, { buffer });
+    };
+    this.createVoice = (frequency) => {
       const context = SimpleSynthesizer.audioContext;
       const amp = this.amplifier ??= createAmplifier(context);
       const envelope = context.createGain();
       envelope.gain.value = 0;
       envelope.connect(amp);
-      const osc = context.createOscillator();
-      osc.frequency.value = frequency;
-      osc.connect(envelope);
-      osc.start();
+      let osc;
+      let noise;
+      if( frequency ) {
+        osc = context.createOscillator();
+        osc.frequency.value = frequency;
+        osc.connect(envelope);
+        osc.start();
+      } else {
+        noise = createNoiseNode(context);
+        noise.loop = true;
+        noise.connect(envelope);
+        noise.start();
+      }
       let timeoutIdToStop;
       const voice = {
         attack: () => {
@@ -91,19 +114,28 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = undefined;
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
-          const sustainLevel = sliders.sustainLevel.value;
-          const attackTime = sliders.attackTime.value - 0;
-          const t1 = context.currentTime + attackTime;
-          const waveKey = waveselect?.value ?? "sawtooth";
-          const { real, imag } = waves[waveKey];
-          if( real ) {
-            const periodicWave = context.createPeriodicWave(real, imag);
-            osc.setPeriodicWave(periodicWave);
-          } else {
-            osc.type = waveKey;
+          const sustainLevel = osc ? sliders.sustainLevel.value : 0;
+          const attackTime = osc ? sliders.attackTime.value : 0;
+          if( osc ) {
+            const waveKey = waveselect?.value ?? "sawtooth";
+            const { real, imag } = waves[waveKey];
+            if( real ) {
+              const periodicWave = context.createPeriodicWave(real, imag);
+              osc.setPeriodicWave(periodicWave);
+            } else {
+              osc.type = waveKey;
+            }
           }
-          gain.linearRampToValueAtTime(1, t1);
-          sustainLevel < 1 && gain.setTargetAtTime(sustainLevel, t1, sliders.decayTime.value);
+          const t1 = context.currentTime + (attackTime - 0);
+          if( attackTime ) {
+            gain.linearRampToValueAtTime(1, t1);
+          } else {
+            gain.value = 1;
+          }
+          if( sustainLevel < 1 ) {
+            const decayTime = osc ? sliders.decayTime.value : 0.1;
+            gain.setTargetAtTime(sustainLevel, t1, decayTime);
+          }
         },
         release: stopped => {
           if( timeoutIdToStop ) return;
@@ -114,11 +146,12 @@ const SimpleSynthesizer = class {
             timeoutIdToStop = undefined;
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
-            osc.stop();
+            osc?.stop();
+            noise?.stop();
             stopped && stopped();
           };
           if( gain.value <= gainValueToStop ) { stop(); return; }
-          const releaseTime = sliders.releaseTime.value;
+          const releaseTime = osc ? sliders.releaseTime.value : 0.03;
           const delay = Math.log(gain.value / gainValueToStop) * releaseTime * 1000;
           gain.cancelScheduledValues(context.currentTime);
           gain.setTargetAtTime(0, context.currentTime, releaseTime);
@@ -160,7 +193,7 @@ const PianoKeyboard = class {
     this.selectedMidiOutputPorts.noteOn(noteNumber);
     this.noteOn(noteNumber, orderInChord);
   };
-  noteOff = noteNumber => {
+  noteOff = (noteNumber) => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
       key.voice?.release(() => { delete key.voice; });
@@ -173,6 +206,15 @@ const PianoKeyboard = class {
   manualNoteOff = noteNumber => {
     this.selectedMidiOutputPorts.noteOff(noteNumber);
     this.noteOff(noteNumber);
+  };
+  activeDrumVoices = {};
+  drumNoteOn = (noteNumber) => {
+    (this.activeDrumVoices[noteNumber] ??= this.synth.createVoice()).attack();
+  };
+  drumNoteOff = (noteNumber) => {
+    this.activeDrumVoices[noteNumber]?.release(() => {
+      delete this.activeDrumVoices[noteNumber];
+    });
   };
   leftEnd = {
     set note(n) {
@@ -342,26 +384,25 @@ const PianoKeyboard = class {
       chord,
       noteOn,
       noteOff,
+      drumNoteOn,
+      drumNoteOff,
     } = this;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
       const channel = statusWithCh & 0xF;
-      if( channel == DRUM_MIDI_CH ) {
-        return;
-      }
       const status = statusWithCh & 0xF0;
       switch(status) {
         case 0x90:
           if( data[1] ) { // velocity > 0
             const noteNumber = data[0];
-            noteOn(noteNumber);
+            channel == DRUM_MIDI_CH ? drumNoteOn(noteNumber) : noteOn(noteNumber);
             break;
           }
           // fallthrough: velocity === 0 means Note Off
         case 0x80:
           {
             const noteNumber = data[0];
-            noteOff(noteNumber);
+            channel == DRUM_MIDI_CH ? drumNoteOff(noteNumber) : noteOff(noteNumber);
           }
           break;
         case 0xB0: // Control Change
