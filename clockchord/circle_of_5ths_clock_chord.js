@@ -73,9 +73,10 @@ const SimpleSynthesizer = class {
       amp.connect(context.destination);
       return amp;
     };
+    const NOISE_TIME = 0.1; // [sec]
     const createNoiseBuffer = (context) => {
       const { sampleRate } = context;
-      const length = sampleRate;
+      const length = sampleRate * NOISE_TIME;
       const noiseBuffer = new AudioBuffer({ length, sampleRate });
       const data = noiseBuffer.getChannelData(0);
       for( let i = 0; i < length; i++ ) {
@@ -83,29 +84,23 @@ const SimpleSynthesizer = class {
       }
       return noiseBuffer;
     };
-    const createNoiseNode = (context) => {
-      const buffer = this.noiseBuffer ??= createNoiseBuffer(context);
-      return new AudioBufferSourceNode(context, { buffer });
-    };
     this.createVoice = (frequency) => {
       const context = SimpleSynthesizer.audioContext;
       const amp = this.amplifier ??= createAmplifier(context);
       const envelope = context.createGain();
       envelope.gain.value = 0;
       envelope.connect(amp);
-      let osc;
-      let noise;
+      let source;
       if( frequency ) {
-        osc = context.createOscillator();
-        osc.frequency.value = frequency;
-        osc.connect(envelope);
-        osc.start();
+        source = context.createOscillator();
+        source.frequency.value = frequency;
       } else {
-        noise = createNoiseNode(context);
-        noise.loop = true;
-        noise.connect(envelope);
-        noise.start();
+        source = context.createBufferSource();
+        source.buffer = this.noiseBuffer ??= createNoiseBuffer(context);
+        source.loop = true;
       }
+      source.connect(envelope);
+      source.start();
       let timeoutIdToStop;
       const voice = {
         attack: () => {
@@ -114,17 +109,22 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = undefined;
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
-          const sustainLevel = osc ? sliders.sustainLevel.value : 0;
-          const attackTime = osc ? sliders.attackTime.value : 0;
-          if( osc ) {
+          let sustainLevel;
+          let attackTime;
+          if( source instanceof OscillatorNode ) {
             const waveKey = waveselect?.value ?? "sawtooth";
             const { real, imag } = waves[waveKey];
             if( real ) {
               const periodicWave = context.createPeriodicWave(real, imag);
-              osc.setPeriodicWave(periodicWave);
+              source.setPeriodicWave(periodicWave);
             } else {
-              osc.type = waveKey;
+              source.type = waveKey;
             }
+            sustainLevel = sliders.sustainLevel.value;
+            attackTime = sliders.attackTime.value;
+          } else {
+            sustainLevel = 0;
+            attackTime = 0;
           }
           const t1 = context.currentTime + (attackTime - 0);
           if( attackTime ) {
@@ -133,7 +133,7 @@ const SimpleSynthesizer = class {
             gain.value = 1;
           }
           if( sustainLevel < 1 ) {
-            const decayTime = osc ? sliders.decayTime.value : 0.1;
+            const decayTime = frequency ? sliders.decayTime.value : NOISE_TIME;
             gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
@@ -146,16 +146,17 @@ const SimpleSynthesizer = class {
             timeoutIdToStop = undefined;
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
-            osc?.stop();
-            noise?.stop();
+            source.stop();
             stopped && stopped();
           };
           if( gain.value <= gainValueToStop ) { stop(); return; }
-          const releaseTime = osc ? sliders.releaseTime.value : 0.03;
-          const delay = Math.log(gain.value / gainValueToStop) * releaseTime * 1000;
+          const releaseTime = source instanceof OscillatorNode ? sliders.releaseTime.value : NOISE_TIME;
+          if( !releaseTime ) { stop(); return; }
+          const delay = Math.log(gain.value / gainValueToStop) * releaseTime;
+          if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(context.currentTime);
           gain.setTargetAtTime(0, context.currentTime, releaseTime);
-          timeoutIdToStop = setTimeout(stop, delay);
+          timeoutIdToStop = setTimeout(stop, delay * 1000);
         }
       };
       return voice;
