@@ -1161,20 +1161,13 @@ const PianoKeyboard = class {
       midiSequencerElement.prepend(midiSequenceElement);
     }
     const loadMidiFile = (file) => {
-      if( !file ) {
-        return;
-      }
-      const reader = new FileReader();
-      reader.addEventListener("load", (event) => {
-        const arrayBuffer = event.target.result;
-        const seq = parseMidiSequence(new Uint8Array(arrayBuffer));
-        if( !seq ) {
-          return;
+      file?.arrayBuffer().then((ab) => {
+        const seq = parseMidiSequence(new Uint8Array(ab));
+        if( seq ) {
+          midiFileNameElement.textContent = (seq.file = file).name;
+          setMidiSequence(seq);
         }
-        midiFileNameElement.textContent = (seq.file = file).name;
-        setMidiSequence(seq);
       });
-      reader.readAsArrayBuffer(file);
     };
     const midiFileInput = document.getElementById("midi_file");
     const midiFileDropZone = document.getElementsByTagName("body")[0];
