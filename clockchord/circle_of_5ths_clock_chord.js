@@ -954,7 +954,7 @@ const PianoKeyboard = class {
               const lastTick = events.findLast((e) => e.metaType === karaokeLyricsMetaType)?.tick ?? 0;
               mergedLyrics.event = {
                 ...event,
-                tick: tick - Math.min(sequence.ticksPerQuarter * 2, (tick - lastTick) / 2),
+                tick: tick - Math.min(sequence.ticksPerQuarter * 2, tick - lastTick),
                 metaType: 5,
               };
               insertEvent(sequence.lyrics, mergedLyrics.event);
