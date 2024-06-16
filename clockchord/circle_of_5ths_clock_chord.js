@@ -919,10 +919,7 @@ const PianoKeyboard = class {
     };
     const parseMidiSequence = (sequenceByteArray) => {
       if( !hasValidChunkId(sequenceByteArray, "MThd") ) {
-        const errorMessage = `Invalid MIDI file format`;
-        console.error(errorMessage);
-        alert(errorMessage);
-        return undefined;
+        throw new Error(`Invalid MIDI file format`);
       }
       const headerChunkSize = parseBigEndian(sequenceByteArray.subarray(4, 8));
       const sequence = {
@@ -1174,11 +1171,12 @@ const PianoKeyboard = class {
     }
     const loadMidiFile = (file) => {
       file?.arrayBuffer().then((ab) => {
-        const seq = parseMidiSequence(new Uint8Array(ab));
-        if( seq ) {
-          midiFileNameElement.textContent = (seq.file = file).name;
-          setMidiSequence(seq);
-        }
+        const seq = parseMidiSequence(new Uint8Array(ab))
+        midiFileNameElement.textContent = (seq.file = file).name;
+        setMidiSequence(seq);
+      }).catch((error) => {
+        console.error(`Could not load MIDI file ${file.name}:`, error);
+        alert(error);
       });
     };
     const midiFileInput = document.getElementById("midi_file");
