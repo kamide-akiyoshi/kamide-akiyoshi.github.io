@@ -165,6 +165,7 @@ const SimpleSynthesizer = class {
 };
 
 const PianoKeyboard = class {
+  static DRUM_MIDI_CH = 9;
   pianoKeys = Array.from(
     {length: 128},
     (_, midiNoteNumber) => {
@@ -174,6 +175,26 @@ const PianoKeyboard = class {
     }
   );
   pressedNoteNumbers = new Set();
+  midiChannel = {
+    setup: () => {
+      const element = document.getElementById('midi_channel');
+      for( let ch = 0; ch < 16; ++ch ) {
+        const option = document.createElement("option");
+        option.value = ch;
+        option.appendChild(document.createTextNode(`${ch + 1}${ch == PianoKeyboard.DRUM_MIDI_CH ? " (Drum)" : ""}`));
+        element.appendChild(option);
+      }
+      this.midiChannel.element = element;
+    },
+    get value() {
+      return parseInt(this.element?.value);
+    },
+    set value(v) {
+      const { element } = this;
+      if( !element ) return;
+      element.value = v;
+    },
+  };
   noteOn = (noteNumber, orderInChord) => {
     !orderInChord && this.chord.classLists.clear();
     const key = this.pianoKeys[noteNumber];
@@ -378,9 +399,9 @@ const PianoKeyboard = class {
     if( ! window.isSecureContext ) {
       console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
     }
-    const DRUM_MIDI_CH = 9;
     // MIDI message receiver
     const {
+      midiChannel,
       toneIndicatorCanvas,
       chord,
       noteOn,
@@ -396,14 +417,14 @@ const PianoKeyboard = class {
         case 0x90:
           if( data[1] ) { // velocity > 0
             const noteNumber = data[0];
-            channel == DRUM_MIDI_CH ? drumNoteOn(noteNumber) : noteOn(noteNumber);
+            channel == PianoKeyboard.DRUM_MIDI_CH ? drumNoteOn(noteNumber) : noteOn(noteNumber);
             break;
           }
           // fallthrough: velocity === 0 means Note Off
         case 0x80:
           {
             const noteNumber = data[0];
-            channel == DRUM_MIDI_CH ? drumNoteOff(noteNumber) : noteOff(noteNumber);
+            channel == PianoKeyboard.DRUM_MIDI_CH ? drumNoteOff(noteNumber) : noteOff(noteNumber);
           }
           break;
         case 0xB0: // Control Change
@@ -426,15 +447,6 @@ const PianoKeyboard = class {
           break;
       }
     });
-    // MIDI OUT channel selecter
-    const chSelect = document.getElementById('midi_channel');
-    for( let ch = 0; ch < 16; ++ch ) {
-      const option = document.createElement("option");
-      option.value = ch;
-      const drumText = ch == DRUM_MIDI_CH ? " (Drum)" : "";
-      option.appendChild(document.createTextNode(`${ch + 1}${drumText}`));
-      chSelect.appendChild(option);
-    }
     // MIDI message sender
     const selectedOutputs = this.selectedMidiOutputPorts = [];
     selectedOutputs.addPort = port => selectedOutputs.push(port);
@@ -445,14 +457,14 @@ const PianoKeyboard = class {
     const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + parseInt(chSelect.value),
+        0x90 + midiChannel.value,
         noteNumber,
         velocitySlider.value
       ])
     );
     selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
       port => port.send([
-        0x90 + parseInt(chSelect.value),
+        0x90 + midiChannel.value,
         noteNumber,
         0
       ])
@@ -1445,6 +1457,7 @@ const PianoKeyboard = class {
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
     const {
+      midiChannel,
       chord,
       setupMidiPorts,
       setupMidiSequencer,
@@ -1452,6 +1465,7 @@ const PianoKeyboard = class {
       setupPianoKeyboard,
     } = this;
     chord.setup();
+    midiChannel.setup();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidiPorts();
     setupMidiSequencer();
