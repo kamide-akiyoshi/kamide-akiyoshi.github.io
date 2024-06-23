@@ -211,10 +211,6 @@ const PianoKeyboard = class {
     }
     return key;
   };
-  manualNoteOn = (noteNumber, orderInChord) => {
-    this.selectedMidiOutputPorts.noteOn(noteNumber);
-    this.noteOn(noteNumber, orderInChord);
-  };
   noteOff = (noteNumber) => {
     const key = this.pianoKeys[noteNumber];
     if( key ) {
@@ -225,8 +221,15 @@ const PianoKeyboard = class {
     }
     return key;
   };
+  manualNoteOn = (noteNumber, orderInChord) => {
+    const ch = this.midiChannel.value;
+    const velocity = this.velocitySlider.value - 0;
+    this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
+    this.noteOn(noteNumber, orderInChord);
+  };
   manualNoteOff = noteNumber => {
-    this.selectedMidiOutputPorts.noteOff(noteNumber);
+    const ch = this.midiChannel.value;
+    this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
     this.noteOff(noteNumber);
   };
   activeDrumVoices = {};
@@ -393,6 +396,18 @@ const PianoKeyboard = class {
       manualNoteOn(noteNumber, currentIndex + 1);
     },
   };
+  createSelectedMidiOutputPorts = () => {
+    const ports = [];
+    ports.addPort = port => ports.push(port);
+    ports.removePort = port => {
+      const i = ports.findIndex(p => p.id === port.id);
+      i < 0 || ports.splice(i, 1);
+    };
+    ports.send = (message) => ports.forEach(port => port.send(message));
+    ports.noteOn = (channel, noteNumber, velocity = 64) => ports.send([0x90 + channel, noteNumber, velocity]);
+    ports.noteOff = (channel, noteNumber) => ports.send([0x90 + channel, noteNumber, 0]);
+    return ports;
+  };
   setupMidiPorts = () => {
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return;
@@ -401,7 +416,6 @@ const PianoKeyboard = class {
     }
     // MIDI message receiver
     const {
-      midiChannel,
       toneIndicatorCanvas,
       chord,
       noteOn,
@@ -447,30 +461,9 @@ const PianoKeyboard = class {
           break;
       }
     });
-    // MIDI message sender
-    const selectedOutputs = this.selectedMidiOutputPorts = [];
-    selectedOutputs.addPort = port => selectedOutputs.push(port);
-    selectedOutputs.removePort = port => {
-      const i = selectedOutputs.findIndex(p => p.id === port.id);
-      i < 0 || selectedOutputs.splice(i, 1);
-    };
-    const velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
-    selectedOutputs.noteOn = noteNumber => selectedOutputs.forEach(
-      port => port.send([
-        0x90 + midiChannel.value,
-        noteNumber,
-        velocitySlider.value
-      ])
-    );
-    selectedOutputs.noteOff = noteNumber => selectedOutputs.forEach(
-      port => port.send([
-        0x90 + midiChannel.value,
-        noteNumber,
-        0
-      ])
-    );
     // MIDI port selecter
     const midiMessageListener = msg => handleMidiMessage(msg.data);
+    const selectedMidiOutputPorts = this.selectedMidiOutputPorts = this.createSelectedMidiOutputPorts();
     const checkboxes = {
       eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
       get: port => midiElement.querySelector(`input[value="${port.id}"]`),
@@ -493,7 +486,7 @@ const PianoKeyboard = class {
             break;
           case "output":
             cb.addEventListener("change", event => {
-              selectedOutputs[`${checkboxes.eventToAddOrRemove(event)}Port`](port);
+              selectedMidiOutputPorts[`${checkboxes.eventToAddOrRemove(event)}Port`](port);
             });
             break;
         };
@@ -504,7 +497,7 @@ const PianoKeyboard = class {
             port.removeEventListener("midimessage", midiMessageListener);
             break;
           case "output":
-            selectedOutputs.removePort(port);
+            selectedMidiOutputPorts.removePort(port);
             break;
         };
         checkboxes.get(port)?.closest("label").remove();
@@ -1049,7 +1042,7 @@ const PianoKeyboard = class {
     const sendMidiMessage = (midiMessage) => {
       handleMidiMessage(midiMessage);
       try {
-        selectedMidiOutputPorts.forEach((port) => port.send(midiMessage));
+        selectedMidiOutputPorts.send(midiMessage);
       } catch(e) {
         console.error(midiMessage, e);
       }
@@ -1462,6 +1455,7 @@ const PianoKeyboard = class {
       setupToneIndicatorCanvas,
       setupPianoKeyboard,
     } = this;
+    this.velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     chord.setup();
     midiChannel.setup();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
