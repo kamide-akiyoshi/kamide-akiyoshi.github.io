@@ -175,6 +175,7 @@ const PianoKeyboard = class {
     }
   );
   pressedNoteNumbers = new Set();
+  activeDrumVoices = {};
   midiChannel = {
     setup: () => {
       const element = document.getElementById('midi_channel');
@@ -195,7 +196,11 @@ const PianoKeyboard = class {
       element.value = v;
     },
   };
-  noteOn = (noteNumber, orderInChord) => {
+  noteOn = (channel, noteNumber, orderInChord) => {
+    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
+      (this.activeDrumVoices[noteNumber] ??= this.synth.createVoice()).attack();
+      return;
+    }
     !orderInChord && this.chord.classLists.clear();
     const key = this.pianoKeys[noteNumber];
     if( key ) {
@@ -209,9 +214,14 @@ const PianoKeyboard = class {
         orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
       }
     }
-    return key;
   };
-  noteOff = (noteNumber) => {
+  noteOff = (channel, noteNumber) => {
+    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
+      this.activeDrumVoices[noteNumber]?.release(() => {
+        delete this.activeDrumVoices[noteNumber];
+      });
+      return;
+    }
     const key = this.pianoKeys[noteNumber];
     if( key ) {
       key.voice?.release(() => { delete key.voice; });
@@ -219,27 +229,17 @@ const PianoKeyboard = class {
       this.pressedNoteNumbers.delete(noteNumber);
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
-    return key;
   };
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannel.value;
     const velocity = this.velocitySlider.value - 0;
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
-    this.noteOn(noteNumber, orderInChord);
+    this.noteOn(ch, noteNumber, orderInChord);
   };
   manualNoteOff = noteNumber => {
     const ch = this.midiChannel.value;
     this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
-    this.noteOff(noteNumber);
-  };
-  activeDrumVoices = {};
-  drumNoteOn = (noteNumber) => {
-    (this.activeDrumVoices[noteNumber] ??= this.synth.createVoice()).attack();
-  };
-  drumNoteOff = (noteNumber) => {
-    this.activeDrumVoices[noteNumber]?.release(() => {
-      delete this.activeDrumVoices[noteNumber];
-    });
+    this.noteOff(ch, noteNumber);
   };
   leftEnd = {
     set note(n) {
@@ -420,8 +420,6 @@ const PianoKeyboard = class {
       chord,
       noteOn,
       noteOff,
-      drumNoteOn,
-      drumNoteOff,
     } = this;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
@@ -431,14 +429,14 @@ const PianoKeyboard = class {
         case 0x90:
           if( data[1] ) { // velocity > 0
             const noteNumber = data[0];
-            channel == PianoKeyboard.DRUM_MIDI_CH ? drumNoteOn(noteNumber) : noteOn(noteNumber);
+            noteOn(channel, noteNumber);
             break;
           }
           // fallthrough: velocity === 0 means Note Off
         case 0x80:
           {
             const noteNumber = data[0];
-            channel == PianoKeyboard.DRUM_MIDI_CH ? drumNoteOff(noteNumber) : noteOff(noteNumber);
+            noteOff(channel, noteNumber);
           }
           break;
         case 0xB0: // Control Change
