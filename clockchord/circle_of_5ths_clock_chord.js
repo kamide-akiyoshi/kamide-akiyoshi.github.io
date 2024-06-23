@@ -166,20 +166,11 @@ const SimpleSynthesizer = class {
 
 const PianoKeyboard = class {
   static DRUM_MIDI_CH = 9;
-  pianoKeys = Array.from(
-    {length: 128},
-    (_, midiNoteNumber) => {
-      return {
-        frequency: 440 * (2 ** ((midiNoteNumber - 69)/12))
-      };
-    }
-  );
-  pressedNoteNumbers = new Set();
-  activeDrumVoices = {};
+  static NUMBER_OF_MIDI_CHANNELS = 16;
   midiChannel = {
     setup: () => {
       const element = document.getElementById('midi_channel');
-      for( let ch = 0; ch < 16; ++ch ) {
+      for( let ch = 0; ch < PianoKeyboard.NUMBER_OF_MIDI_CHANNELS; ++ch ) {
         const option = document.createElement("option");
         option.value = ch;
         option.appendChild(document.createTextNode(`${ch + 1}${ch == PianoKeyboard.DRUM_MIDI_CH ? " (Drum)" : ""}`));
@@ -196,16 +187,27 @@ const PianoKeyboard = class {
       element.value = v;
     },
   };
-  noteOn = (channel, noteNumber, orderInChord) => {
-    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
-      (this.activeDrumVoices[noteNumber] ??= this.synth.createVoice()).attack();
-      return;
+  pianoKeys = Array.from(
+    {length: 128},
+    (_, midiNoteNumber) => {
+      return {
+        frequency: 440 * (2 ** ((midiNoteNumber - 69)/12))
+      };
     }
+  );
+  pressedNoteNumbers = new Set();
+  activeChannelVoices = Array.from({length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS}, _ => ({}));
+  noteOn = (channel, noteNumber, orderInChord) => {
     !orderInChord && this.chord.classLists.clear();
     const key = this.pianoKeys[noteNumber];
     if( key ) {
-      !key.voice?.isPressing && this.toneIndicatorCanvas.noteOn(noteNumber);
-      (key.voice ??= this.synth.createVoice(key.frequency)).attack();
+      const activeVoices = this.activeChannelVoices[channel];
+      if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
+        (activeVoices[noteNumber] ??= this.synth.createVoice()).attack();
+      } else {
+        !activeVoices[noteNumber]?.isPressing && this.toneIndicatorCanvas.noteOn(noteNumber);
+        (activeVoices[noteNumber] ??= this.synth.createVoice(key.frequency)).attack();
+      }
       this.pressedNoteNumbers.add(noteNumber);
       const { element } = key;
       if( element ) {
@@ -216,19 +218,22 @@ const PianoKeyboard = class {
     }
   };
   noteOff = (channel, noteNumber) => {
-    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
-      this.activeDrumVoices[noteNumber]?.release(() => {
-        delete this.activeDrumVoices[noteNumber];
-      });
-      return;
-    }
-    const key = this.pianoKeys[noteNumber];
-    if( key ) {
-      key.voice?.release(() => { delete key.voice; });
-      key.element?.classList.remove('pressed');
-      this.pressedNoteNumbers.delete(noteNumber);
+    const activeVoices = this.activeChannelVoices[channel];
+    activeVoices[noteNumber]?.release(() => { delete activeVoices[noteNumber]; });
+    if( channel != PianoKeyboard.DRUM_MIDI_CH ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
+    const key = this.pianoKeys[noteNumber];
+    key?.element?.classList.remove('pressed');
+    this.pressedNoteNumbers.delete(noteNumber);
+  };
+  allSoundOff = (channel) => {
+    const activeVoices = this.activeChannelVoices[channel];
+    Object.entries(activeVoices).forEach(([noteNumber, voice]) => {
+      voice.release(() => { delete activeVoices[noteNumber]; });
+    });
+    this.toneIndicatorCanvas.allSoundOff();
+    this.pressedNoteNumbers.delete(noteNumber);
   };
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannel.value;
@@ -420,6 +425,7 @@ const PianoKeyboard = class {
       chord,
       noteOn,
       noteOff,
+      allSoundOff,
     } = this;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
@@ -442,8 +448,7 @@ const PianoKeyboard = class {
         case 0xB0: // Control Change
           if( data[0] == 0x78 ) { // All Sound Off
             if( data[1] == 0 ) { // Must be 0
-              chord.stop();
-              toneIndicatorCanvas.allSoundOff();
+              allSoundOff(channel);
             }
           }
           break;
