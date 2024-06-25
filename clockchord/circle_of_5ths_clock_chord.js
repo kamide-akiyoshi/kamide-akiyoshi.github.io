@@ -167,6 +167,7 @@ const SimpleSynthesizer = class {
 const PianoKeyboard = class {
   static DRUM_MIDI_CH = 9;
   static NUMBER_OF_MIDI_CHANNELS = 16;
+  static NUMBER_OF_MIDI_NOTES = 128;
   midiChannel = {
     setup: () => {
       const element = document.getElementById('midi_channel');
@@ -187,34 +188,20 @@ const PianoKeyboard = class {
       element.value = v;
     },
   };
-  pianoKeys = Array.from(
-    {length: 128},
-    (_, midiNoteNumber) => {
-      return {
-        frequency: 440 * (2 ** ((midiNoteNumber - 69)/12))
-      };
-    }
+  frequencies = Array.from(
+    {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
+    (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
-  pressedNoteNumbers = new Set();
   activeChannelVoices = Array.from({length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS}, _ => ({}));
   noteOn = (channel, noteNumber, orderInChord) => {
-    !orderInChord && this.chord.classLists.clear();
-    const key = this.pianoKeys[noteNumber];
-    if( key ) {
-      const activeVoices = this.activeChannelVoices[channel];
-      if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
-        (activeVoices[noteNumber] ??= this.synth.createVoice()).attack();
-      } else {
-        !activeVoices[noteNumber]?.isPressing && this.toneIndicatorCanvas.noteOn(noteNumber);
-        (activeVoices[noteNumber] ??= this.synth.createVoice(key.frequency)).attack();
+    const activeVoices = this.activeChannelVoices[channel];
+    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
+      (activeVoices[noteNumber] ??= this.synth.createVoice()).attack();
+    } else {
+      if( !activeVoices[noteNumber]?.isPressing ) {
+        this.toneIndicatorCanvas.noteOn(noteNumber);
       }
-      this.pressedNoteNumbers.add(noteNumber);
-      const { element } = key;
-      if( element ) {
-        const cl = element.classList;
-        cl.add('pressed');
-        orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
-      }
+      (activeVoices[noteNumber] ??= this.synth.createVoice(this.frequencies[noteNumber])).attack();
     }
   };
   noteOff = (channel, noteNumber) => {
@@ -223,9 +210,6 @@ const PianoKeyboard = class {
     if( channel != PianoKeyboard.DRUM_MIDI_CH ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
-    const key = this.pianoKeys[noteNumber];
-    key?.element?.classList.remove('pressed');
-    this.pressedNoteNumbers.delete(noteNumber);
   };
   allSoundOff = (channel) => {
     const activeVoices = this.activeChannelVoices[channel];
@@ -233,18 +217,43 @@ const PianoKeyboard = class {
       voice.release(() => { delete activeVoices[noteNumber]; });
     });
     this.toneIndicatorCanvas.allSoundOff();
-    this.pressedNoteNumbers.delete(noteNumber);
   };
+  pianoKeys = Array.from(
+    {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
+    (_) => ({})
+  );
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannel.value;
     const velocity = this.velocitySlider.value - 0;
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
-    this.noteOn(ch, noteNumber, orderInChord);
+    this.noteOn(ch, noteNumber);
+    const keys = this.pianoKeys;
+    const { pressed } = keys;
+    if( pressed.has(noteNumber) ) {
+      this.manualNoteOff(noteNumber);
+    }
+    pressed.set(noteNumber, ch);
+    !orderInChord && this.chord.classLists.clear();
+    const key = keys[noteNumber];
+    if( key ) {
+      const { element } = key;
+      if( element ) {
+        const cl = element.classList;
+        cl.add('pressed');
+        orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
+      }
+    }
   };
   manualNoteOff = noteNumber => {
-    const ch = this.midiChannel.value;
-    this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
-    this.noteOff(ch, noteNumber);
+    const keys = this.pianoKeys;
+    const { pressed } = keys;
+    if( pressed.has(noteNumber) ) {
+      const ch = pressed.get(noteNumber);
+      this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
+      this.noteOff(ch, noteNumber);
+      pressed.delete(noteNumber);
+    }
+    keys[noteNumber]?.element?.classList.remove('pressed');
   };
   leftEnd = {
     set note(n) {
@@ -296,6 +305,7 @@ const PianoKeyboard = class {
       const {
         label,
         dialCenterLabel,
+        classLists,
         keySignatureSetButton,
         buttonCanvas,
       } = chord;
@@ -310,15 +320,11 @@ const PianoKeyboard = class {
       delete chord.add9th;
       keySignatureSetButton.style.visibility = 'hidden';
       buttonCanvas.clearChord();
+      classLists.clear();
     },
     stop: () => {
-      const {
-        chord,
-        manualNoteOff,
-        pressedNoteNumbers,
-      } = this;
-      pressedNoteNumbers.forEach(manualNoteOff);
-      chord.buttonCanvas.disableStrum();
+      this.pianoKeys.pressed.forEach((value, key) => this.manualNoteOff(key - 0));
+      this.chord.buttonCanvas.disableStrum();
     },
     start: () => {
       const {
@@ -355,7 +361,7 @@ const PianoKeyboard = class {
       noteOn(rootPitchNumber + 7 + offset5th);
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
-      chord.notes = [...this.pressedNoteNumbers];
+      chord.notes = Array.from(this.pianoKeys.pressed.keys());
       buttonCanvas.selectChord();
       buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
@@ -421,7 +427,6 @@ const PianoKeyboard = class {
     }
     // MIDI message receiver
     const {
-      toneIndicatorCanvas,
       chord,
       noteOn,
       noteOff,
@@ -1353,10 +1358,12 @@ const PianoKeyboard = class {
     }
     const {
       pianoKeys,
+      frequencies,
       manualNoteOn,
       manualNoteOff,
       chord,
     } = this;
+    pianoKeys.pressed = new Map();
     const [
       whiteKeyElement,
       blackKeyElement,
@@ -1382,7 +1389,7 @@ const PianoKeyboard = class {
         }
         if( hour == 9 ) {
           const newFrequencyElement = frequencyElement.cloneNode();
-          newFrequencyElement.innerHTML = pianoKey.frequency;
+          newFrequencyElement.innerHTML = frequencies[noteNumber];
           newFrequencyElement.style.left = pianoKey.element.style.left;
           keyboard.appendChild(newFrequencyElement);
         }
