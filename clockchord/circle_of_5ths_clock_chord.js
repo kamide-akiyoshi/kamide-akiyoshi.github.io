@@ -192,30 +192,34 @@ const PianoKeyboard = class {
     {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
-  activeChannelVoices = Array.from({length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS}, _ => ({}));
+  activeChannelVoices = Array.from({length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS}, (_) => new Map());
   noteOn = (channel, noteNumber, orderInChord) => {
     const activeVoices = this.activeChannelVoices[channel];
-    if( channel == PianoKeyboard.DRUM_MIDI_CH ) {
-      (activeVoices[noteNumber] ??= this.synth.createVoice()).attack();
-    } else {
-      if( !activeVoices[noteNumber]?.isPressing ) {
-        this.toneIndicatorCanvas.noteOn(noteNumber);
-      }
-      (activeVoices[noteNumber] ??= this.synth.createVoice(this.frequencies[noteNumber])).attack();
+    const isDrum = channel == PianoKeyboard.DRUM_MIDI_CH;
+    let voice = activeVoices.get(noteNumber);
+    if( !isDrum && !voice?.isPressing ) {
+      this.toneIndicatorCanvas.noteOn(noteNumber);
     }
+    if( !voice ) {
+      voice = this.synth.createVoice(isDrum ? undefined : this.frequencies[noteNumber]);
+      activeVoices.set(noteNumber, voice);
+    }
+    voice.attack();
   };
   noteOff = (channel, noteNumber) => {
     const activeVoices = this.activeChannelVoices[channel];
-    activeVoices[noteNumber]?.release(() => { delete activeVoices[noteNumber]; });
+    activeVoices.get(noteNumber)?.release(
+      () => activeVoices.delete(noteNumber)
+    );
     if( channel != PianoKeyboard.DRUM_MIDI_CH ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
   };
   allSoundOff = (channel) => {
     const activeVoices = this.activeChannelVoices[channel];
-    Object.entries(activeVoices).forEach(([noteNumber, voice]) => {
-      voice.release(() => { delete activeVoices[noteNumber]; });
-    });
+    activeVoices.forEach((voice, noteNumber) => voice.release(
+      () => activeVoices.delete(noteNumber)
+    ));
     this.toneIndicatorCanvas.allSoundOff();
   };
   manualNoteOn = (noteNumber, orderInChord) => {
