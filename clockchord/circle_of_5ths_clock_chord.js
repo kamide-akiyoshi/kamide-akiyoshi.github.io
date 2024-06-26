@@ -218,10 +218,6 @@ const PianoKeyboard = class {
     });
     this.toneIndicatorCanvas.allSoundOff();
   };
-  pianoKeys = Array.from(
-    {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
-    (_) => ({})
-  );
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannel.value;
     const velocity = this.velocitySlider.value - 0;
@@ -1357,12 +1353,15 @@ const PianoKeyboard = class {
       pointerup = 'touchend';
     }
     const {
-      pianoKeys,
       frequencies,
       manualNoteOn,
       manualNoteOff,
       chord,
     } = this;
+    const pianoKeys = this.pianoKeys = Array.from(
+      {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
+      (_) => ({})
+    );
     pianoKeys.pressed = new Map();
     const [
       whiteKeyElement,
