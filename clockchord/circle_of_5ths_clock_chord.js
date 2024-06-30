@@ -168,33 +168,31 @@ const PianoKeyboard = class {
   static DRUM_MIDI_CH = 9;
   static NUMBER_OF_MIDI_CHANNELS = 16;
   static NUMBER_OF_MIDI_NOTES = 128;
-  midiChannel = {
-    setup: () => {
-      const element = document.getElementById('midi_channel');
-      for( let ch = 0; ch < PianoKeyboard.NUMBER_OF_MIDI_CHANNELS; ++ch ) {
-        const option = document.createElement("option");
-        option.value = ch;
-        option.appendChild(document.createTextNode(`${ch + 1}${ch == PianoKeyboard.DRUM_MIDI_CH ? " (Drum)" : ""}`));
-        element.appendChild(option);
-      }
-      this.midiChannel.element = element;
-    },
-    get value() {
-      return parseInt(this.element?.value);
-    },
-    set value(v) {
-      const { element } = this;
-      if( !element ) return;
-      element.value = v;
-    },
+  setupMidiChannels = () => {
+    const element = document.getElementById('midi_channel');
+    for( let ch = 0; ch < PianoKeyboard.NUMBER_OF_MIDI_CHANNELS; ++ch ) {
+      const option = document.createElement("option");
+      const text = `${ch + 1}${ch == PianoKeyboard.DRUM_MIDI_CH ? " (Drum)" : ""}`;
+      option.value = ch;
+      option.appendChild(document.createTextNode(text));
+      element.appendChild(option);
+    }
+    const midiChannels = this.midiChannels = Array.from(
+      {length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS},
+      () => ({
+        voices: (new Map()),
+      })
+    );
+    Object.defineProperty(midiChannels, "selectedChannel", {
+      get() { return parseInt(element?.value); },
+    });
   };
   frequencies = Array.from(
     {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
-  activeChannelVoices = Array.from({length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS}, (_) => new Map());
   noteOn = (channel, noteNumber, orderInChord) => {
-    const activeVoices = this.activeChannelVoices[channel];
+    const activeVoices = this.midiChannels[channel].voices;
     const isDrum = channel == PianoKeyboard.DRUM_MIDI_CH;
     let voice = activeVoices.get(noteNumber);
     if( !isDrum && !voice?.isPressing ) {
@@ -207,7 +205,7 @@ const PianoKeyboard = class {
     voice.attack();
   };
   noteOff = (channel, noteNumber) => {
-    const activeVoices = this.activeChannelVoices[channel];
+    const activeVoices = this.midiChannels[channel].voices;
     activeVoices.get(noteNumber)?.release(
       () => activeVoices.delete(noteNumber)
     );
@@ -216,14 +214,14 @@ const PianoKeyboard = class {
     }
   };
   allSoundOff = (channel) => {
-    const activeVoices = this.activeChannelVoices[channel];
+    const activeVoices = this.midiChannels[channel].voices;
     activeVoices.forEach((voice, noteNumber) => voice.release(
       () => activeVoices.delete(noteNumber)
     ));
     this.toneIndicatorCanvas.allSoundOff();
   };
   manualNoteOn = (noteNumber, orderInChord) => {
-    const ch = this.midiChannel.value;
+    const ch = this.midiChannels.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
     this.noteOn(ch, noteNumber);
@@ -1461,8 +1459,8 @@ const PianoKeyboard = class {
   constructor(toneIndicatorCanvas) {
     this.synth = new SimpleSynthesizer();
     const {
-      midiChannel,
       chord,
+      setupMidiChannels,
       setupMidiPorts,
       setupMidiSequencer,
       setupToneIndicatorCanvas,
@@ -1470,7 +1468,7 @@ const PianoKeyboard = class {
     } = this;
     this.velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     chord.setup();
-    midiChannel.setup();
+    setupMidiChannels();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidiPorts();
     setupMidiSequencer();
