@@ -456,6 +456,7 @@ const PianoKeyboard = class {
       noteOn,
       noteOff,
       allSoundOff,
+      resetAllControllers,
       midiChannels,
     } = this;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
