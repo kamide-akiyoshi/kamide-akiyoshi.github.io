@@ -84,16 +84,25 @@ const SimpleSynthesizer = class {
       }
       return noiseBuffer;
     };
+    const createModulator = (context) => {
+      return modulatorGain;
+    };
     this.createVoice = (frequency) => {
       const context = SimpleSynthesizer.audioContext;
       const amp = this.amplifier ??= createAmplifier(context);
       const envelope = context.createGain();
       envelope.gain.value = 0;
       envelope.connect(amp);
-      let source;
+      let source, modulator, modulatorGain;
       if( frequency ) {
         source = context.createOscillator();
         source.frequency.value = frequency;
+        modulator = context.createOscillator();
+        modulator.frequency.value = 6;
+        modulatorGain = context.createGain();
+        modulatorGain.gain.value = 0;
+        modulator.connect(modulatorGain);
+        modulatorGain.connect(source.frequency);
       } else {
         source = context.createBufferSource();
         source.buffer = this.noiseBuffer ??= createNoiseBuffer(context);
@@ -101,6 +110,7 @@ const SimpleSynthesizer = class {
       }
       source.connect(envelope);
       source.start();
+      modulator?.start();
       let timeoutIdToStop;
       const voice = {
         attack: () => {
@@ -147,6 +157,7 @@ const SimpleSynthesizer = class {
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
             source.stop();
+            modulator?.stop();
             stopped && stopped();
           };
           if( gain.value <= gainValueToStop ) { stop(); return; }
@@ -160,7 +171,10 @@ const SimpleSynthesizer = class {
         },
         changeFrequency: newFrequency => {
           frequency && (source.frequency.value = newFrequency);
-        }
+        },
+        changeModulation: gainValue => {
+          modulatorGain && (modulatorGain.gain.value = gainValue);
+        },
       };
       return voice;
     };
@@ -184,6 +198,11 @@ const PianoKeyboard = class {
         pitchRatio: 1,
         pitchBendSensitivity: 2,
         parameterNumber: {},
+        set modulationDepth(value) {
+          this.voices.forEach((voice, noteNumber) => {
+            voice.changeModulation(value / 8);
+          });
+        },
         set parameterValue(value) {
           const { MSB, LSB, isRegistered } = this.parameterNumber;
           if( isRegistered && MSB === 0 && LSB === 0 ) {
@@ -479,6 +498,9 @@ const PianoKeyboard = class {
           break;
         case 0xB0: // Control Change
           switch(data[0]) {
+            case 0x01: // Modulation MSB
+              midiChannels[channel].modulationDepth = data[1];
+              break;
             case 0x06: // Data Entry MSB
               midiChannels[channel].parameterValue = data[1];
               break;
