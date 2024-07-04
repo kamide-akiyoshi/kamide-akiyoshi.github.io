@@ -1,4 +1,13 @@
 
+const MIDI = class {
+  static DRUM_CHANNEL = 9;
+  static NUMBER_OF_CHANNELS = 16;
+  static FREQUENCIES = Array.from(
+    {length: 128},
+    (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
+  );
+};
+
 const setupSlider = (id, value, min, max, step) => {
   const slider = document.getElementById(id);
   if( ! slider ) {
@@ -27,7 +36,7 @@ const SimpleSynthesizer = class {
   };
   constructor() {
     const sliders = {
-      volume:       setupSlider('volume' , 0.2, 0, 1, 0.01),
+      volume:       setupSlider('volume' , 0.3, 0, 1, 0.01),
       attackTime:   setupSlider('attack' , 0.01, 0, 0.3, 0.001),
       decayTime:    setupSlider('decay'  , 0.5, 0, 1, 0.01),
       sustainLevel: setupSlider('sustain', 0.3, 0, 1, 0.01),
@@ -87,12 +96,11 @@ const SimpleSynthesizer = class {
     const createModulator = (context) => {
       return modulatorGain;
     };
-    this.createVoice = (frequency) => {
+    const createVoice = (channel, frequency) => {
       const context = SimpleSynthesizer.audioContext;
-      const amp = this.amplifier ??= createAmplifier(context);
       const envelope = context.createGain();
       envelope.gain.value = 0;
-      envelope.connect(amp);
+      envelope.connect(channel.channelGain);
       let source, modulator, modulatorGain;
       if( frequency ) {
         source = context.createOscillator();
@@ -178,96 +186,135 @@ const SimpleSynthesizer = class {
       };
       return voice;
     };
-  }
-};
-
-const PianoKeyboard = class {
-  static DRUM_MIDI_CH = 9;
-  static NUMBER_OF_MIDI_CHANNELS = 16;
-  static NUMBER_OF_MIDI_NOTES = 128;
-  frequencies = Array.from(
-    {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
-    (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
-  );
-  setupMidiChannels = () => {
-    const { frequencies } = this;
+    const createChannelGain = (context) => {
+      const amp = this.amplifier ??= createAmplifier(context);
+      const channelGain = context.createGain();
+      channelGain.gain.value = 0;
+      channelGain.connect(amp);
+      return channelGain;
+    };
     const midiChannels = this.midiChannels = Array.from(
-      {length: PianoKeyboard.NUMBER_OF_MIDI_CHANNELS},
+      {length: MIDI.NUMBER_OF_CHANNELS},
       () => ({
         voices: (new Map()),
-        pitchRatio: 1,
-        pitchBendSensitivity: 2,
-        parameterNumber: {},
         set modulationDepth(value) {
-          this.voices.forEach((voice, noteNumber) => {
-            voice.changeModulation(value / 8);
-          });
+          this.voices.forEach(
+            (voice, noteNumber) => voice.changeModulation(value / 8)
+          );
         },
+        parameterNumber: {}, // RPN or NRPN
+        pitchBendSensitivity: 2,
         set parameterValue(value) {
           const { MSB, LSB, isRegistered } = this.parameterNumber;
           if( isRegistered && MSB === 0 && LSB === 0 ) {
-            // Pitch Bend Sensitivity Change
             this.pitchBendSensitivity = value;
           }
         },
+        pitchRatio: 1,
         set pitchBendValue(value) {
           const ratio = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
-          this.voices.forEach((voice, noteNumber) => {
-            voice.changeFrequency(frequencies[noteNumber] * ratio);
-          });
+          this.voices.forEach(
+            (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * ratio)
+          );
+        },
+        _volume: 100,
+        _expression: 0x7F,
+        get channelGainValue() {
+          return (this._volume / 0x7F) * (this._expression / 0x7F);
+        },
+        get channelGain() {
+          if( !this._channelGain ) {
+            this._channelGain = createChannelGain(SimpleSynthesizer.audioContext);
+            this._channelGain.gain.value = this.channelGainValue;
+          }
+          return this._channelGain;
+        },
+        set volume(value) {
+          this._volume = value;
+          this.channelGain.gain.value = this.channelGainValue;
+        },
+        set expression(value) {
+          this._expression = value;
+          this.channelGain.gain.value = this.channelGainValue;
         },
       })
     );
+    this.resetAllControllers = (channel) => {
+      const ch = midiChannels[channel];
+      ch.pitchRatio = 1;
+      ch.pitchBendSensitivity = 2;
+      ch.parameterNumber = {};
+      ch.volume = 100;
+      ch.expression = 0x7F;
+    };
+    this.noteOn = (channel, noteNumber) => {
+      const isDrum = channel == MIDI.DRUM_CHANNEL;
+      const ch = midiChannels[channel];
+      const activeVoices = ch.voices;
+      let voice = activeVoices.get(noteNumber);
+      const isNewVoice = !voice?.isPressing;
+      if( !voice ) {
+        voice = createVoice(
+          ch,
+          isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * ch.pitchRatio
+        );
+        activeVoices.set(noteNumber, voice);
+      }
+      voice.attack();
+      return isNewVoice;
+    };
+    this.noteOff = (channel, noteNumber) => {
+      const activeVoices = midiChannels[channel].voices;
+      activeVoices.get(noteNumber)?.release(
+        () => activeVoices.delete(noteNumber)
+      );
+    };
+    this.allSoundOff = (channel) => {
+      const activeVoices = midiChannels[channel].voices;
+      activeVoices.forEach((voice, noteNumber) => voice.release(
+        () => activeVoices.delete(noteNumber)
+      ));
+    };
+    this.changePitchBend = (channel, value) => {
+      midiChannels[channel].pitchBendValue = value;
+    };
+  };
+};
+
+const PianoKeyboard = class {
+  setupMidiChannelSelecter = () => {
     const element = document.getElementById('midi_channel');
-    midiChannels.forEach((_, ch) => {
-      const option = document.createElement("option");
-      const text = `${ch + 1}${ch == PianoKeyboard.DRUM_MIDI_CH ? " (Drum)" : ""}`;
-      option.value = ch;
-      option.appendChild(document.createTextNode(text));
-      element.appendChild(option);
-    });
-    Object.defineProperty(midiChannels, "selectedChannel", {
-      get() { return parseInt(element?.value); },
-    });
+    Array.from(
+      {length: MIDI.NUMBER_OF_CHANNELS},
+      (_, ch) => {
+        const option = document.createElement("option");
+        option.value = ch;
+        option.appendChild(document.createTextNode(`${ch + 1}${ch == MIDI.DRUM_CHANNEL ? ' (Drum)' : ''}`));
+        element.appendChild(option);
+      }
+    );
+    this.midiChannelSelecter = {
+      get selectedChannel() { return parseInt(element?.value); }
+    };
   };
-  resetAllControllers = (channel) => {
-    const ch = this.midiChannels[channel];
-    ch.pitchRatio = 1;
-    ch.pitchBendSensitivity = 2;
-    ch.parameterNumber = {};
-  };
-  noteOn = (channel, noteNumber, orderInChord) => {
-    const ch = this.midiChannels[channel];
-    const activeVoices = ch.voices;
-    const isDrum = channel == PianoKeyboard.DRUM_MIDI_CH;
-    let voice = activeVoices.get(noteNumber);
-    if( !isDrum && !voice?.isPressing ) {
+  noteOn = (channel, noteNumber) => {
+    const isNewVoice = this.synth.noteOn(channel, noteNumber);
+    if( channel != MIDI.DRUM_CHANNEL && isNewVoice ) {
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
-    if( !voice ) {
-      voice = this.synth.createVoice(isDrum ? undefined : this.frequencies[noteNumber] * ch.pitchRatio);
-      activeVoices.set(noteNumber, voice);
-    }
-    voice.attack();
   };
   noteOff = (channel, noteNumber) => {
-    const activeVoices = this.midiChannels[channel].voices;
-    activeVoices.get(noteNumber)?.release(
-      () => activeVoices.delete(noteNumber)
-    );
-    if( channel != PianoKeyboard.DRUM_MIDI_CH ) {
+    this.synth.noteOff(channel, noteNumber);
+    if( channel != MIDI.DRUM_CHANNEL ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
   };
   allSoundOff = (channel) => {
-    const activeVoices = this.midiChannels[channel].voices;
-    activeVoices.forEach((voice, noteNumber) => voice.release(
-      () => activeVoices.delete(noteNumber)
-    ));
+    this.synth.allSoundOff(channel);
     this.toneIndicatorCanvas.allSoundOff();
   };
   manualNoteOn = (noteNumber, orderInChord) => {
-    const ch = this.midiChannels.selectedChannel;
+    const ch = this.midiChannelSelecter.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
     this.noteOn(ch, noteNumber);
@@ -475,9 +522,13 @@ const PianoKeyboard = class {
       noteOn,
       noteOff,
       allSoundOff,
-      resetAllControllers,
-      midiChannels,
+      synth,
     } = this;
+    const {
+      midiChannels,
+      changePitchBend,
+      resetAllControllers,
+    } = synth;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
       const channel = statusWithCh & 0xF;
@@ -503,6 +554,12 @@ const PianoKeyboard = class {
               break;
             case 0x06: // Data Entry MSB
               midiChannels[channel].parameterValue = data[1];
+              break;
+            case 0x07: // Channel Volume MSB
+              midiChannels[channel].volume = data[1];
+              break;
+            case 0x0B: // Expression MSB
+              midiChannels[channel].expression = data[1];
               break;
             // case 0x26: // Data Entry LSB
             // case 0x60: // Data Increment
@@ -550,7 +607,10 @@ const PianoKeyboard = class {
           }
           break;
         case 0xE0: // Pitch Bend Change
-          midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
+          changePitchBend(
+            channel,
+            (data[1] * (1 << 7) + data[0]) - (1 << 13) // -8192 ... +8191
+          );
           break;
       }
     };
@@ -1393,7 +1453,7 @@ const PianoKeyboard = class {
     const pause = () => {
       clearInterval(intervalId);
       intervalId = undefined;
-      this.midiChannels.forEach((_, ch) => {
+      this.synth.midiChannels.forEach((_, ch) => {
         sendMidiMessage([0xB0 + ch, 0x78, 0]); // All Sound Off
         sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
       });
@@ -1452,15 +1512,11 @@ const PianoKeyboard = class {
       pointerup = 'touchend';
     }
     const {
-      frequencies,
       manualNoteOn,
       manualNoteOff,
       chord,
     } = this;
-    const pianoKeys = this.pianoKeys = Array.from(
-      {length: PianoKeyboard.NUMBER_OF_MIDI_NOTES},
-      (_) => ({})
-    );
+    const pianoKeys = this.pianoKeys = MIDI.FREQUENCIES.map((_) => ({}));
     pianoKeys.pressed = new Map();
     const [
       whiteKeyElement,
@@ -1487,7 +1543,7 @@ const PianoKeyboard = class {
         }
         if( hour == 9 ) {
           const newFrequencyElement = frequencyElement.cloneNode();
-          newFrequencyElement.innerHTML = frequencies[noteNumber];
+          newFrequencyElement.innerHTML = MIDI.FREQUENCIES[noteNumber];
           newFrequencyElement.style.left = pianoKey.element.style.left;
           keyboard.appendChild(newFrequencyElement);
         }
@@ -1557,7 +1613,7 @@ const PianoKeyboard = class {
     this.synth = new SimpleSynthesizer();
     const {
       chord,
-      setupMidiChannels,
+      setupMidiChannelSelecter,
       setupMidiPorts,
       setupMidiSequencer,
       setupToneIndicatorCanvas,
@@ -1565,7 +1621,7 @@ const PianoKeyboard = class {
     } = this;
     this.velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
     chord.setup();
-    setupMidiChannels();
+    setupMidiChannelSelecter();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidiPorts();
     setupMidiSequencer();
