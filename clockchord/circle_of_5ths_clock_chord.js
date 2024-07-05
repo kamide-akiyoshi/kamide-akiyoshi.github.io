@@ -36,7 +36,7 @@ const SimpleSynthesizer = class {
   };
   constructor() {
     const sliders = {
-      volume:       setupSlider('volume' , 0.3, 0, 1, 0.01),
+      volume:       setupSlider('volume' , 0.4, 0, 1.6, 0.01),
       attackTime:   setupSlider('attack' , 0.01, 0, 0.3, 0.001),
       decayTime:    setupSlider('decay'  , 0.5, 0, 1, 0.01),
       sustainLevel: setupSlider('sustain', 0.3, 0, 1, 0.01),
@@ -96,11 +96,14 @@ const SimpleSynthesizer = class {
     const createModulator = (context) => {
       return modulatorGain;
     };
-    const createVoice = (channel, frequency) => {
+    const createVoice = (channel, frequency, velocity) => {
       const context = SimpleSynthesizer.audioContext;
+      const velocityGain = context.createGain();
+      velocityGain.gain.value = velocity / 0x7F;
+      velocityGain.connect(channel.channelGain);
       const envelope = context.createGain();
       envelope.gain.value = 0;
-      envelope.connect(channel.channelGain);
+      envelope.connect(velocityGain);
       let source, modulator, modulatorGain;
       if( frequency ) {
         source = context.createOscillator();
@@ -247,7 +250,7 @@ const SimpleSynthesizer = class {
       ch.volume = 100;
       ch.expression = 0x7F;
     };
-    this.noteOn = (channel, noteNumber) => {
+    this.noteOn = (channel, noteNumber, velocity) => {
       const isDrum = channel == MIDI.DRUM_CHANNEL;
       const ch = midiChannels[channel];
       const activeVoices = ch.voices;
@@ -256,7 +259,8 @@ const SimpleSynthesizer = class {
       if( !voice ) {
         voice = createVoice(
           ch,
-          isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * ch.pitchRatio
+          isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * ch.pitchRatio,
+          velocity
         );
         activeVoices.set(noteNumber, voice);
       }
@@ -297,8 +301,8 @@ const PianoKeyboard = class {
       get selectedChannel() { return parseInt(element?.value); }
     };
   };
-  noteOn = (channel, noteNumber) => {
-    const isNewVoice = this.synth.noteOn(channel, noteNumber);
+  noteOn = (channel, noteNumber, velocity) => {
+    const isNewVoice = this.synth.noteOn(channel, noteNumber, velocity);
     if( channel != MIDI.DRUM_CHANNEL && isNewVoice ) {
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
@@ -317,7 +321,7 @@ const PianoKeyboard = class {
     const ch = this.midiChannelSelecter.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
-    this.noteOn(ch, noteNumber);
+    this.noteOn(ch, noteNumber, velocity);
     const keys = this.pianoKeys;
     const { pressed } = keys;
     if( pressed.has(noteNumber) ) {
@@ -537,7 +541,7 @@ const PianoKeyboard = class {
         case 0x90:
           if( data[1] ) { // velocity > 0
             const noteNumber = data[0];
-            noteOn(channel, noteNumber);
+            noteOn(channel, noteNumber, data[1]);
             break;
           }
           // fallthrough: velocity === 0 means Note Off
