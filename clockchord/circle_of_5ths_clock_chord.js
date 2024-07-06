@@ -72,7 +72,8 @@ const SimpleSynthesizer = class {
         setIcon(waveselect.value);
       }
     }
-    const createAmplifier = (context) => {
+    const createAmplifier = () => {
+      const context = SimpleSynthesizer.audioContext;
       const amp = context.createGain();
       const { gain } = amp;
       const { volume } = sliders;
@@ -82,17 +83,12 @@ const SimpleSynthesizer = class {
       amp.connect(context.destination);
       return amp;
     };
-    const createChannelGain = () => {
-      const context = SimpleSynthesizer.audioContext;
-      const amp = this.amplifier ??= createAmplifier(context);
-      const channelGain = context.createGain();
-      channelGain.gain.value = 0;
-      channelGain.connect(amp);
-      return channelGain;
-    };
+    const getAmplifier = () => {
+      return this.amplifier ??= createAmplifier();
+    }
     const NOISE_TIME = 0.1; // [sec]
-    const createNoiseBuffer = (context) => {
-      const { sampleRate } = context;
+    const createNoiseBuffer = () => {
+      const { sampleRate } = SimpleSynthesizer.audioContext;
       const length = sampleRate * NOISE_TIME;
       const noiseBuffer = new AudioBuffer({ length, sampleRate });
       const data = noiseBuffer.getChannelData(0);
@@ -121,7 +117,7 @@ const SimpleSynthesizer = class {
         modulatorGain.connect(source.frequency);
       } else {
         source = context.createBufferSource();
-        source.buffer = this.noiseBuffer ??= createNoiseBuffer(context);
+        source.buffer = this.noiseBuffer ??= createNoiseBuffer();
         source.loop = true;
       }
       source.connect(envelope);
@@ -234,11 +230,17 @@ const SimpleSynthesizer = class {
             (voice, noteNumber) => voice.changeModulation(value / 8)
           );
         },
+        createChannelGain() {
+          const context = SimpleSynthesizer.audioContext;
+          const panner = this.panner ??= context.createStereoPanner();
+          panner.connect(getAmplifier());
+          const channelGain = context.createGain();
+          channelGain.gain.value = this.channelGainValue;
+          channelGain.connect(panner);
+          return channelGain;
+        },
         get channelGain() {
-          if( !this._channelGain ) {
-            (this._channelGain = createChannelGain()).gain.value = this.channelGainValue;
-          }
-          return this._channelGain;
+          return this._channelGain ??= this.createChannelGain();
         },
         get channelGainValue() {
           return (this._volume / 0x7F) * (this._expression / 0x7F);
@@ -253,12 +255,24 @@ const SimpleSynthesizer = class {
           this._expression = value;
           this.channelGain.gain.value = this.channelGainValue;
         },
+        set pan(value) {
+          const context = SimpleSynthesizer.audioContext;
+          const panner = this.panner;
+          if( !panner ) {
+            this._channelGain ??= createChannelGain();
+          }
+          // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+          // Web Audio API's panner value: -1(L) ... 1(R)
+          this.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
+          console.debug(value);
+        },
         resetAllControllers() {
           delete this.parameterNumber;
           this.pitchRatio = 1;
           this.pitchBendSensitivity = 2;
           this.volume = 100;
           this.expression = 0x7F;
+          this.pan = 0x40;
         }
       })
     );
@@ -566,6 +580,9 @@ const PianoKeyboard = class {
               break;
             case 0x07: // Channel Volume MSB
               midiChannels[channel].volume = data[1];
+              break;
+            case 0x0A: // Pan
+              midiChannels[channel].pan = data[1];
               break;
             case 0x0B: // Expression MSB
               midiChannels[channel].expression = data[1];
