@@ -196,7 +196,7 @@ const SimpleSynthesizer = class {
     };
     const midiChannels = this.midiChannels = Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
-      () => ({
+      (_, channelNumber) => ({
         voices: new Map(),
         setParameterNumber(control, value) {
           // Control#
@@ -211,7 +211,12 @@ const SimpleSynthesizer = class {
           pn[control & 1 ? "MSB" : "LSB"] = value;
         },
         set parameterValue(value) {
-          const { MSB, LSB, isRegistered } = this.parameterNumber ?? {};
+          const pn = this.parameterNumber;
+          if( !pn ) {
+            console.warn(`Warning: MIDI CH.${channelNumber + 1}: No parameter number received yet, value ${value} ignored`);
+            return;
+          }
+          const { MSB, LSB, isRegistered } = pn;
           if( isRegistered && MSB === 0 && LSB === 0 ) {
             this.pitchBendSensitivity = value;
           }
@@ -229,36 +234,34 @@ const SimpleSynthesizer = class {
             (voice, noteNumber) => voice.changeModulation(value / 8)
           );
         },
-        _volume: 100,
-        _expression: 0x7F,
-        get channelGainValue() {
-          return (this._volume / 0x7F) * (this._expression / 0x7F);
-        },
         get channelGain() {
           if( !this._channelGain ) {
-            this._channelGain = createChannelGain();
-            this._channelGain.gain.value = this.channelGainValue;
+            (this._channelGain = createChannelGain()).gain.value = this.channelGainValue;
           }
           return this._channelGain;
         },
+        get channelGainValue() {
+          return (this._volume / 0x7F) * (this._expression / 0x7F);
+        },
+        _volume: 100,
         set volume(value) {
           this._volume = value;
           this.channelGain.gain.value = this.channelGainValue;
         },
+        _expression: 0x7F,
         set expression(value) {
           this._expression = value;
           this.channelGain.gain.value = this.channelGainValue;
         },
+        resetAllControllers() {
+          delete this.parameterNumber;
+          this.pitchRatio = 1;
+          this.pitchBendSensitivity = 2;
+          this.volume = 100;
+          this.expression = 0x7F;
+        }
       })
     );
-    this.resetAllControllers = (channel) => {
-      const ch = midiChannels[channel];
-      delete ch.parameterNumber;
-      ch.pitchRatio = 1;
-      ch.pitchBendSensitivity = 2;
-      ch.volume = 100;
-      ch.expression = 0x7F;
-    };
     this.noteOn = (channel, noteNumber, velocity) => {
       const isDrum = channel == MIDI.DRUM_CHANNEL;
       const ch = midiChannels[channel];
@@ -534,10 +537,7 @@ const PianoKeyboard = class {
       allSoundOff,
       synth,
     } = this;
-    const {
-      midiChannels,
-      resetAllControllers,
-    } = synth;
+    const { midiChannels } = synth;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
       const channel = statusWithCh & 0xF;
@@ -587,7 +587,7 @@ const PianoKeyboard = class {
               }
               break;
             case 0x79: // Reset All Controllers
-              resetAllControllers(channel);
+              midiChannels[channel].resetAllControllers();
               break;
           }
           break;
