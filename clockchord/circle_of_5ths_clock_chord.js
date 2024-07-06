@@ -193,6 +193,7 @@ const SimpleSynthesizer = class {
     const midiChannels = this.midiChannels = Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
       (_, channelNumber) => ({
+        isDrum: channelNumber == MIDI.DRUM_CHANNEL,
         voices: new Map(),
         setParameterNumber(control, value) {
           // Control#
@@ -272,39 +273,33 @@ const SimpleSynthesizer = class {
           this.volume = 100;
           this.expression = 0x7F;
           this.pan = 0x40;
-        }
-      })
-    );
-    this.noteOn = (channel, noteNumber, velocity) => {
-      const isDrum = channel == MIDI.DRUM_CHANNEL;
-      const ch = midiChannels[channel];
-      const activeVoices = ch.voices;
-      let voice = activeVoices.get(noteNumber);
-      const isNewVoice = !voice?.isPressing;
-      if( !voice ) {
-        voice = createVoice(
-          ch,
-          isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * ch.pitchRatio,
-          velocity
-        );
-        activeVoices.set(noteNumber, voice);
-      }
-      voice.attack();
-      return isNewVoice;
-    };
-    this.noteOff = (channel, noteNumber) => {
-      const activeVoices = midiChannels[channel].voices;
-      activeVoices.get(noteNumber)?.release(
-        () => activeVoices.delete(noteNumber)
-      );
-    };
-    this.allSoundOff = (channel) => {
-      const activeVoices = midiChannels[channel].voices;
-      activeVoices.forEach((voice, noteNumber) => voice.release(
-        () => activeVoices.delete(noteNumber)
-      ));
-    };
-  };
+        },
+        allSoundOff() {
+          const { voices } = this;
+          voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
+        },
+        noteOff(noteNumber) {
+          const { voices } = this;
+          voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
+        },
+        noteOn(noteNumber, velocity) {
+          const { isDrum, pitchRatio, voices } = this;
+          let voice = voices.get(noteNumber);
+          const isNewVoice = !voice?.isPressing;
+          if( !voice ) {
+            voice = createVoice(
+              this,
+              isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio,
+              velocity
+            );
+            voices.set(noteNumber, voice);
+          }
+          voice.attack();
+          return isNewVoice;
+        },
+      }) // Array.from
+    ); // midiChannels
+  }; // constuctor
 };
 
 const PianoKeyboard = class {
@@ -324,19 +319,19 @@ const PianoKeyboard = class {
     };
   };
   noteOn = (channel, noteNumber, velocity) => {
-    const isNewVoice = this.synth.noteOn(channel, noteNumber, velocity);
+    const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
     if( channel != MIDI.DRUM_CHANNEL && isNewVoice ) {
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
   };
   noteOff = (channel, noteNumber) => {
-    this.synth.noteOff(channel, noteNumber);
+    this.synth.midiChannels[channel].noteOff(noteNumber);
     if( channel != MIDI.DRUM_CHANNEL ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
   };
   allSoundOff = (channel) => {
-    this.synth.allSoundOff(channel);
+    this.synth.midiChannels[channel].allSoundOff();
     this.toneIndicatorCanvas.allSoundOff();
   };
   manualNoteOn = (noteNumber, orderInChord) => {
@@ -550,7 +545,6 @@ const PianoKeyboard = class {
       allSoundOff,
       synth,
     } = this;
-    const { midiChannels } = synth;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
       const [statusWithCh, ...data] = msg;
       const channel = statusWithCh & 0xF;
@@ -571,31 +565,33 @@ const PianoKeyboard = class {
           break;
         case 0xB0: // Control Change
           switch(data[0]) {
-            case 0x01: // Modulation MSB
-              midiChannels[channel].modulationDepth = data[1];
+            // MSB: 0x00 ... 0x1F
+            case 0x01: // Modulation
+              synth.midiChannels[channel].modulationDepth = data[1];
               break;
-            case 0x06: // Data Entry MSB
-              midiChannels[channel].parameterValue = data[1];
+            case 0x06: // RPN/NRPN Data Entry
+              synth.midiChannels[channel].parameterValue = data[1];
               break;
-            case 0x07: // Channel Volume MSB
-              midiChannels[channel].volume = data[1];
+            case 0x07: // Channel Volume
+              synth.midiChannels[channel].volume = data[1];
               break;
             case 0x0A: // Pan
-              midiChannels[channel].pan = data[1];
+              synth.midiChannels[channel].pan = data[1];
               break;
-            case 0x0B: // Expression MSB
-              midiChannels[channel].expression = data[1];
+            case 0x0B: // Expression
+              synth.midiChannels[channel].expression = data[1];
               break;
-            // case 0x26: // Data Entry LSB
+            // LSB: 0x20 ... 0x3F
+            //  :
+            //  :
+            // RPN/NRPN
             // case 0x60: // Data Increment
             // case 0x61: // Data Decrement
-            //   break;
-            //
             case 0x62:
             case 0x63:
             case 0x64:
             case 0x65:
-              midiChannels[channel].setParameterNumber(...data);
+              synth.midiChannels[channel].setParameterNumber(...data);
               break;
             case 0x78: // All Sound Off
               if( data[1] == 0 ) { // Must be 0
@@ -603,12 +599,12 @@ const PianoKeyboard = class {
               }
               break;
             case 0x79: // Reset All Controllers
-              midiChannels[channel].resetAllControllers();
+              synth.midiChannels[channel].resetAllControllers();
               break;
           }
           break;
         case 0xE0: // Pitch Bend Change
-          midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
+          synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
           break;
       }
     };
