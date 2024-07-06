@@ -82,6 +82,14 @@ const SimpleSynthesizer = class {
       amp.connect(context.destination);
       return amp;
     };
+    const createChannelGain = () => {
+      const context = SimpleSynthesizer.audioContext;
+      const amp = this.amplifier ??= createAmplifier(context);
+      const channelGain = context.createGain();
+      channelGain.gain.value = 0;
+      channelGain.connect(amp);
+      return channelGain;
+    };
     const NOISE_TIME = 0.1; // [sec]
     const createNoiseBuffer = (context) => {
       const { sampleRate } = context;
@@ -92,9 +100,6 @@ const SimpleSynthesizer = class {
         data[i] = Math.random() * 2 - 1;
       }
       return noiseBuffer;
-    };
-    const createModulator = (context) => {
-      return modulatorGain;
     };
     const createVoice = (channel, frequency, velocity) => {
       const context = SimpleSynthesizer.audioContext;
@@ -189,35 +194,39 @@ const SimpleSynthesizer = class {
       };
       return voice;
     };
-    const createChannelGain = (context) => {
-      const amp = this.amplifier ??= createAmplifier(context);
-      const channelGain = context.createGain();
-      channelGain.gain.value = 0;
-      channelGain.connect(amp);
-      return channelGain;
-    };
     const midiChannels = this.midiChannels = Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
       () => ({
-        voices: (new Map()),
-        set modulationDepth(value) {
-          this.voices.forEach(
-            (voice, noteNumber) => voice.changeModulation(value / 8)
-          );
+        voices: new Map(),
+        setParameterNumber(control, value) {
+          // Control#
+          //   NRPN (Non-Registered Parameter Number)
+          //     0x62: LSB
+          //     0x63: MSB
+          //   RPN (Registered Parameter Number)
+          //     0x64: LSB
+          //     0x65: MSB
+          const pn = this.parameterNumber ??= {};
+          pn.isRegistered = !!(control & 4);
+          pn[control & 1 ? "MSB" : "LSB"] = value;
         },
-        parameterNumber: {}, // RPN or NRPN
-        pitchBendSensitivity: 2,
         set parameterValue(value) {
-          const { MSB, LSB, isRegistered } = this.parameterNumber;
+          const { MSB, LSB, isRegistered } = this.parameterNumber ?? {};
           if( isRegistered && MSB === 0 && LSB === 0 ) {
             this.pitchBendSensitivity = value;
           }
         },
+        pitchBendSensitivity: 2,
         pitchRatio: 1,
         set pitchBendValue(value) {
-          const ratio = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
+          const r = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
           this.voices.forEach(
-            (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * ratio)
+            (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * r)
+          );
+        },
+        set modulationDepth(value) {
+          this.voices.forEach(
+            (voice, noteNumber) => voice.changeModulation(value / 8)
           );
         },
         _volume: 100,
@@ -227,7 +236,7 @@ const SimpleSynthesizer = class {
         },
         get channelGain() {
           if( !this._channelGain ) {
-            this._channelGain = createChannelGain(SimpleSynthesizer.audioContext);
+            this._channelGain = createChannelGain();
             this._channelGain.gain.value = this.channelGainValue;
           }
           return this._channelGain;
@@ -244,9 +253,9 @@ const SimpleSynthesizer = class {
     );
     this.resetAllControllers = (channel) => {
       const ch = midiChannels[channel];
+      delete ch.parameterNumber;
       ch.pitchRatio = 1;
       ch.pitchBendSensitivity = 2;
-      ch.parameterNumber = {};
       ch.volume = 100;
       ch.expression = 0x7F;
     };
@@ -278,9 +287,6 @@ const SimpleSynthesizer = class {
       activeVoices.forEach((voice, noteNumber) => voice.release(
         () => activeVoices.delete(noteNumber)
       ));
-    };
-    this.changePitchBend = (channel, value) => {
-      midiChannels[channel].pitchBendValue = value;
     };
   };
 };
@@ -530,7 +536,6 @@ const PianoKeyboard = class {
     } = this;
     const {
       midiChannels,
-      changePitchBend,
       resetAllControllers,
     } = synth;
     const handleMidiMessage = this.handleMidiMessage = (msg) => {
@@ -570,35 +575,11 @@ const PianoKeyboard = class {
             // case 0x61: // Data Decrement
             //   break;
             //
-            // Non-Registered Parameter Number
             case 0x62:
-              {
-                const { parameterNumber } = midiChannels[channel];
-                parameterNumber.isRegistered = false;
-                parameterNumber.LSB = data[1];
-              }
-              break;
             case 0x63:
-              {
-                const { parameterNumber } = midiChannels[channel];
-                parameterNumber.isRegistered = false;
-                parameterNumber.MSB = data[1];
-              }
-              break;
-            // Registered Parameter Number
             case 0x64:
-              {
-                const { parameterNumber } = midiChannels[channel];
-                parameterNumber.isRegistered = true;
-                parameterNumber.LSB = data[1];
-              }
-              break;
             case 0x65:
-              {
-                const { parameterNumber } = midiChannels[channel];
-                parameterNumber.isRegistered = true;
-                parameterNumber.MSB = data[1];
-              }
+              midiChannels[channel].setParameterNumber(...data);
               break;
             case 0x78: // All Sound Off
               if( data[1] == 0 ) { // Must be 0
@@ -611,10 +592,7 @@ const PianoKeyboard = class {
           }
           break;
         case 0xE0: // Pitch Bend Change
-          changePitchBend(
-            channel,
-            (data[1] * (1 << 7) + data[0]) - (1 << 13) // -8192 ... +8191
-          );
+          midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
           break;
       }
     };
