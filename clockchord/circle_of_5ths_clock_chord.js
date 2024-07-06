@@ -264,7 +264,6 @@ const SimpleSynthesizer = class {
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
           this.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
-          console.debug(value);
         },
         resetAllControllers() {
           delete this.parameterNumber;
