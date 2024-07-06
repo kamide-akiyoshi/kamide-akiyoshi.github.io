@@ -259,7 +259,7 @@ const SimpleSynthesizer = class {
           const context = SimpleSynthesizer.audioContext;
           const panner = this.panner;
           if( !panner ) {
-            this._channelGain ??= createChannelGain();
+            this._channelGain ??= this.createChannelGain();
           }
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
