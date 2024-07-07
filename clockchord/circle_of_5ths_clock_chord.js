@@ -72,19 +72,18 @@ const SimpleSynthesizer = class {
         setIcon(waveselect.value);
       }
     }
-    const createAmplifier = () => {
-      const context = SimpleSynthesizer.audioContext;
-      const amp = context.createGain();
-      const { gain } = amp;
-      const { volume } = sliders;
-      const changeVolume = () => gain.value = volume.value ** 2;
-      volume.addEventListener && volume.addEventListener('input', changeVolume);
-      changeVolume();
-      amp.connect(context.destination);
-      return amp;
-    };
-    const getAmplifier = () => {
-      return this.amplifier ??= createAmplifier();
+    const getMixer = () => {
+      if( !this.mixer ) {
+        const context = SimpleSynthesizer.audioContext;
+        const mixer = this.mixer = context.createGain();
+        const { gain } = mixer;
+        const { volume } = sliders;
+        const changeVolume = () => gain.value = volume.value ** 2;
+        volume.addEventListener && volume.addEventListener('input', changeVolume);
+        changeVolume();
+        mixer.connect(context.destination);
+      }
+      return this.mixer;
     }
     const NOISE_TIME = 0.1; // [sec]
     const createNoiseBuffer = () => {
@@ -101,7 +100,7 @@ const SimpleSynthesizer = class {
       const context = SimpleSynthesizer.audioContext;
       const velocityGain = context.createGain();
       velocityGain.gain.value = velocity / 0x7F;
-      velocityGain.connect(channel.channelGain);
+      velocityGain.connect(channel.ampan.amplifier);
       const envelope = context.createGain();
       envelope.gain.value = 0;
       envelope.connect(velocityGain);
@@ -231,40 +230,36 @@ const SimpleSynthesizer = class {
             (voice, noteNumber) => voice.changeModulation(value / 8)
           );
         },
-        createChannelGain() {
-          const context = SimpleSynthesizer.audioContext;
-          const panner = this.panner ??= context.createStereoPanner();
-          panner.connect(getAmplifier());
-          const channelGain = context.createGain();
-          channelGain.gain.value = this.channelGainValue;
-          channelGain.connect(panner);
-          return channelGain;
-        },
-        get channelGain() {
-          return this._channelGain ??= this.createChannelGain();
-        },
-        get channelGainValue() {
-          return (this._volume / 0x7F) * (this._expression / 0x7F);
-        },
         _volume: 100,
+        _expression: 0x7F,
+        get gainValueToSet() {
+          return (this._volume / 0x7F) * (this._expression / 0x7F)
+        },
+        get ampan() {
+          if( !this._ampan ) {
+            const context = SimpleSynthesizer.audioContext;
+            const panner = context.createStereoPanner();
+            panner.connect(getMixer());
+            const amplifier = context.createGain();
+            this._ampan = { amplifier, panner };
+            amplifier.gain.value = this.gainValueToSet;
+            amplifier.connect(panner);
+          }
+          return this._ampan;
+        },
         set volume(value) {
           this._volume = value;
-          this.channelGain.gain.value = this.channelGainValue;
+          this.ampan.amplifier.gain.value = this.gainValueToSet;
         },
-        _expression: 0x7F,
         set expression(value) {
           this._expression = value;
-          this.channelGain.gain.value = this.channelGainValue;
+          this.ampan.amplifier.gain.value = this.gainValueToSet;
         },
         set pan(value) {
           const context = SimpleSynthesizer.audioContext;
-          const panner = this.panner;
-          if( !panner ) {
-            this._channelGain ??= this.createChannelGain();
-          }
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
-          this.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
+          this.ampan.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
         },
         resetAllControllers() {
           delete this.parameterNumber;
