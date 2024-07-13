@@ -397,6 +397,7 @@ const PianoKeyboard = class {
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannelSelecter.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
+    this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, velocity]);
     this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
     this.noteOn(ch, noteNumber, velocity);
     const keys = this.pianoKeys;
@@ -421,6 +422,7 @@ const PianoKeyboard = class {
     const { pressed } = keys;
     if( pressed.has(noteNumber) ) {
       const ch = pressed.get(noteNumber);
+      this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, 0]);
       this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
       this.noteOff(ch, noteNumber);
       pressed.delete(noteNumber);
@@ -658,6 +660,38 @@ const PianoKeyboard = class {
     }).catch(msg => {
       alert(msg);
     });
+  };
+  setupWebMidiLink = () => {
+    // WebMidiLink described on https://www.g200kg.com/en/docs/webmidilink/
+    const {
+      handleMidiMessage,
+    } = this;
+    // Input
+    window.addEventListener('message', event => {
+      const msg = event.data.split(",");
+      const msgType = msg.shift();
+      switch(msgType) {
+        case 'midi':
+          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+          break;
+      }
+    });
+    // Output
+    const urlElement = document.getElementById('WebMidiLinkUrl');
+    const loadButton = document.getElementById('LoadWebMidiLinkUrl');
+    const iFrame = document.getElementById('WebMidiLinkSynth');
+    if( urlElement && loadButton && iFrame ) {
+      iFrame.style.visibility = "hidden";
+      loadButton.addEventListener('click', () => {
+        iFrame.style.visibility = (iFrame.src = urlElement.value) ? "visible" : "hidden";
+        this.sendWebMidiLinkMessage = (msg) => {
+          iFrame.contentWindow.postMessage(
+            msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi"),
+            "*"
+          );
+        };
+      });
+    }
   };
   setupToneIndicatorCanvas = (canvas) => {
     const BASS_MAX_NOTE_NUMBER = 48;
@@ -1177,6 +1211,7 @@ const PianoKeyboard = class {
     };
     const sendMidiMessage = (midiMessage) => {
       handleMidiMessage(midiMessage);
+      this.sendWebMidiLinkMessage?.(midiMessage);
       try {
         selectedMidiOutputPorts.send(midiMessage);
       } catch(e) {
@@ -1588,7 +1623,7 @@ const PianoKeyboard = class {
       chord,
       setupMidiChannelSelecter,
       setupMidiPorts,
-      handleMidiMessage,
+      setupWebMidiLink,
       setupMidiSequencer,
       setupToneIndicatorCanvas,
       setupPianoKeyboard,
@@ -1598,15 +1633,7 @@ const PianoKeyboard = class {
     setupMidiChannelSelecter();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidiPorts();
-    window.addEventListener('message', event => {
-      const msg = event.data.split(",");
-      const msgType = msg.shift();
-      switch(msgType) {
-        case 'midi': // Supports WebMidiLink described on https://www.g200kg.com/en/docs/webmidilink/
-          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
-          break;
-      }
-    });
+    setupWebMidiLink();
     setupMidiSequencer();
     setupPianoKeyboard();
   }

@@ -85,10 +85,6 @@
 	.center_chord_dark {
 		background: radial-gradient(#404040D0 50%, #40404000);
 	}
-	button {
-		width: 32px;
-		height: 32px;
-	}
 	#volume {
 		width: 360px;
 	}
@@ -230,9 +226,6 @@
 	.grayout {
 		color: #808080;
 	}
-	#midi_file_select_button {
-		width: auto;
-	}
 	#midi_sequence > .controller {
 		display: flex;
 	}
@@ -251,6 +244,13 @@
 	#past_lyrics {
 		color: red;
 		background-color: pink;
+	}
+	#WebMidiLinkUrl {
+		width: 100%;
+	}
+	#WebMidiLinkSynth {
+		width: 100%;
+		height: 500px;
 	}
 </style>
 </HEAD>
@@ -378,6 +378,12 @@
       </div>
     </div>
   </div>
+</div>
+<div id="WebMidiLink">
+  <label for="WebMidiLinkUrl">WebMidiLink OUT URL</label>
+  <input id="WebMidiLinkUrl" type="text"/>
+  <button id="LoadWebMidiLinkUrl">Load</button>
+  <iframe id="WebMidiLinkSynth"></iframe>
 </div>
 <hr/>
 <a name="how_to_use"></a>
