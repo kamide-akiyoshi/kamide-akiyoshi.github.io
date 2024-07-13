@@ -298,21 +298,6 @@ const SimpleSynthesizer = class {
 };
 
 const PianoKeyboard = class {
-  setupMidiChannelSelecter = () => {
-    const element = document.getElementById('midi_channel');
-    Array.from(
-      {length: MIDI.NUMBER_OF_CHANNELS},
-      (_, ch) => {
-        const option = document.createElement("option");
-        option.value = ch;
-        option.appendChild(document.createTextNode(`${ch + 1}${ch == MIDI.DRUM_CHANNEL ? ' (Drum)' : ''}`));
-        element.appendChild(option);
-      }
-    );
-    this.midiChannelSelecter = {
-      get selectedChannel() { return parseInt(element?.value); }
-    };
-  };
   noteOn = (channel, noteNumber, velocity) => {
     const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
     if( channel != MIDI.DRUM_CHANNEL && isNewVoice ) {
@@ -328,6 +313,86 @@ const PianoKeyboard = class {
   allSoundOff = (channel) => {
     this.synth.midiChannels[channel].allSoundOff();
     this.toneIndicatorCanvas.allSoundOff();
+  };
+  handleMidiMessage = (msg) => {
+    const {
+      noteOff,
+      noteOn,
+      allSoundOff,
+      synth,
+    } = this;
+    const [statusWithCh, ...data] = msg;
+    const channel = statusWithCh & 0xF;
+    const status = statusWithCh & 0xF0;
+    switch(status) {
+      case 0x90:
+        if( data[1] ) { // velocity > 0
+          noteOn(channel, data[0], data[1]);
+          break;
+        }
+        // fallthrough: velocity === 0 means Note Off
+      case 0x80:
+        noteOff(channel, data[0]);
+        break;
+      case 0xB0: // Control Change
+        switch(data[0]) {
+          // MSB: 0x00 ... 0x1F
+          case 0x01: // Modulation
+            synth.midiChannels[channel].modulationDepth = data[1];
+            break;
+          case 0x06: // RPN/NRPN Data Entry
+            synth.midiChannels[channel].parameterValue = data[1];
+            break;
+          case 0x07: // Channel Volume
+            synth.midiChannels[channel].volume = data[1];
+            break;
+          case 0x0A: // Pan
+            synth.midiChannels[channel].pan = data[1];
+            break;
+          case 0x0B: // Expression
+            synth.midiChannels[channel].expression = data[1];
+            break;
+          // LSB: 0x20 ... 0x3F
+          //  :
+          //  :
+          // RPN/NRPN
+          // case 0x60: // Data Increment
+          // case 0x61: // Data Decrement
+          case 0x62:
+          case 0x63:
+          case 0x64:
+          case 0x65:
+            synth.midiChannels[channel].setParameterNumber(...data);
+            break;
+          case 0x78: // All Sound Off
+            if( data[1] == 0 ) { // Must be 0
+              allSoundOff(channel);
+            }
+            break;
+          case 0x79: // Reset All Controllers
+            synth.midiChannels[channel].resetAllControllers();
+            break;
+        }
+        break;
+      case 0xE0: // Pitch Bend Change
+        synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
+        break;
+    }
+  };
+  setupMidiChannelSelecter = () => {
+    const element = document.getElementById('midi_channel');
+    Array.from(
+      {length: MIDI.NUMBER_OF_CHANNELS},
+      (_, ch) => {
+        const option = document.createElement("option");
+        option.value = ch;
+        option.appendChild(document.createTextNode(`${ch + 1}${ch == MIDI.DRUM_CHANNEL ? ' (Drum)' : ''}`));
+        element.appendChild(option);
+      }
+    );
+    this.midiChannelSelecter = {
+      get selectedChannel() { return parseInt(element?.value); }
+    };
   };
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannelSelecter.selectedChannel;
@@ -532,89 +597,8 @@ const PianoKeyboard = class {
     if( ! window.isSecureContext ) {
       console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
     }
-    // MIDI message receiver
-    const {
-      chord,
-      noteOn,
-      noteOff,
-      allSoundOff,
-      synth,
-    } = this;
-    const handleMidiMessage = this.handleMidiMessage = (msg) => {
-      const [statusWithCh, ...data] = msg;
-      const channel = statusWithCh & 0xF;
-      const status = statusWithCh & 0xF0;
-      switch(status) {
-        case 0x90:
-          if( data[1] ) { // velocity > 0
-            const noteNumber = data[0];
-            noteOn(channel, noteNumber, data[1]);
-            break;
-          }
-          // fallthrough: velocity === 0 means Note Off
-        case 0x80:
-          {
-            const noteNumber = data[0];
-            noteOff(channel, noteNumber);
-          }
-          break;
-        case 0xB0: // Control Change
-          switch(data[0]) {
-            // MSB: 0x00 ... 0x1F
-            case 0x01: // Modulation
-              synth.midiChannels[channel].modulationDepth = data[1];
-              break;
-            case 0x06: // RPN/NRPN Data Entry
-              synth.midiChannels[channel].parameterValue = data[1];
-              break;
-            case 0x07: // Channel Volume
-              synth.midiChannels[channel].volume = data[1];
-              break;
-            case 0x0A: // Pan
-              synth.midiChannels[channel].pan = data[1];
-              break;
-            case 0x0B: // Expression
-              synth.midiChannels[channel].expression = data[1];
-              break;
-            // LSB: 0x20 ... 0x3F
-            //  :
-            //  :
-            // RPN/NRPN
-            // case 0x60: // Data Increment
-            // case 0x61: // Data Decrement
-            case 0x62:
-            case 0x63:
-            case 0x64:
-            case 0x65:
-              synth.midiChannels[channel].setParameterNumber(...data);
-              break;
-            case 0x78: // All Sound Off
-              if( data[1] == 0 ) { // Must be 0
-                allSoundOff(channel);
-              }
-              break;
-            case 0x79: // Reset All Controllers
-              synth.midiChannels[channel].resetAllControllers();
-              break;
-          }
-          break;
-        case 0xE0: // Pitch Bend Change
-          synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
-          break;
-      }
-    };
-    // Listen WebMidiLink
-    window.addEventListener('message', event => {
-      const msg = event.data.split(",");
-      const msgType = msg.shift();
-      switch(msgType) {
-        case 'midi':
-          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
-          break;
-      }
-    });
     // MIDI port selecter
-    const midiMessageListener = msg => handleMidiMessage(msg.data);
+    const midiMessageListener = msg => this.handleMidiMessage(msg.data);
     const selectedMidiOutputPorts = this.selectedMidiOutputPorts = this.createSelectedMidiOutputPorts();
     const checkboxes = {
       eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
@@ -1604,6 +1588,7 @@ const PianoKeyboard = class {
       chord,
       setupMidiChannelSelecter,
       setupMidiPorts,
+      handleMidiMessage,
       setupMidiSequencer,
       setupToneIndicatorCanvas,
       setupPianoKeyboard,
@@ -1613,6 +1598,15 @@ const PianoKeyboard = class {
     setupMidiChannelSelecter();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
     setupMidiPorts();
+    window.addEventListener('message', event => {
+      const msg = event.data.split(",");
+      const msgType = msg.shift();
+      switch(msgType) {
+        case 'midi': // Supports WebMidiLink described on https://www.g200kg.com/en/docs/webmidilink/
+          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+          break;
+      }
+    });
     setupMidiSequencer();
     setupPianoKeyboard();
   }
