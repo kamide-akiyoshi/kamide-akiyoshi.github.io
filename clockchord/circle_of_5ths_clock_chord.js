@@ -662,34 +662,38 @@ const PianoKeyboard = class {
     });
   };
   setupWebMidiLink = () => {
-    // WebMidiLink described on https://www.g200kg.com/en/docs/webmidilink/
-    const {
-      handleMidiMessage,
-    } = this;
-    // Input
     window.addEventListener('message', event => {
       const msg = event.data.split(",");
       const msgType = msg.shift();
       switch(msgType) {
         case 'midi':
-          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+          this.handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
           break;
       }
     });
-    // Output
     const urlElement = document.getElementById('WebMidiLinkUrl');
     const loadButton = document.getElementById('LoadWebMidiLinkUrl');
     const iFrame = document.getElementById('WebMidiLinkSynth');
     if( urlElement && loadButton && iFrame ) {
-      iFrame.style.visibility = "hidden";
+      const parent = iFrame.parentNode;
+      const attach = () => parent.contains(iFrame) || parent.appendChild(iFrame);
+      const detach = () => parent.contains(iFrame) && parent.removeChild(iFrame);
+      const send = (msg) => {
+        const str = msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi");
+        iFrame.contentWindow.postMessage(str, "*");
+      };
+      detach();
       loadButton.addEventListener('click', () => {
-        iFrame.style.visibility = (iFrame.src = urlElement.value) ? "visible" : "hidden";
-        this.sendWebMidiLinkMessage = (msg) => {
-          iFrame.contentWindow.postMessage(
-            msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi"),
-            "*"
-          );
-        };
+        const url = urlElement.value;
+        if( url ) {
+          attach();
+          iFrame.src = url;
+          this.sendWebMidiLinkMessage = send;
+        } else {
+          iFrame.src = url;
+          detach();
+          delete this.sendWebMidiLinkMessage;
+        }
       });
     }
   };
@@ -931,7 +935,6 @@ const PianoKeyboard = class {
   };
   setupMidiSequencer = () => {
     const {
-      handleMidiMessage,
       chord,
       toneIndicatorCanvas,
       selectedMidiOutputPorts,
@@ -1209,15 +1212,6 @@ const PianoKeyboard = class {
       if( title ) sequence.title = title;
       return sequence;
     };
-    const sendMidiMessage = (midiMessage) => {
-      handleMidiMessage(midiMessage);
-      this.sendWebMidiLinkMessage?.(midiMessage);
-      try {
-        selectedMidiOutputPorts.send(midiMessage);
-      } catch(e) {
-        console.error(midiMessage, e);
-      }
-    };
     let lastTimeSignatureEvent;
     const currentLyrics = {
       element: document.getElementById("lyrics"),
@@ -1456,6 +1450,15 @@ const PianoKeyboard = class {
     const changeTempo = (uspq) => {
       bpmElement.textContent = Math.floor(60000000 / uspq);
       ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
+    };
+    const sendMidiMessage = (midiMessage) => {
+      this.handleMidiMessage(midiMessage);
+      this.sendWebMidiLinkMessage?.(midiMessage);
+      try {
+        selectedMidiOutputPorts.send(midiMessage);
+      } catch(e) {
+        console.error(midiMessage, e);
+      }
     };
     let intervalId;
     const pause = () => {
