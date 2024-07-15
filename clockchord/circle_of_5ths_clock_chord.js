@@ -1,4 +1,39 @@
 
+const Music = class {
+  static FLAT    = '\u{266D}';
+  static NATURAL = '\u{266E}';
+  static SHARP   = '\u{266F}';
+  static DOUBLE_SHARP = '\u{1D12A}';
+  static DOUBLE_FLAT  = '\u{1D12B}';
+  static majorPitchNameAt = hour => [
+    String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7),
+    [
+      Music.DOUBLE_FLAT,
+      Music.FLAT,
+      '',
+      Music.SHARP,
+      Music.DOUBLE_SHARP
+    ][Math.trunc((hour + 15) / 7)]
+  ];
+  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
+  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
+  static normalizeHourAsKey = hour => {
+    while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
+    return hour;
+  };
+  static keySignatureTextAt = hour => {
+    if( ! hour ) return '';
+    const n = Math.abs(hour);
+    const fs = hour < 0 ? Music.FLAT : Music.SHARP;
+    if( n == 1 ) return fs;
+    return `${n > 2 ? n : fs}${fs}`;
+  };
+  static keyTextOf = (hour = 0, minor) => {
+    const textAt = (hour) => Music.majorPitchNameAt(hour).join('');
+    return minor ? `${textAt(hour + 3)}m` : textAt(hour);
+  };
+}
+
 const MIDI = class {
   static DRUM_CHANNEL = 9;
   static NUMBER_OF_CHANNELS = 16;
@@ -1643,41 +1678,6 @@ const PianoKeyboard = class {
     setupMidiSequencer();
     setupPianoKeyboard();
   }
-}
-
-const Music = class {
-  static FLAT    = '\u{266D}';
-  static NATURAL = '\u{266E}';
-  static SHARP   = '\u{266F}';
-  static DOUBLE_SHARP = '\u{1D12A}';
-  static DOUBLE_FLAT  = '\u{1D12B}';
-  static majorPitchNameAt = hour => [
-    String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7),
-    [
-      Music.DOUBLE_FLAT,
-      Music.FLAT,
-      '',
-      Music.SHARP,
-      Music.DOUBLE_SHARP
-    ][Math.trunc((hour + 15) / 7)]
-  ];
-  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
-  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
-  static normalizeHourAsKey = hour => {
-    while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
-    return hour;
-  };
-  static keySignatureTextAt = hour => {
-    if( ! hour ) return '';
-    const n = Math.abs(hour);
-    const fs = hour < 0 ? Music.FLAT : Music.SHARP;
-    if( n == 1 ) return fs;
-    return `${n > 2 ? n : fs}${fs}`;
-  };
-  static keyTextOf = (hour = 0, minor) => {
-    const textAt = (hour) => Music.majorPitchNameAt(hour).join('');
-    return minor ? `${textAt(hour + 3)}m` : textAt(hour);
-  };
 }
 
 const CircleOfFifthsClock = class {
