@@ -687,12 +687,15 @@ const PianoKeyboard = class {
         const url = urlElement.value;
         if( url ) {
           attach();
+          iFrame.onload = () => {
+            this.sendWebMidiLinkMessage = send;
+          };
           iFrame.src = url;
-          this.sendWebMidiLinkMessage = send;
         } else {
-          iFrame.src = url;
-          detach();
           delete this.sendWebMidiLinkMessage;
+          iFrame.onload = undefined;
+          iFrame.src = undefined;
+          detach();
         }
       });
     }
