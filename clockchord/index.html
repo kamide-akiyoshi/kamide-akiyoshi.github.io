@@ -262,7 +262,7 @@
   <div>
     <label for="volume" title="Volume" style="display: flex;">
       <img src="image/speaker.svg" alt="Volume"/>
-      <input id="volume" type="range"/>
+      <input id="volume" type="range" value="0.4" min="0" max="1.6" step="0.01"/>
     </label>
     <div class="clock clock_light">
       <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
@@ -341,7 +341,9 @@
       </div>
     </div>
     <div>
-      <label for="velocity" title="Velocity">Velocity<input id="velocity" type="range"/></label>
+      <label for="velocity" title="Velocity">Velocity<input
+        id="velocity" type="range" value="64" min="0" max="127" step="1"
+      /></label>
       <label for="midi_channel">
         Channel
         <select id="midi_channel">

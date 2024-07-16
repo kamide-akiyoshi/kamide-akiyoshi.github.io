@@ -71,7 +71,6 @@ const SimpleSynthesizer = class {
   };
   constructor() {
     const sliders = {
-      volume:       setupSlider('volume' , 0.4, 0, 1.6, 0.01),
       attackTime:   setupSlider('attack' , 0.01, 0, 0.3, 0.001),
       decayTime:    setupSlider('decay'  , 0.5, 0, 1, 0.01),
       sustainLevel: setupSlider('sustain', 0.3, 0, 1, 0.01),
@@ -109,12 +108,12 @@ const SimpleSynthesizer = class {
     }
     const getMixer = () => {
       if( !this.mixer ) {
+        const volumeSlider = document.getElementById('volume') ?? { value: 0.4 };
         const context = SimpleSynthesizer.audioContext;
         const mixer = this.mixer = context.createGain();
         const { gain } = mixer;
-        const { volume } = sliders;
-        const changeVolume = () => gain.value = volume.value ** 2;
-        volume.addEventListener && volume.addEventListener('input', changeVolume);
+        const changeVolume = () => gain.value = volumeSlider.value ** 2;
+        volumeSlider.addEventListener?.('input', changeVolume);
         changeVolume();
         mixer.connect(context.destination);
       }
@@ -1669,7 +1668,7 @@ const PianoKeyboard = class {
       setupToneIndicatorCanvas,
       setupPianoKeyboard,
     } = this;
-    this.velocitySlider = setupSlider('velocity', 64, 0, 127, 1);
+    this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
     chord.setup();
     setupMidiChannelSelecter();
     setupToneIndicatorCanvas(toneIndicatorCanvas);
