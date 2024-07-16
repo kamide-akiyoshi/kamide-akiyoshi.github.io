@@ -130,10 +130,10 @@ const SimpleSynthesizer = class {
       }
       return noiseBuffer;
     };
-    const createVoice = (channel, frequency, velocity) => {
+    const createVoice = (channel, frequency) => {
       const context = SimpleSynthesizer.audioContext;
       const velocityGain = context.createGain();
-      velocityGain.gain.value = velocity / 0x7F;
+      velocityGain.gain.value = 0;
       velocityGain.connect(channel.ampan.amplifier);
       const envelope = context.createGain();
       envelope.gain.value = 0;
@@ -158,7 +158,7 @@ const SimpleSynthesizer = class {
       modulator?.start();
       let timeoutIdToStop;
       const voice = {
-        attack: () => {
+        attack: (velocity) => {
           voice.isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
@@ -181,6 +181,7 @@ const SimpleSynthesizer = class {
             sustainLevel = 0;
             attackTime = 0;
           }
+          velocityGain.gain.value = velocity / 0x7F;
           const t1 = context.currentTime + (attackTime - 0);
           if( attackTime ) {
             gain.linearRampToValueAtTime(1, t1);
@@ -318,12 +319,11 @@ const SimpleSynthesizer = class {
           if( !voice ) {
             voice = createVoice(
               this,
-              isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio,
-              velocity
+              isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio
             );
             voices.set(noteNumber, voice);
           }
-          voice.attack();
+          voice.attack(velocity);
           return isNewVoice;
         },
       }) // Array.from
