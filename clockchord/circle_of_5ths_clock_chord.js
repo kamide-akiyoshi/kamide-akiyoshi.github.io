@@ -1317,7 +1317,7 @@ const PianoKeyboard = class {
     };
     const darkModeSelect = document.getElementById("dark_mode_select");
     const midiFileNameElement = document.getElementById("midi_file_name");
-    const tickPositionSlider = setupSlider("time_position", 0, 0, 1, 1);
+    const tickPositionSlider = document.getElementById("time_position");
     const timeSignatureElement = document.getElementById("time_signature");
     const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
