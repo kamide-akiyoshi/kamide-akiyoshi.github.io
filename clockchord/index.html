@@ -245,6 +245,11 @@
 		color: red;
 		background-color: pink;
 	}
+	#WebMidiLinkUrlForm {
+		width: 100%;
+		display: flex;
+		align-items: center;
+	}
 	#WebMidiLinkUrl {
 		width: 100%;
 	}
@@ -381,12 +386,16 @@
     </div>
   </div>
 </div>
+<hr/>
 <div id="WebMidiLink">
-  <label for="WebMidiLinkUrl">
-    <a href="https://www.g200kg.com/en/docs/webmidilink/" target="_blank">WebMidiLink</a> OUT URL
-  </label>
-  <input id="WebMidiLinkUrl" type="url"/>
-  <button id="LoadWebMidiLinkUrl">Load</button>
+  <div>
+    <a href="https://www.g200kg.com/en/docs/webmidilink/" target="_blank">WebMidiLink</a> OUT
+  </div>
+  <div id="WebMidiLinkUrlForm">
+    <label for="WebMidiLinkUrl">URL</label>
+    <input id="WebMidiLinkUrl" type="url"/>
+    <button id="LoadWebMidiLinkUrl">Load</button>
+  </div>
   <iframe id="WebMidiLinkSynth"></iframe>
 </div>
 <hr/>
