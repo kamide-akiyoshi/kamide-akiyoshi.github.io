@@ -43,19 +43,6 @@ const MIDI = class {
   );
 };
 
-const setupSlider = (id, value, min, max, step) => {
-  const slider = document.getElementById(id);
-  if( ! slider ) {
-    console.warn(`No slider found: ID=${id}`);
-    return { value };
-  }
-  slider.min = min;
-  slider.max = max;
-  slider.step = step;
-  slider.value = value;
-  return slider;
-};
-
 const SimpleSynthesizer = class {
   static get audioContext() {
     if( ! SimpleSynthesizer._audioContext ) {
@@ -71,10 +58,10 @@ const SimpleSynthesizer = class {
   };
   constructor() {
     const sliders = {
-      attackTime:   setupSlider('attack' , 0.01, 0, 0.3, 0.001),
-      decayTime:    setupSlider('decay'  , 0.5, 0, 1, 0.01),
-      sustainLevel: setupSlider('sustain', 0.3, 0, 1, 0.01),
-      releaseTime:  setupSlider('release', 0.3, 0, 1, 0.01),      
+      attackTime:   document.getElementById('attack'),
+      decayTime:    document.getElementById('decay'),
+      sustainLevel: document.getElementById('sustain'),
+      releaseTime:  document.getElementById('release'),
     };
     const waves = {
       ...(["sawtooth", "square", "triangle", "sine"].reduce(
