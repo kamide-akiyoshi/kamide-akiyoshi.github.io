@@ -192,6 +192,17 @@
 	label {
 		font-size: small;
 	}
+	#periodicWaveTerms {
+		display: flex;
+	}
+	#periodicWaveTerms.hidden {
+		display: none;
+	}
+	.periodicWaveTermSliders {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
 	#midi {
 		display: flex;
 		align-items: flex-start;
@@ -357,12 +368,32 @@
       <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" target="_blank" style="font-size: small;">Frequency table</a>
     </div>
     <hr/>
-    <div style="margin: 4px 0">
+    <div style="margin: 4px 0; display: flex;">
       <label for="waveselect" title="wave">
         <img id="wave" alt="wave" height="32" align="center"/>
         <select id="waveselect" style="height: 32px;">
         </select>
       </label>
+      <div id="periodicWaveTerms">
+        <div id="periodicWaveRealTerms" class="periodicWaveTermSliders">
+          <div>cos (real)</div>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="1" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="0" min="0" max="1" step="0.01"/>
+        </div>
+        <div id="periodicWaveImagTerms" class="periodicWaveTermSliders">
+          <div>sin (imag)</div>
+          <input type="range" value="1" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="1" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="0.5" min="0" max="1" step="0.01"/>
+          <input type="range" value="0" min="0" max="1" step="0.01"/>
+        </div>
+      </div>
     </div>
     <div style="margin: 4px 0">
       <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>

@@ -57,12 +57,16 @@ const SimpleSynthesizer = class {
     return SimpleSynthesizer._audioContext;
   };
   constructor() {
-    const sliders = {
+    const envelopeSliders = {
       attackTime:   document.getElementById('attack'),
       decayTime:    document.getElementById('decay'),
       sustainLevel: document.getElementById('sustain'),
       releaseTime:  document.getElementById('release'),
     };
+    const termsSliders = [
+      Array.from(document.querySelectorAll(`#periodicWaveRealTerms input`)),
+      Array.from(document.querySelectorAll(`#periodicWaveImagTerms input`)),
+    ];
     const waves = {
       ...(["sawtooth", "square", "triangle", "sine"].reduce(
         (basicWaves, key) => {
@@ -70,10 +74,11 @@ const SimpleSynthesizer = class {
           return basicWaves;
         },{}
       )),
-      custom_test: {
+      custom: {
         iconFile: "image/wave.svg",
-        real: [0, 0, 0, 0, 0, 0, 0, 0],
-        imag: [0, 1, 1, 1, 0, 1, 1, 0],
+        getTerms: () => termsSliders.map(
+          sliders => [0, ...sliders.map(e => parseInt(e.value))]
+        ),
       },
     };
     const waveselect = document.getElementById('waveselect');
@@ -86,11 +91,15 @@ const SimpleSynthesizer = class {
       waveselect.value = "sawtooth";
       const img = document.getElementById('wave');
       if( img ) {
-        const setIcon = waveName => {
-          img.src = waves[waveName].iconFile;
+        const termsElement = termsSliders[0][0].parentElement.parentElement;
+        const setWave = waveName => {
+          const wave = waves[waveName];
+          img.src = wave.iconFile;
+          const cl = termsElement.classList;
+          wave.getTerms ? cl.remove("hidden") : cl.add("hidden");
         };
-        waveselect.addEventListener('change', event => setIcon(event.target.value));
-        setIcon(waveselect.value);
+        waveselect.addEventListener('change', event => setWave(event.target.value));
+        setWave(waveselect.value);
       }
     }
     const getMixer = () => {
@@ -155,15 +164,14 @@ const SimpleSynthesizer = class {
           let attackTime;
           if( source instanceof OscillatorNode ) {
             const waveKey = waveselect?.value ?? "sawtooth";
-            const { real, imag } = waves[waveKey];
-            if( real ) {
-              const periodicWave = context.createPeriodicWave(real, imag);
-              source.setPeriodicWave(periodicWave);
+            const { getTerms } = waves[waveKey];
+            if( getTerms ) {
+              source.setPeriodicWave(context.createPeriodicWave(...getTerms()));
             } else {
               source.type = waveKey;
             }
-            sustainLevel = sliders.sustainLevel.value;
-            attackTime = sliders.attackTime.value;
+            sustainLevel = envelopeSliders.sustainLevel.value;
+            attackTime = envelopeSliders.attackTime.value;
           } else {
             sustainLevel = 0;
             attackTime = 0;
@@ -176,7 +184,7 @@ const SimpleSynthesizer = class {
             gain.value = 1;
           }
           if( sustainLevel < 1 ) {
-            const decayTime = frequency ? sliders.decayTime.value : NOISE_TIME;
+            const decayTime = frequency ? envelopeSliders.decayTime.value : NOISE_TIME;
             gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
@@ -194,7 +202,7 @@ const SimpleSynthesizer = class {
             stopped && stopped();
           };
           if( gain.value <= gainValueToStop ) { stop(); return; }
-          const releaseTime = source instanceof OscillatorNode ? sliders.releaseTime.value : NOISE_TIME;
+          const releaseTime = source instanceof OscillatorNode ? envelopeSliders.releaseTime.value : NOISE_TIME;
           if( !releaseTime ) { stop(); return; }
           const delay = Math.log(gain.value / gainValueToStop) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
