@@ -1201,6 +1201,10 @@ const PianoKeyboard = class {
                     mergedLyrics.createEvent(event);
                     break;
                   }
+                  if ( mergedLyrics.event?.text.length > 127 && event.text.trim().length === 0 ) {
+                    mergedLyrics.createEvent(event);
+                    break;
+                  }
                   if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
                     mergedLyrics.appendTextOf(event);
                     break;
