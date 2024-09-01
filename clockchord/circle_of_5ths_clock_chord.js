@@ -1267,7 +1267,7 @@ const PianoKeyboard = class {
         currentLyrics.pastElement.innerText = "";
         currentLyrics.element.innerText = text;
       },
-      proceedText: (fragment, nextPosition) => {
+      proceedText: (nextPosition) => {
         const t = currentLyrics.text;
         currentLyrics.element.innerText = t.slice(nextPosition);
         currentLyrics.pastElement.innerText = t.slice(0, nextPosition);
@@ -1278,7 +1278,7 @@ const PianoKeyboard = class {
       switch(metaType) {
         case 5:
           if( "lyricsNextPosition" in event && currentLyrics.element.textContent ) {
-            currentLyrics.proceedText(event.text, event.lyricsNextPosition);
+            currentLyrics.proceedText(event.lyricsNextPosition);
           } else {
             currentLyrics.setText(event.text);
           }
@@ -1311,7 +1311,7 @@ const PianoKeyboard = class {
           if( "text" in event ) {
             const { text } = event;
             if( "lyricsNextPosition" in event && currentLyrics.element.textContent && metaType === 1 ) {
-              currentLyrics.proceedText(text, event.lyricsNextPosition);
+              currentLyrics.proceedText(event.lyricsNextPosition);
             } else if( midiSequence.title != text ) {
               textElement.textContent = text;
             }
