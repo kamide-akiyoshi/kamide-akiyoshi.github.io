@@ -1156,21 +1156,24 @@ const PianoKeyboard = class {
           let tick = 0;
           let runningStatus;
           const mergedLyrics = {
+            lastFragmentTick: 0,
             createEvent: (event) => {
               karaokeLyricsMetaType = event.metaType;
               const lastTick = events.findLast((e) => e.metaType === karaokeLyricsMetaType)?.tick ?? 0;
-              mergedLyrics.event = {
+              mergedLyrics.lastFragmentTick = tick;
+              const createdEvent = mergedLyrics.event = {
                 ...event,
                 tick: tick - Math.min(sequence.ticksPerQuarter * 2, tick - lastTick),
                 metaType: 5,
               };
-              insertEvent(sequence.lyrics, mergedLyrics.event);
-              insertEvent(events, mergedLyrics.event);
+              insertEvent(sequence.lyrics, createdEvent);
+              insertEvent(events, createdEvent);
               event.lyricsNextPosition = event.text.length;
             },
             appendTextOf: (event) => {
-              mergedLyrics.event.text = mergedLyrics.event.text.concat(event.text);
-              event.lyricsNextPosition = mergedLyrics.event.text.length;
+              mergedLyrics.lastFragmentTick = tick;
+              const mergedEvent = mergedLyrics.event;
+              event.lyricsNextPosition = (mergedEvent.text = mergedEvent.text.concat(event.text)).length;
             },
           };
           while(true) {
@@ -1201,9 +1204,11 @@ const PianoKeyboard = class {
                     mergedLyrics.createEvent(event);
                     break;
                   }
-                  if ( mergedLyrics.event?.text.length > 127 && event.text.trim().length === 0 ) {
-                    mergedLyrics.createEvent(event);
-                    break;
+                  if ( mergedLyrics.event?.text.length > 127 ) {
+                    if( tick - mergedLyrics.lastFragmentTick > sequence.ticksPerQuarter * 2 ) {
+                      mergedLyrics.createEvent(event);
+                      break;
+                    }
                   }
                   if( karaokeLyricsMetaType === 5 && mergedLyrics.event ) {
                     mergedLyrics.appendTextOf(event);
