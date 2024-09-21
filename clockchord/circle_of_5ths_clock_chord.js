@@ -188,19 +188,27 @@ const SimpleSynthesizer = class {
             gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
-        release: stopped => {
-          if( timeoutIdToStop ) return;
-          delete voice.isPressing;
+        release: (stopped, immediately) => {
           const { gain } = envelope;
-          const gainValueToStop = 0.001;
           const stop = () => {
-            timeoutIdToStop = undefined;
+            if( timeoutIdToStop ) {
+              clearTimeout(timeoutIdToStop);
+              timeoutIdToStop = undefined;
+            }
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
             source.stop();
             modulator?.stop();
             stopped && stopped();
           };
+          if( immediately ) {
+            delete voice.isPressing;
+            stop();
+            return;
+          }
+          if( timeoutIdToStop ) return;
+          delete voice.isPressing;
+          const gainValueToStop = 0.001;
           if( gain.value <= gainValueToStop ) { stop(); return; }
           const releaseTime = source instanceof OscillatorNode ? envelopeSliders.releaseTime.value : NOISE_TIME;
           if( !releaseTime ) { stop(); return; }
@@ -301,6 +309,10 @@ const SimpleSynthesizer = class {
         },
         allSoundOff() {
           const { voices } = this;
+          voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
+        },
+        allNotesOff() {
+          const { voices } = this;
           voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
         },
         noteOff(noteNumber) {
@@ -342,12 +354,17 @@ const PianoKeyboard = class {
   allSoundOff = (channel) => {
     this.synth.midiChannels[channel].allSoundOff();
     this.toneIndicatorCanvas.allSoundOff();
+  }
+  allNotesOff = (channel) => {
+    this.synth.midiChannels[channel].allNotesOff();
+    this.toneIndicatorCanvas.allSoundOff();
   };
   handleMidiMessage = (msg) => {
     const {
       noteOff,
       noteOn,
       allSoundOff,
+      allNotesOff,
       synth,
     } = this;
     const [statusWithCh, ...data] = msg;
@@ -400,6 +417,11 @@ const PianoKeyboard = class {
             break;
           case 0x79: // Reset All Controllers
             synth.midiChannels[channel].resetAllControllers();
+            break;
+          case 0x7B: // All Notes Off
+            if( data[1] == 0 ) { // Must be 0
+              allNotesOff(channel);
+            }
             break;
         }
         break;
@@ -1507,7 +1529,7 @@ const PianoKeyboard = class {
       clearInterval(intervalId);
       intervalId = undefined;
       this.synth.midiChannels.forEach((_, ch) => {
-        sendMidiMessage([0xB0 + ch, 0x78, 0]); // All Sound Off
+        sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
         sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
       });
       if( playPauseIcon ) {
@@ -1538,7 +1560,13 @@ const PianoKeyboard = class {
           });
           setBeatAt(tickPosition);
           if( (tickPosition += ticksPerInterval) > tickLength ) {
+            // End of a song
             pause();
+            this.synth.midiChannels.forEach((_, ch) => {
+              const controlChangeStatus = 0xB0 + ch;
+              sendMidiMessage([controlChangeStatus, 0x78, 0]); // All Sound Off
+              sendMidiMessage([controlChangeStatus, 0x79, 0]); // Reset All Controllers
+            });
             setTickPosition(0);
           }
         },
