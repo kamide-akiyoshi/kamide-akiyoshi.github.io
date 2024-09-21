@@ -1537,7 +1537,10 @@ const PianoKeyboard = class {
             }
           });
           setBeatAt(tickPosition);
-          if( (tickPosition += ticksPerInterval) > tickLength ) pause();
+          if( (tickPosition += ticksPerInterval) > tickLength ) {
+            pause();
+            setTickPosition(0);
+          }
         },
         INTERVAL_MILLI_SEC
       );
