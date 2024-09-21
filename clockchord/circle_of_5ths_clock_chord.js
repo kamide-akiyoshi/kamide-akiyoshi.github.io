@@ -139,7 +139,7 @@ const SimpleSynthesizer = class {
         source = context.createOscillator();
         source.frequency.value = frequency;
         modulator = context.createOscillator();
-        modulator.frequency.value = 6;
+        modulator.frequency.value = 8;
         modulatorGain = context.createGain();
         modulatorGain.gain.value = 0;
         modulator.connect(modulatorGain);
@@ -257,7 +257,7 @@ const SimpleSynthesizer = class {
         },
         set modulationDepth(value) {
           this.voices.forEach(
-            (voice, noteNumber) => voice.changeModulation(value / 8)
+            (voice, noteNumber) => voice.changeModulation(value / 16)
           );
         },
         _volume: 100,
