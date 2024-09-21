@@ -1373,6 +1373,7 @@ const PianoKeyboard = class {
         const seq = parseMidiSequence(new Uint8Array(ab))
         midiFileNameElement.textContent = (seq.file = file).name;
         setMidiSequence(seq);
+        play();
       }).catch((error) => {
         console.error(`Could not load MIDI file ${file.name}:`, error);
         alert(error);
