@@ -449,7 +449,7 @@ const PianoKeyboard = class {
     const ch = this.midiChannelSelecter.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, velocity]);
-    this.selectedMidiOutputPorts.noteOn(ch, noteNumber, velocity);
+    this.selectedMidiOutputPorts?.noteOn(ch, noteNumber, velocity);
     this.noteOn(ch, noteNumber, velocity);
     const keys = this.pianoKeys;
     const { pressed } = keys;
@@ -474,7 +474,7 @@ const PianoKeyboard = class {
     if( pressed.has(noteNumber) ) {
       const ch = pressed.get(noteNumber);
       this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, 0]);
-      this.selectedMidiOutputPorts.noteOff(ch, noteNumber);
+      this.selectedMidiOutputPorts?.noteOff(ch, noteNumber);
       this.noteOff(ch, noteNumber);
       pressed.delete(noteNumber);
     }
@@ -1519,7 +1519,7 @@ const PianoKeyboard = class {
       this.handleMidiMessage(midiMessage);
       this.sendWebMidiLinkMessage?.(midiMessage);
       try {
-        selectedMidiOutputPorts.send(midiMessage);
+        selectedMidiOutputPorts?.send(midiMessage);
       } catch(e) {
         console.error(midiMessage, e);
       }
