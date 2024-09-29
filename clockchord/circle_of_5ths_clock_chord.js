@@ -1526,6 +1526,7 @@ const PianoKeyboard = class {
     };
     let intervalId;
     const pause = () => {
+      if( !intervalId ) return;
       clearInterval(intervalId);
       intervalId = undefined;
       this.synth.midiChannels.forEach((_, ch) => {
@@ -1539,6 +1540,13 @@ const PianoKeyboard = class {
     };
     const play = () => {
       if( !midiSequence || intervalId ) return;
+      if( tickPosition === 0 ) {
+        this.synth.midiChannels.forEach((_, ch) => {
+          const controlChangeStatus = 0xB0 + ch;
+          sendMidiMessage([controlChangeStatus, 0x78, 0]); // All Sound Off
+          sendMidiMessage([controlChangeStatus, 0x79, 0]); // Reset All Controllers
+        });
+      }
       const { tickLength, tracks } = midiSequence;
       intervalId = setInterval(
         () => {
@@ -1562,11 +1570,6 @@ const PianoKeyboard = class {
           if( (tickPosition += ticksPerInterval) > tickLength ) {
             // End of a song
             pause();
-            this.synth.midiChannels.forEach((_, ch) => {
-              const controlChangeStatus = 0xB0 + ch;
-              sendMidiMessage([controlChangeStatus, 0x78, 0]); // All Sound Off
-              sendMidiMessage([controlChangeStatus, 0x79, 0]); // Reset All Controllers
-            });
             setTickPosition(0);
           }
         },
