@@ -480,6 +480,9 @@ const PianoKeyboard = class {
     }
     keys[noteNumber]?.element?.classList.remove('pressed');
   };
+  manualAllNotesOff = () => {
+    this.pianoKeys.pressed.forEach((value, key) => this.manualNoteOff(key - 0));
+  };
   leftEnd = {
     set note(n) {
       this._chordNote = n + 5;
@@ -548,7 +551,7 @@ const PianoKeyboard = class {
       classLists.clear();
     },
     stop: () => {
-      this.pianoKeys.pressed.forEach((value, key) => this.manualNoteOff(key - 0));
+      this.manualAllNotesOff();
       this.chord.buttonCanvas.disableStrum();
     },
     start: () => {
