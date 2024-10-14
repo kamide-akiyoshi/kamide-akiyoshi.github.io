@@ -1251,9 +1251,9 @@ const PianoKeyboard = class {
           const context = beatCanvas.getContext("2d");
           const { width, height, dial } = toneIndicatorCanvas;
           const center = dial.center;
-          const n = (numerator - 1) || 1;
+          const maxBeat = (numerator - 1) || 1;
           const startAngle = - Math.PI / 2;
-          const endAngle = startAngle - 2 * Math.PI * (n - beat) / n;
+          const endAngle = startAngle - 2 * Math.PI * (maxBeat - beat) / maxBeat;
           context.clearRect(0, 0, width, height);
           context.fillStyle = "#808080";
           context.beginPath();
