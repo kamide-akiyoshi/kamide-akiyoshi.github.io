@@ -754,7 +754,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = () => {
+  setupMidiSequencer = (beatCanvas) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -1233,8 +1233,7 @@ const PianoKeyboard = class {
         track.currentEventIndex = mid;
       });
     };
-    let beat = 0;
-    const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
+    let beat;
     const setBeatAt = (tick) => {
       const {
         tick: lastTick,
@@ -1244,37 +1243,9 @@ const PianoKeyboard = class {
         },
       } = lastTimeSignatureEvent;
       const ticksPerBeat = midiSequence.ticksPerQuarter * (4 / denominator);
-      const newBeat = Math.floor((tick - lastTick) / ticksPerBeat) % numerator;
-      if( beat != newBeat ) {
-        beat = newBeat;
-        if( beatCanvas ) {
-          const context = beatCanvas.getContext("2d");
-          const { width, height, dial } = toneIndicatorCanvas;
-          const center = dial.center;
-          const maxBeat = (numerator - 1) || 1;
-          const startAngle = - Math.PI / 2;
-          const endAngle = startAngle - 2 * Math.PI * (maxBeat - beat) / maxBeat;
-          context.clearRect(0, 0, width, height);
-          context.fillStyle = "#808080";
-          context.beginPath();
-          context.arc(
-            center.x,
-            center.y,
-            dial.borderRadius[0] * width * 3 / 4,
-            startAngle,
-            endAngle,
-            true
-          );
-          context.arc(
-            center.x,
-            center.y,
-            dial.borderRadius[0] * width / 2,
-            endAngle,
-            startAngle,
-          );
-          context.fill();
-        }
-      }
+      const newBeat = tick ? Math.floor((tick - lastTick) / ticksPerBeat) % numerator : undefined;
+      if( beat === newBeat ) return;
+      beatCanvas?.drawBeat(beat = newBeat, numerator);
     };
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
@@ -1463,7 +1434,7 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
-  constructor(toneIndicatorCanvas) {
+  constructor(toneIndicatorCanvas, beatCanvas) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -1479,7 +1450,7 @@ const PianoKeyboard = class {
     this.midiChannelSelecter = createMidiChannelSelecter();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer();
+    setupMidiSequencer(beatCanvas);
     setupPianoKeyboard();
   }
 }
@@ -2015,6 +1986,39 @@ const CircleOfFifthsClock = class {
       redrawAll();
     };
   };
+  setupBeatCanvas = () => {
+    const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
+    beatCanvas.drawBeat = (beat, numerator) => {
+      const context = beatCanvas.getContext("2d");
+      const { dial } = this;
+      const { width, height } = dial.canvas;
+      context.clearRect(0, 0, width, height);
+      if( beat === undefined ) return;
+      const maxBeat = (numerator - 1) || 1;
+      const startAngle = - Math.PI / 2;
+      const endAngle = startAngle - 2 * Math.PI * (maxBeat - beat) / maxBeat;
+      const { center } = dial;
+      context.fillStyle = "#808080";
+      context.beginPath();
+      context.arc(
+        center.x,
+        center.y,
+        dial.borderRadius[0] * width * 3 / 4,
+        startAngle,
+        endAngle,
+        true
+      );
+      context.arc(
+        center.x,
+        center.y,
+        dial.borderRadius[0] * width / 2,
+        endAngle,
+        startAngle,
+      );
+      context.fill();
+    };
+    return beatCanvas;
+  };
   constructor() {
     const loader = event => {
       const canvasId = 'circleOfFifthsClockCanvas';
@@ -2090,7 +2094,7 @@ const CircleOfFifthsClock = class {
     }
     const toneIndicatorCanvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
     this.setupToneIndicatorCanvas(toneIndicatorCanvas);
-    const { chord } = this.pianokeyboard = new PianoKeyboard(toneIndicatorCanvas);
+    const { chord } = this.pianokeyboard = new PianoKeyboard(toneIndicatorCanvas, this.setupBeatCanvas());
     canvas.focus();
     const { keySignature, dial } = this;
     chord.keySignature = keySignature;
