@@ -1089,10 +1089,12 @@ const PianoKeyboard = class {
           break;
         case 0x59:
           {
-            const hour = event.keySignature;
-            toneIndicatorCanvas.keySignature.value = hour;
+            const { keySignature: hour, minor } = event;
+            const { keySignature } = toneIndicatorCanvas;
+            keySignature.value = hour;
+            keySignature.minor = minor;
             chord.clear(); // To hide key signature change button
-            keyElement.textContent = `Key:${Music.keyTextOf(hour, event.minor)}`;
+            keyElement.textContent = `Key:${Music.keyTextOf(hour, minor)}`;
             keyElement.classList.remove("grayout");
           }
           break;
@@ -1990,30 +1992,34 @@ const CircleOfFifthsClock = class {
     const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     beatCanvas.drawBeat = (beat, numerator) => {
       const context = beatCanvas.getContext("2d");
-      const { dial } = this;
+      const { dial, keySignature } = this;
       const { width, height } = dial.canvas;
       context.clearRect(0, 0, width, height);
       if( beat === undefined ) return;
       const maxBeat = (numerator - 1) || 1;
-      const startAngle = - Math.PI / 2;
-      const endAngle = startAngle - 2 * Math.PI * (maxBeat - beat) / maxBeat;
+      const ratio = (maxBeat - beat) / maxBeat;
+      const outer = dial.borderRadius[keySignature.minor ? 1 : 2];
+      const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
+      const radianPerHour = Math.PI / 6;
+      const startAngle = (keySignature.value - 3.5) * radianPerHour;
+      const endAngle = startAngle + radianPerHour;
       const { center } = dial;
-      context.fillStyle = "#808080";
+      context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 20%, transparent)`;
       context.beginPath();
       context.arc(
         center.x,
         center.y,
-        dial.borderRadius[0] * width * 3 / 4,
+        inner * width,
         startAngle,
         endAngle,
-        true
       );
       context.arc(
         center.x,
         center.y,
-        dial.borderRadius[0] * width / 2,
+        outer * width,
         endAngle,
         startAngle,
+        true,
       );
       context.fill();
     };
