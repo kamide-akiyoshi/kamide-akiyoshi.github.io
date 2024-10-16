@@ -1084,7 +1084,7 @@ const PianoKeyboard = class {
             const { numerator, denominator } = event.timeSignature;
             timeSignatureElement.textContent = `${numerator}/${denominator}`;
             timeSignatureElement.classList.remove("grayout");
-            lastTimeSignatureEvent = event;
+            (lastTimeSignatureEvent = event).ticksPerBeat = midiSequence.ticksPerQuarter * (4 / denominator);
           }
           break;
         case 0x59:
@@ -1139,7 +1139,8 @@ const PianoKeyboard = class {
         timeSignature: {
           numerator: 4,
           denominator: 4,
-        }
+        },
+        ticksPerBeat: midiSequence.ticksPerQuarter,
       };
       changeTempo(500000);
       [
@@ -1239,10 +1240,9 @@ const PianoKeyboard = class {
         tick: lastTick,
         timeSignature: {
           numerator,
-          denominator,
         },
+        ticksPerBeat,
       } = lastTimeSignatureEvent;
-      const ticksPerBeat = midiSequence.ticksPerQuarter * (4 / denominator);
       const newBeat = tick ? Math.floor((tick - lastTick) / ticksPerBeat) % numerator : undefined;
       if( beat === newBeat ) return;
       beatCanvas?.drawBeat(beat = newBeat, numerator);
