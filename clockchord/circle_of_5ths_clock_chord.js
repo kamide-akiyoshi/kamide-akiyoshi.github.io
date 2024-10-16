@@ -1990,37 +1990,24 @@ const CircleOfFifthsClock = class {
   };
   setupBeatCanvas = () => {
     const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
+    const radianPerHour = Math.PI / 6;
+    const context = beatCanvas.getContext("2d");
+    const { dial, keySignature } = this;
+    const { center, canvas: { width, height } } = dial;
+    const cxy = [center.x, center.y];
     beatCanvas.drawBeat = (beat, numerator) => {
-      const context = beatCanvas.getContext("2d");
-      const { dial, keySignature } = this;
-      const { width, height } = dial.canvas;
       context.clearRect(0, 0, width, height);
       if( beat === undefined ) return;
       const maxBeat = (numerator - 1) || 1;
       const ratio = (maxBeat - beat) / maxBeat;
       const outer = dial.borderRadius[keySignature.minor ? 1 : 2];
       const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
-      const radianPerHour = Math.PI / 6;
       const startAngle = (keySignature.value - 3.5) * radianPerHour;
       const endAngle = startAngle + radianPerHour;
-      const { center } = dial;
       context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 20%, transparent)`;
       context.beginPath();
-      context.arc(
-        center.x,
-        center.y,
-        inner * width,
-        startAngle,
-        endAngle,
-      );
-      context.arc(
-        center.x,
-        center.y,
-        outer * width,
-        endAngle,
-        startAngle,
-        true,
-      );
+      context.arc(...cxy, inner * width, startAngle, endAngle);
+      context.arc(...cxy, outer * width, endAngle, startAngle, true);
       context.fill();
     };
     return beatCanvas;
