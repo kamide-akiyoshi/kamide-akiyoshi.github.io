@@ -1749,7 +1749,8 @@ const CircleOfFifthsClock = class {
     },
     toggle() { this.value = this.enharmonicHour; }
   };
-  setupToneIndicatorCanvas = (canvas) => {
+  setupToneIndicatorCanvas = () => {
+    const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
     const BASS_MAX_NOTE_NUMBER = 48;
     const { dial, keySignature } = this;
     canvas.dial = dial;
@@ -1987,6 +1988,7 @@ const CircleOfFifthsClock = class {
       bassToneIndicating.fill(0);
       redrawAll();
     };
+    return canvas;
   };
   setupBeatCanvas = () => {
     const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
@@ -2085,9 +2087,10 @@ const CircleOfFifthsClock = class {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
-    const toneIndicatorCanvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
-    this.setupToneIndicatorCanvas(toneIndicatorCanvas);
-    const { chord } = this.pianokeyboard = new PianoKeyboard(toneIndicatorCanvas, this.setupBeatCanvas());
+    const { chord } = this.pianokeyboard = new PianoKeyboard(
+      this.setupToneIndicatorCanvas(),
+      this.setupBeatCanvas()
+    );
     canvas.focus();
     const { keySignature, dial } = this;
     chord.keySignature = keySignature;
