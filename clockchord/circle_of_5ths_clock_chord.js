@@ -754,7 +754,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas) => {
+  setupMidiSequencer = (beatCanvas, darkModeSelect) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -1110,7 +1110,6 @@ const PianoKeyboard = class {
           break;
       }
     };
-    const darkModeSelect = document.getElementById("dark_mode_select");
     const midiFileNameElement = document.getElementById("midi_file_name");
     const tickPositionSlider = document.getElementById("time_position");
     const timeSignatureElement = document.getElementById("time_signature");
@@ -1436,7 +1435,7 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
-  constructor(toneIndicatorCanvas, beatCanvas) {
+  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -1452,7 +1451,7 @@ const PianoKeyboard = class {
     this.midiChannelSelecter = createMidiChannelSelecter();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas);
+    setupMidiSequencer(beatCanvas, darkModeSelect);
     setupPianoKeyboard();
   }
 }
@@ -2048,7 +2047,10 @@ const CircleOfFifthsClock = class {
         osdc.height = height;
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const darkModeSelect = document.getElementById('dark_mode_select');
+      const darkModeSelect = dial.darkModeSelect = document.getElementById('dark_mode_select');
+      if( darkModeSelect ) {
+        dial.darkModeSelect = darkModeSelect;
+      }
       const changeDarkClass = (classList, classPrefix, theme) => {
         if( !classList ) return;
         const newClassName = `${classPrefix}${theme}`;
@@ -2087,12 +2089,13 @@ const CircleOfFifthsClock = class {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
+    const { keySignature, dial } = this;
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       this.setupToneIndicatorCanvas(),
-      this.setupBeatCanvas()
+      this.setupBeatCanvas(),
+      dial.darkModeSelect
     );
     canvas.focus();
-    const { keySignature, dial } = this;
     chord.keySignature = keySignature;
     chord.buttonCanvas = canvas;
     chord.dial = dial;
