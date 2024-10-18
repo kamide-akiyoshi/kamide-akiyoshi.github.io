@@ -2047,7 +2047,7 @@ const CircleOfFifthsClock = class {
         osdc.height = height;
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const darkModeSelect = dial.darkModeSelect = document.getElementById('dark_mode_select');
+      const darkModeSelect = document.getElementById('dark_mode_select');
       if( darkModeSelect ) {
         dial.darkModeSelect = darkModeSelect;
       }
