@@ -1726,6 +1726,35 @@ const CircleOfFifthsClock = class {
     get moving() { return this._isMoving; }
   };
   keySignature = {
+    setup(chord, dial) {
+      this.chord = chord;
+      this.dial = dial;
+      this.element = document.getElementById('keyselect') || {};
+      if( this.element.addEventListener ) {
+        this.minorElement = document.getElementById('minor') || {};
+        for( let hour = -7; hour <= 7; hour++ ) {
+          const option = document.createElement('option');
+          const value = document.createAttribute('value');
+          option.setAttributeNode(value);
+          (value.value = hour) === 0 && option.setAttributeNode(document.createAttribute('selected'));
+          option.appendChild(document.createTextNode(Music.keySignatureTextAt(hour)||Music.NATURAL));
+          this.element.appendChild(option);
+        }
+        this.element.addEventListener('change', event => this.value = event.target.value);
+        (this.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
+          'click', event => this.toggle()
+        );
+        chord.keySignatureSetButton?.addEventListener('click',
+          event => {
+            if ( chord.hour || chord.hour === 0 ) {
+              this.value = chord.hour;
+              this.minor = chord.offset3rd < 0;
+            }
+          }
+        );
+      }
+      this.value = 0;
+    },
     get value() { return this.element?.value - 0; },
     set value(hour) {
       const { element, dial, chord, enharmonicButton: ehb } = this;
@@ -1746,7 +1775,9 @@ const CircleOfFifthsClock = class {
       }
       dial.draw();
     },
-    toggle() { this.value = this.enharmonicHour; }
+    toggle() { this.value = this.enharmonicHour; },
+    get minor() { return this.minorElement?.checked; },
+    set minor(isMinor) { this.minorElement && (this.minorElement.checked = isMinor); }
   };
   setupToneIndicatorCanvas = () => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
@@ -2100,28 +2131,8 @@ const CircleOfFifthsClock = class {
     chord.buttonCanvas = canvas;
     chord.dial = dial;
     dial.chord = chord;
-    keySignature.chord = chord;
-    keySignature.dial = dial;
     dial.keySignatureTextAt0 = 'key/sus4';
-    const kse = keySignature.element = document.getElementById('keyselect') || {};
-    if( kse.addEventListener ) {
-      for( let hour = -7; hour <= 7; hour++ ) {
-        const option = document.createElement('option');
-        const value = document.createAttribute('value');
-        option.setAttributeNode(value);
-        (value.value = hour) === 0 && option.setAttributeNode(document.createAttribute('selected'));
-        option.appendChild(document.createTextNode(Music.keySignatureTextAt(hour)||Music.NATURAL));
-        kse.appendChild(option);
-      }
-      kse.addEventListener('change', event => keySignature.value = event.target.value);
-      (keySignature.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
-        'click', event => keySignature.toggle()
-      );
-      chord.keySignatureSetButton?.addEventListener('click',
-        event => ( chord.hour || chord.hour === 0 ) && ( keySignature.value = chord.hour )
-      );
-    }
-    keySignature.value = 0;
+    keySignature.setup(chord, dial);
     //
     // PC keyboard bindings
     const createLeftRightKeyCodes = (key) => [`${key}Left`, `${key}Right`];

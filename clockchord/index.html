@@ -48,10 +48,15 @@
 		z-index: 1;
 		top: 18px;
 	}
+	#minor_label {
+	  z-index: 1;
+	  top: 1px;
+	  left: 24px;
+	}
 	#setkey {
 		z-index: 1;
 		top: 1px;
-		left: 50px;
+		left: 58px;
 		width: 36px;
 		padding-inline: 0;
 	}
@@ -285,6 +290,9 @@
     <div class="clock clock_light">
       <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
       <select id="keyselect" style="height: 32px;"></select>
+      <label id="minor_label" for="minor">
+        <input id="minor" type="checkbox">m</input>
+      </label>
       <button id="enharmonic" title="Enharmonic key"></button>
       <button id="setkey" title="Set the chord as key signature"></button>
       <select id="dark_mode_select">
