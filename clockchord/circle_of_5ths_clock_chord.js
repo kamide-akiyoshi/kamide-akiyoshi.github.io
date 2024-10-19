@@ -551,6 +551,7 @@ const PianoKeyboard = class {
       buttonCanvas.clearChord();
       classLists.clear();
     },
+    hasValue: () => "hour" in this.chord,
     stop: () => {
       this.manualAllNotesOff();
       this.chord.buttonCanvas.disableStrum();
@@ -575,9 +576,10 @@ const PianoKeyboard = class {
         buttonCanvas,
         classLists,
         keyOrChordChanged,
+        hasValue,
       } = chord;
       stop();
-      if( !hour && hour !== 0 ) return;
+      if( ! hasValue() ) return;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
       let i = 0;
@@ -624,7 +626,7 @@ const PianoKeyboard = class {
         keySignature,
         keySignatureSetButton: { style },
       } = chord;
-      style.visibility = ("hour" in chord && ! Music.enharmonicallyEquals(chord.hour, keySignature.value)) ? 'visible' : 'hidden';
+      style.visibility = (chord.hasValue() && ! Music.enharmonicallyEquals(chord.hour, keySignature.value)) ? 'visible' : 'hidden';
     },
     strum: (direction) => {
       const {
@@ -1779,9 +1781,8 @@ const CircleOfFifthsClock = class {
     set minor(isMinor) { this.minorElement && (this.minorElement.checked = isMinor); },
     setChordAsKey() {
       const { chord } = this;
-      const { hour } = chord;
-      if( !hour && hour !== 0 ) return;
-      this.value = hour;
+      if( ! chord.hasValue() ) return;
+      this.value = chord.hour;
       this.minor = chord.offset3rd < 0;
     }
   };
