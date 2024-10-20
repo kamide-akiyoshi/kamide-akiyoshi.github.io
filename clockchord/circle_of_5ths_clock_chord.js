@@ -140,7 +140,7 @@ const SimpleSynthesizer = class {
         source = context.createOscillator();
         source.frequency.value = frequency;
         modulator = context.createOscillator();
-        modulator.frequency.value = 8;
+        modulator.frequency.value = 6;
         modulatorGain = context.createGain();
         modulatorGain.gain.value = 0;
         modulator.connect(modulatorGain);
@@ -228,7 +228,7 @@ const SimpleSynthesizer = class {
       };
       return voice;
     };
-    const midiChannels = this.midiChannels = Array.from(
+    this.midiChannels = Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
       (_, channelNumber) => ({
         isDrum: channelNumber == MIDI.DRUM_CHANNEL,
@@ -266,7 +266,7 @@ const SimpleSynthesizer = class {
         },
         set modulationDepth(value) {
           this.voices.forEach(
-            (voice, noteNumber) => voice.changeModulation(value / 16)
+            (voice, noteNumber) => voice.changeModulation(value / 32)
           );
         },
         _volume: 100,
