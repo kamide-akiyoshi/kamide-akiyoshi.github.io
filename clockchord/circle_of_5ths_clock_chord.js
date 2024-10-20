@@ -17,6 +17,7 @@ const Music = class {
   ];
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
+  static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
   static normalizeHourAsKey = hour => {
     while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
     return hour;
@@ -1529,7 +1530,7 @@ const CircleOfFifthsClock = class {
       if( !themeColor ) return;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const selectedHour = keySignature.value;
+      const selectedKeyHour = keySignature.value;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
@@ -1537,7 +1538,7 @@ const CircleOfFifthsClock = class {
         themeColor.background.pie.map(
           (color, index) => {
             const relativeHour = 3 * index;
-            const startAngle = (selectedHour + relativeHour - 4.5) * Math.PI / 6;
+            const startAngle = (selectedKeyHour + relativeHour - 4.5) * Math.PI / 6;
             return {startAngle, color};
           }
         ).forEach(
@@ -1578,7 +1579,7 @@ const CircleOfFifthsClock = class {
         const t = hour * Math.PI / 6;
         const x = center.dx(t);
         const y = center.dy(t);
-        const relativeHour = hour - selectedHour;
+        const relativeHour = hour - selectedKeyHour;
         // Hour-border
         let tt = t + Math.PI / 12;
         let xx = center.dx(tt);
@@ -1612,13 +1613,13 @@ const CircleOfFifthsClock = class {
         context.fillStyle = textColorAt(relativeHour);
         const fontWeight = fontWeightAt(relativeHour);
         context.font = sizeToFont(11, fontWeight);
-        if( Math.abs(hour) > 4 ) {
+        const enharmonicHour = Music.enharmonicKeyOf(hour);
+        if( enharmonicHour ) {
           drawText(keySignatureText, 0.48);
           context.font = sizeToFont(14, fontWeight);
           drawText(majorText, 0.38);
           drawText(minorText, 0.25);
-          const enharmonicHour = hour - 12 * Math.sign(hour);
-          const enharmonicRelativeHour = enharmonicHour - selectedHour;
+          const enharmonicRelativeHour = enharmonicHour - selectedKeyHour;
           context.fillStyle = textColorAt(enharmonicRelativeHour);
           const enharmonicFontWeight = fontWeightAt(enharmonicRelativeHour);
           context.font = sizeToFont(11, enharmonicFontWeight);
@@ -1633,7 +1634,7 @@ const CircleOfFifthsClock = class {
             drawText(majorText, 0.38);
             drawText(minorText, 0.25);
             const enharmonicHour = hour - 12 * Math.sign(relativeHour);
-            const enharmonicRelativeHour = enharmonicHour - selectedHour;
+            const enharmonicRelativeHour = enharmonicHour - selectedKeyHour;
             context.fillStyle = textColorAt(enharmonicRelativeHour);
             drawText(Music.keyTextOf(enharmonicHour), 0.33);
             drawText(Music.keyTextOf(enharmonicHour, true), 0.19);
@@ -1754,29 +1755,33 @@ const CircleOfFifthsClock = class {
         }
         this.element.addEventListener('change', event => this.value = event.target.value);
         (this.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
-          'click', event => this.toggle()
+          'click', event => {
+            const { enharmonicHour } = this;
+            if( ! enharmonicHour || this.value === enharmonicHour ) return;
+            this.value = enharmonicHour;
+          }
         );
       }
       this.value = 0;
     },
     get value() { return this.element?.value - 0; },
     set value(hour) {
-      const { element, dial, chord, enharmonicButton: ehb } = this;
+      const { element, dial, chord, enharmonicButton } = this;
       element.value = hour = Music.normalizeHourAsKey(hour);
-      if( ehb ) {
-        const { style } = ehb;
-        if( Math.abs(hour) > 4 ) {
-          ehb.textContent = Music.keySignatureTextAt(this.enharmonicHour = hour - 12 * Math.sign(hour));
+      if( enharmonicButton ) {
+        const { style } = enharmonicButton;
+        const enharmonicHour = Music.enharmonicKeyOf(hour);
+        if( enharmonicHour ) {
+          enharmonicButton.textContent = Music.keySignatureTextAt(this.enharmonicHour = enharmonicHour);
           style.visibility = 'visible';
         } else {
-          this.enharmonicHour = undefined;
+          delete this.enharmonicHour;
           style.visibility = 'hidden';
         }
       }
       chord?.keyOrChordChanged();
       dial.draw();
     },
-    toggle() { this.value = this.enharmonicHour; },
     get minor() { return this.minorElement?.checked; },
     set minor(isMinor) { this.minorElement && (this.minorElement.checked = isMinor); },
     setChordAsKey() {
