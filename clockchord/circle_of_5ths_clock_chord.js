@@ -1124,7 +1124,7 @@ const PianoKeyboard = class {
       }
     };
     const midiFileNameElement = document.getElementById("midi_file_name");
-    const tickPositionSlider = document.getElementById("time_position");
+    const tickPositionSlider = document.getElementById("time_position") ?? {};
     const timeSignatureElement = document.getElementById("time_signature");
     const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
@@ -1137,7 +1137,7 @@ const PianoKeyboard = class {
     document.getElementById("top")?.addEventListener('click', () => setTickPosition(0));
     document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
     const playPauseIcon = document.getElementById("play_pause_icon");
-    tickPositionSlider?.addEventListener("change", (event) => {
+    tickPositionSlider.addEventListener?.("change", (event) => {
       !intervalId && setTickPosition(parseInt(event.target.value));
     });
     const midiSequencerElement = midiSequenceElement.parentElement;
@@ -1164,7 +1164,7 @@ const PianoKeyboard = class {
       ].forEach((element) => element.classList.add("grayout"));
       timeSignatureElement.textContent = "4/4";
       keyElement.textContent = `Key:${Music.keyTextOf()}`;
-      tickPositionSlider && (tickPositionSlider.max = midiSequence.tickLength);
+      tickPositionSlider.max = midiSequence.tickLength;
       if( darkModeSelect.value == "light" ) {
         darkModeSelect.value = "dark";
         darkModeSelect.dispatchEvent(new Event("change"));
@@ -1205,8 +1205,7 @@ const PianoKeyboard = class {
     let tickPosition = 0;
     const setTickPosition = (tick) => {
       pause();
-      tickPosition = tick;
-      tickPositionSlider && (tickPositionSlider.value = tick);
+      tickPositionSlider.value = tickPosition = tick;
       setBeatAt(tick);
       if( !midiSequence ) {
         return;
@@ -1251,13 +1250,11 @@ const PianoKeyboard = class {
     let beat;
     const setBeatAt = (tick) => {
       const {
-        tick: lastTick,
-        timeSignature: {
-          numerator,
-        },
+        tick: startTick,
+        timeSignature: { numerator },
         ticksPerBeat,
       } = lastTimeSignatureEvent;
-      const newBeat = tick ? Math.floor((tick - lastTick) / ticksPerBeat) % numerator : undefined;
+      const newBeat = tick ? Math.floor((tick - startTick) / ticksPerBeat) % numerator : undefined;
       if( beat === newBeat ) return;
       beatCanvas?.drawBeat(beat = newBeat, numerator);
     };
@@ -1302,7 +1299,7 @@ const PianoKeyboard = class {
       const { tickLength, tracks } = midiSequence;
       intervalId = setInterval(
         () => {
-          if( tickPositionSlider ) tickPositionSlider.value = tickPosition;
+          tickPositionSlider.value = tickPosition;
           tracks.forEach((events) => {
             while(true) {
               const event = events[events.currentEventIndex];
