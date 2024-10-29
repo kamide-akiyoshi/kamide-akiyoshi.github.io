@@ -1528,6 +1528,7 @@ const CircleOfFifthsClock = class {
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const selectedKeyHour = keySignature.value;
+      const isMinorKey = keySignature.minor;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
@@ -1565,9 +1566,11 @@ const CircleOfFifthsClock = class {
         context.stroke();
       });
       // Foreground
-      const textColorAt = h => themeColor[h < -5 || h > 6 ? 'grayoutForeground' : 'foreground'];
+      const isKeyOf = (h, minor) => h === 0 && (minor === undefined || isMinorKey === undefined || minor === isMinorKey);
+      const textColorAt = (h, minor) =>
+        isKeyOf(h, minor) ? themeColor.indicator[1] : h < -5 || h > 6 ? themeColor.grayoutForeground : themeColor.foreground;
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
-      const fontWeightAt = h => h === 0 ?'bold':'normal';
+      const fontWeightAt = (h, minor) => isKeyOf(h, minor) ? 'bold' : 'normal';
       context.textAlign = "center";
       context.textBaseline = "middle";
       const rDot = width / 120;
@@ -1608,21 +1611,25 @@ const CircleOfFifthsClock = class {
         const majorText = Music.keyTextOf(hour);
         const minorText = Music.keyTextOf(hour, true);
         context.fillStyle = textColorAt(relativeHour);
-        const fontWeight = fontWeightAt(relativeHour);
-        context.font = sizeToFont(11, fontWeight);
+        context.font = sizeToFont(11, fontWeightAt(relativeHour));
         const enharmonicHour = Music.enharmonicKeyOf(hour);
         if( enharmonicHour ) {
           drawText(keySignatureText, 0.48);
-          context.font = sizeToFont(14, fontWeight);
+          context.fillStyle = textColorAt(relativeHour, false);
+          context.font = sizeToFont(14, fontWeightAt(relativeHour, false));
           drawText(majorText, 0.38);
+          context.fillStyle = textColorAt(relativeHour, true);
+          context.font = sizeToFont(14, fontWeightAt(relativeHour, true));
           drawText(minorText, 0.25);
           const enharmonicRelativeHour = enharmonicHour - selectedKeyHour;
           context.fillStyle = textColorAt(enharmonicRelativeHour);
-          const enharmonicFontWeight = fontWeightAt(enharmonicRelativeHour);
-          context.font = sizeToFont(11, enharmonicFontWeight);
+          context.font = sizeToFont(11, fontWeightAt(enharmonicRelativeHour));
           drawText(Music.keySignatureTextAt(enharmonicHour), 0.45);
-          context.font = sizeToFont(14, enharmonicFontWeight);
+          context.fillStyle = textColorAt(enharmonicRelativeHour, false);
+          context.font = sizeToFont(14, fontWeightAt(enharmonicRelativeHour, false));
           drawText(Music.keyTextOf(enharmonicHour), 0.33);
+          context.fillStyle = textColorAt(enharmonicRelativeHour, true);
+          context.font = sizeToFont(14, fontWeightAt(enharmonicRelativeHour, true));
           drawText(Music.keyTextOf(enharmonicHour, true), 0.19);
         } else {
           drawText(keySignatureText, 0.465);
@@ -1636,8 +1643,11 @@ const CircleOfFifthsClock = class {
             drawText(Music.keyTextOf(enharmonicHour), 0.33);
             drawText(Music.keyTextOf(enharmonicHour, true), 0.19);
           } else {
-            context.font = sizeToFont(19, fontWeight);
+            context.fillStyle = textColorAt(relativeHour, false);
+            context.font = sizeToFont(19, fontWeightAt(relativeHour, false));
             drawText(majorText, 0.36);
+            context.fillStyle = textColorAt(relativeHour, true);
+            context.font = sizeToFont(19, fontWeightAt(relativeHour, true));
             drawText(minorText, 0.22);
           }
         }
@@ -1741,7 +1751,9 @@ const CircleOfFifthsClock = class {
       this.dial = dial;
       this.element = document.getElementById('keyselect') || {};
       if( this.element.addEventListener ) {
-        this.minorElement = document.getElementById('minor') || {};
+        (this.minorElement = document.getElementById('minor') || {}).addEventListener?.(
+          'change', event => { this.dial.draw(); }
+        );
         for( let hour = -7; hour <= 7; hour++ ) {
           const option = document.createElement('option');
           const value = document.createAttribute('value');
@@ -1780,7 +1792,11 @@ const CircleOfFifthsClock = class {
       dial.draw();
     },
     get minor() { return this.minorElement?.checked; },
-    set minor(isMinor) { this.minorElement && (this.minorElement.checked = isMinor); },
+    set minor(isMinor) {
+      if( !this.minorElement ) return;
+      this.minorElement.checked = isMinor;
+      this.dial.draw();
+    },
     setChordAsKey() {
       const { chord } = this;
       if( ! chord.hasValue() ) return;
