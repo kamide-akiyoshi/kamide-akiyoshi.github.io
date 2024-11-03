@@ -379,9 +379,9 @@
       <a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" target="_blank" style="font-size: small;">Frequency table</a>
     </div>
     <hr/>
-    <div style="margin: 4px 0; display: flex;">
+    <div id="wave" style="margin: 4px 0; display: flex;">
       <label for="waveselect" title="wave">
-        <img id="wave" alt="wave" height="32" align="center"/>
+        <img id="waveIcon" alt="wave" height="32" align="center"/>
         <select id="waveselect" style="height: 32px;">
         </select>
       </label>
@@ -406,19 +406,19 @@
         </div>
       </div>
     </div>
-    <div style="margin: 4px 0">
-      <img id="envelope" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
-      <label for="attack" title="Attack time">
-        A<input id="attack" type="range" value="0.01" min="0" max="0.3" step="0.001"/>
+    <div id="envelope" style="margin: 4px 0">
+      <img id="envelopeIcon" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
+      <label for="attackTime" title="Attack time">
+        A<input id="attackTime" type="range" value="0.01" min="0" max="0.3" step="0.001"/>
       </label>
-      <label for="decay" title="Decay time">
-        D<input id="decay" type="range" value="0.5" min="0" max="1" step="0.01"/>
+      <label for="decayTime" title="Decay time">
+        D<input id="decayTime" type="range" value="0.5" min="0" max="1" step="0.01"/>
       </label>
-      <label for="sustain" title="Sustain level">
-        S<input id="sustain" type="range" value="0.3" min="0" max="1" step="0.01"/>
+      <label for="sustainLevel" title="Sustain level">
+        S<input id="sustainLevel" type="range" value="0.3" min="0" max="1" step="0.01"/>
       </label>
-      <label for="release" title="Release time">
-        R<input id="release" type="range" value="0.3" min="0" max="1" step="0.01"/>
+      <label for="releaseTime" title="Release time">
+        R<input id="releaseTime" type="range" value="0.3" min="0" max="1" step="0.01"/>
       </label>
     </div>
     <hr/>

@@ -58,16 +58,11 @@ const SimpleSynthesizer = class {
     return SimpleSynthesizer._audioContext;
   };
   constructor() {
-    const envelopeSliders = {
-      attackTime:   document.getElementById('attack'),
-      decayTime:    document.getElementById('decay'),
-      sustainLevel: document.getElementById('sustain'),
-      releaseTime:  document.getElementById('release'),
-    };
-    const termsSliders = [
-      Array.from(document.querySelectorAll(`#periodicWaveRealTerms input`)),
-      Array.from(document.querySelectorAll(`#periodicWaveImagTerms input`)),
-    ];
+    const envelopeSliders = {};
+    document.querySelectorAll(`#envelope input`).forEach((slider) => envelopeSliders[slider.id] = slider);
+    const termsSliders = ['Real', 'Imag'].map(
+      (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
+    );
     const waves = {
       ...(["sawtooth", "square", "triangle", "sine"].reduce(
         (basicWaves, key) => {
@@ -90,7 +85,7 @@ const SimpleSynthesizer = class {
         waveselect.appendChild(option);
       });
       waveselect.value = "sawtooth";
-      const img = document.getElementById('wave');
+      const img = document.getElementById('waveIcon');
       if( img ) {
         const termsElement = termsSliders[0][0].parentElement.parentElement;
         const setWave = waveName => {
