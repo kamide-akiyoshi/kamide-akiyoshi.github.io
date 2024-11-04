@@ -63,19 +63,13 @@ const SimpleSynthesizer = class {
     const termsSliders = ['Real', 'Imag'].map(
       (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
     );
-    const waves = {
-      ...(["sawtooth", "square", "triangle", "sine"].reduce(
-        (basicWaves, key) => {
-          basicWaves[key] = {iconFile: `image/${key}.svg`};
-          return basicWaves;
-        },{}
-      )),
-      custom: {
-        iconFile: "image/wave.svg",
-        getTerms: () => termsSliders.map(
-          sliders => [0, ...sliders.map(e => parseInt(e.value))]
-        ),
-      },
+    const waves = {};
+    ["sawtooth", "square", "triangle", "sine"].forEach((key) => waves[key] = {iconFile: `image/${key}.svg`});
+    waves.custom = {
+      iconFile: "image/wave.svg",
+      getTerms: () => termsSliders.map(
+        sliders => [0, ...sliders.map(e => parseInt(e.value))]
+      ),
     };
     const waveselect = document.getElementById('waveselect');
     if( waveselect ) {
