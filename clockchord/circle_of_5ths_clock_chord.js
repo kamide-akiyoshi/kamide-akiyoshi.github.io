@@ -201,7 +201,7 @@ const SimpleSynthesizer = class {
             gain.value = 0;
             source.stop();
             modulator?.stop();
-            stopped && stopped();
+            stopped?.();
           };
           if( immediately ) {
             delete voice.isPressing;
