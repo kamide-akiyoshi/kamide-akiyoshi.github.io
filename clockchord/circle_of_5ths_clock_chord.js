@@ -58,52 +58,6 @@ const SimpleSynthesizer = class {
     return SimpleSynthesizer._audioContext;
   };
   constructor() {
-    const instrumentUI = {
-      envelope: {},
-      waveSelector: document.getElementById('waveselect'),
-      waves: {
-        sawtooth: {},
-        square: {},
-        triangle: {},
-        sine: {},
-      },
-      setup() {
-        const { envelope, waveSelector, waves } = this;
-        const iconPathOf = (key) => `image/${key}.svg`;
-        document.querySelectorAll(`#envelope input`).forEach((slider) => envelope[slider.id] = slider);
-        Object.keys(waves).forEach((key) => waves[key].icon = iconPathOf(key));
-        const termsSliders = ['Real', 'Imag'].map(
-          (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
-        );
-        waves.custom = {
-          icon: iconPathOf("wave"),
-          getTerms: () => termsSliders.map(
-            sliders => [0, ...sliders.map(e => parseInt(e.value))]
-          ),
-        };
-        if( waveSelector ) {
-          Object.keys(waves).forEach(key => {
-            const option = document.createElement("option");
-            option.appendChild(document.createTextNode(key));
-            waveSelector.appendChild(option);
-          });
-          waveSelector.value = "sawtooth";
-          const img = document.getElementById('waveIcon');
-          if( img ) {
-            const termsElement = termsSliders[0][0].parentElement.parentElement;
-            const setWave = waveName => {
-              const wave = waves[waveName];
-              img.src = wave.icon;
-              const cl = termsElement.classList;
-              wave.getTerms ? cl.remove("hidden") : cl.add("hidden");
-            };
-            waveSelector.addEventListener('change', event => setWave(event.target.value));
-            setWave(waveSelector.value);
-          }
-        }
-      },
-    };
-    instrumentUI.setup();
     const getMixer = () => {
       if( !this.mixer ) {
         const volumeSlider = document.getElementById('volume') ?? { value: 0.4 };
@@ -129,10 +83,11 @@ const SimpleSynthesizer = class {
       return noiseBuffer;
     };
     const createVoice = (channel, frequency) => {
+      const { ampan, instrument } = channel;
       const context = SimpleSynthesizer.audioContext;
       const velocityGain = context.createGain();
       velocityGain.gain.value = 0;
-      velocityGain.connect(channel.ampan.amplifier);
+      velocityGain.connect(ampan.amplifier);
       const envelope = context.createGain();
       envelope.gain.value = 0;
       envelope.connect(velocityGain);
@@ -162,21 +117,18 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = undefined;
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
-          let sustainLevel;
-          let attackTime;
+          const {
+            attackTime,
+            decayTime,
+            sustainLevel,
+          } = instrument.envelope;
           if( source instanceof OscillatorNode ) {
-            const waveKey = instrumentUI.waveSelector?.value ?? "sawtooth";
-            const { getTerms } = instrumentUI.waves[waveKey];
-            if( getTerms ) {
-              source.setPeriodicWave(context.createPeriodicWave(...getTerms()));
+            const waveKey = instrument.wave;
+            if( waveKey === 'custom' ) {
+              source.setPeriodicWave(context.createPeriodicWave(...instrument.terms));
             } else {
               source.type = waveKey;
             }
-            sustainLevel = instrumentUI.envelope.sustainLevel.value;
-            attackTime = instrumentUI.envelope.attackTime.value;
-          } else {
-            sustainLevel = 0;
-            attackTime = 0;
           }
           velocityGain.gain.value = velocity / 0x7F;
           const t1 = context.currentTime + (attackTime - 0);
@@ -186,7 +138,6 @@ const SimpleSynthesizer = class {
             gain.value = 1;
           }
           if( sustainLevel < 1 ) {
-            const decayTime = frequency ? instrumentUI.envelope.decayTime.value : NOISE_TIME;
             gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
@@ -212,7 +163,7 @@ const SimpleSynthesizer = class {
           delete voice.isPressing;
           const gainValueToStop = 0.001;
           if( gain.value <= gainValueToStop ) { stop(); return; }
-          const releaseTime = source instanceof OscillatorNode ? instrumentUI.envelope.releaseTime.value : NOISE_TIME;
+          const { releaseTime } = instrument.envelope;
           if( !releaseTime ) { stop(); return; }
           const delay = Math.log(gain.value / gainValueToStop) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
@@ -231,111 +182,134 @@ const SimpleSynthesizer = class {
     };
     this.midiChannels = Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
-      (_, channelNumber) => ({
-        isDrum: channelNumber == MIDI.DRUM_CHANNEL,
-        voices: new Map(),
-        setParameterNumber(control, value) {
-          // Control#
-          //   NRPN (Non-Registered Parameter Number)
-          //     0x62: LSB
-          //     0x63: MSB
-          //   RPN (Registered Parameter Number)
-          //     0x64: LSB
-          //     0x65: MSB
-          const pn = this.parameterNumber ??= {};
-          pn.isRegistered = !!(control & 4);
-          pn[control & 1 ? "MSB" : "LSB"] = value;
-        },
-        set parameterValue(value) {
-          const pn = this.parameterNumber;
-          if( !pn ) {
-            console.warn(`Warning: MIDI CH.${channelNumber + 1}: No parameter number received yet, value ${value} ignored`);
-            return;
-          }
-          const { MSB, LSB, isRegistered } = pn;
-          if( isRegistered && MSB === 0 && LSB === 0 ) {
-            this.pitchBendSensitivity = value;
-          }
-        },
-        pitchBendSensitivity: 2,
-        pitchRatio: 1,
-        set pitchBendValue(value) {
-          const r = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
-          this.voices.forEach(
-            (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * r)
-          );
-        },
-        set modulationDepth(value) {
-          this.voices.forEach(
-            (voice, noteNumber) => voice.changeModulation(value / 32)
-          );
-        },
-        _volume: 100,
-        _expression: 0x7F,
-        get gainValueToSet() {
-          return (this._volume / 0x7F) * (this._expression / 0x7F)
-        },
-        get ampan() {
-          if( !this._ampan ) {
-            const context = SimpleSynthesizer.audioContext;
-            const panner = context.createStereoPanner();
-            panner.connect(getMixer());
-            const amplifier = context.createGain();
-            this._ampan = { amplifier, panner };
-            amplifier.gain.value = this.gainValueToSet;
-            amplifier.connect(panner);
-          }
-          return this._ampan;
-        },
-        set volume(value) {
-          this._volume = value;
-          this.ampan.amplifier.gain.value = this.gainValueToSet;
-        },
-        set expression(value) {
-          this._expression = value;
-          this.ampan.amplifier.gain.value = this.gainValueToSet;
-        },
-        set pan(value) {
-          const context = SimpleSynthesizer.audioContext;
-          // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-          // Web Audio API's panner value: -1(L) ... 1(R)
-          this.ampan.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
-        },
-        resetAllControllers() {
-          delete this.parameterNumber;
-          this.pitchRatio = 1;
-          this.pitchBendSensitivity = 2;
-          this.volume = 100;
-          this.expression = 0x7F;
-          this.pan = 0x40;
-        },
-        allSoundOff() {
-          const { voices } = this;
-          voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
-        },
-        allNotesOff() {
-          const { voices } = this;
-          voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
-        },
-        noteOff(noteNumber) {
-          const { voices } = this;
-          voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
-        },
-        noteOn(noteNumber, velocity) {
-          const { isDrum, pitchRatio, voices } = this;
-          let voice = voices.get(noteNumber);
-          const isNewVoice = !voice?.isPressing;
-          if( !voice ) {
-            voice = createVoice(
-              this,
-              isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio
+      (_, channelNumber) => {
+        const channel = {
+          isDrum: channelNumber == MIDI.DRUM_CHANNEL,
+          voices: new Map(),
+          setParameterNumber(control, value) {
+            // Control#
+            //   NRPN (Non-Registered Parameter Number)
+            //     0x62: LSB
+            //     0x63: MSB
+            //   RPN (Registered Parameter Number)
+            //     0x64: LSB
+            //     0x65: MSB
+            const pn = this.parameterNumber ??= {};
+            pn.isRegistered = !!(control & 4);
+            pn[control & 1 ? "MSB" : "LSB"] = value;
+          },
+          set parameterValue(value) {
+            const pn = this.parameterNumber;
+            if( !pn ) {
+              console.warn(`Warning: MIDI CH.${channelNumber + 1}: No parameter number received yet, value ${value} ignored`);
+              return;
+            }
+            const { MSB, LSB, isRegistered } = pn;
+            if( isRegistered && MSB === 0 && LSB === 0 ) {
+              this.pitchBendSensitivity = value;
+            }
+          },
+          pitchBendSensitivity: 2,
+          pitchRatio: 1,
+          set pitchBendValue(value) {
+            const r = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
+            this.voices.forEach(
+              (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * r)
             );
-            voices.set(noteNumber, voice);
-          }
-          voice.attack(velocity);
-          return isNewVoice;
-        },
-      }) // Array.from
+          },
+          set modulationDepth(value) {
+            this.voices.forEach(
+              (voice, noteNumber) => voice.changeModulation(value / 32)
+            );
+          },
+          _volume: 100,
+          _expression: 0x7F,
+          get gainValueToSet() {
+            return (this._volume / 0x7F) * (this._expression / 0x7F)
+          },
+          get ampan() {
+            if( !this._ampan ) {
+              const context = SimpleSynthesizer.audioContext;
+              const panner = context.createStereoPanner();
+              panner.connect(getMixer());
+              const amplifier = context.createGain();
+              this._ampan = { amplifier, panner };
+              amplifier.gain.value = this.gainValueToSet;
+              amplifier.connect(panner);
+            }
+            return this._ampan;
+          },
+          set volume(value) {
+            this._volume = value;
+            this.ampan.amplifier.gain.value = this.gainValueToSet;
+          },
+          set expression(value) {
+            this._expression = value;
+            this.ampan.amplifier.gain.value = this.gainValueToSet;
+          },
+          set pan(value) {
+            const context = SimpleSynthesizer.audioContext;
+            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+            // Web Audio API's panner value: -1(L) ... 1(R)
+            this.ampan.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
+          },
+          resetAllControllers() {
+            delete this.parameterNumber;
+            this.pitchRatio = 1;
+            this.pitchBendSensitivity = 2;
+            this.volume = 100;
+            this.expression = 0x7F;
+            this.pan = 0x40;
+          },
+          allSoundOff() {
+            const { voices } = this;
+            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
+          },
+          allNotesOff() {
+            const { voices } = this;
+            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
+          },
+          noteOff(noteNumber) {
+            const { voices } = this;
+            voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
+          },
+          noteOn(noteNumber, velocity) {
+            const { isDrum, pitchRatio, voices } = this;
+            let voice = voices.get(noteNumber);
+            const isNewVoice = !voice?.isPressing;
+            if( !voice ) {
+              voice = createVoice(
+                this,
+                isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio
+              );
+              voices.set(noteNumber, voice);
+            }
+            voice.attack(velocity);
+            return isNewVoice;
+          },
+        };
+        channel.instrument = channel.isDrum ? {
+          envelope: {
+            attackTime: 0,
+            decayTime: NOISE_TIME,
+            sustainLevel: 0,
+            releaseTime: NOISE_TIME,
+          },
+        } : {
+          wave: "sawtooth",
+          envelope: {
+            attackTime: 0.01,
+            decayTime: 0.5,
+            sustainLevel: 0.3,
+            releaseTime: 0.3,
+          },
+          terms: [
+            [0, 0.5, 1, 0.5, 0.5, 0.5, 0],
+            [0, 1, 0.5, 1, 0.5, 0.5, 0],
+          ],
+        };
+        return channel;
+      } // Array.from
     ); // midiChannels
   }; // constuctor
 };
@@ -432,23 +406,93 @@ const PianoKeyboard = class {
         break;
     }
   };
-  createMidiChannelSelecter = () => {
-    const element = document.getElementById('midi_channel');
+  instrumentView = {
+    setup() {
+      const iconPathOf = (key) => `image/${key}.svg`;
+      const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
+        waves[key] = { icon: iconPathOf(key) };
+        return waves;
+      }, {});
+      waves.custom = { icon: iconPathOf("wave") };
+      const termsSliders = this.termsSliders = ['Real', 'Imag'].map(
+        (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
+      );
+      termsSliders.forEach((group, groupIndex) => {
+        group.forEach((slider, index) => {
+          slider.addEventListener('change', (event) => {
+            this.model.terms[groupIndex][index + 1] = parseFloat(event.target.value);
+          });
+        });
+      });
+      const waveSelector = document.getElementById('waveselect');
+      if( waveSelector ) {
+        this.waveSelector = waveSelector;
+        Object.keys(waves).forEach(key => {
+          const option = document.createElement("option");
+          option.appendChild(document.createTextNode(key));
+          waveSelector.appendChild(option);
+        });
+        const img = document.getElementById('waveIcon');
+        const cl = termsSliders[0][0].parentElement.parentElement.classList;
+        const showNewWave = this.showNewWave = (wave) => {
+          wave === 'custom' ? cl.remove("hidden") : cl.add("hidden");
+          img && (img.src = waves[wave].icon);
+        };
+        waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
+      }
+      const envelope = this.envelope = {};
+      document.querySelectorAll(`#envelope input`).forEach((slider) => {
+        const { id } = slider;
+        (envelope[id] = slider).addEventListener('change', event => {
+          this.model.envelope[id] = parseFloat(event.target.value);
+        });
+      });
+    },
+    get model() { return this._model; },
+    set model(m) {
+      this._model = m;
+      const { envelope, waveSelector, waves, termsSliders, showNewWave } = this;
+      const { wave } = m;
+      waveSelector && (waveSelector.value = wave)
+      showNewWave(wave);
+      const envelopeModel = m.envelope;
+      Object.entries(envelope).forEach(([key, slider]) => {
+        slider.value = envelopeModel[key];
+      });
+      m.terms.forEach((group, groupIndex) => {
+        group.forEach((value, index) => {
+          index && (termsSliders[groupIndex][index - 1].value = value);
+        });
+      });
+    },
+  };
+  createMidiChannelSelector = () => {
+    const selector = document.getElementById('midi_channel');
     Array.from(
       {length: MIDI.NUMBER_OF_CHANNELS},
       (_, ch) => {
         const option = document.createElement("option");
         option.value = ch;
         option.appendChild(document.createTextNode(`${ch + 1}${ch == MIDI.DRUM_CHANNEL ? ' (Drum)' : ''}`));
-        element.appendChild(option);
+        selector.appendChild(option);
       }
     );
+    const { instrumentView } = this;
+    instrumentView.setup();
+    const setInstrumentModelOf = (ch) => {
+      instrumentView.model = this.synth.midiChannels[ch].instrument;
+    };
+    selector.addEventListener(
+      'change',
+      (event) => setInstrumentModelOf(parseInt(event.target.value))
+    );
+    setInstrumentModelOf(parseInt(selector.value));
     return {
-      get selectedChannel() { return parseInt(element?.value); }
+      get selectedChannel() { return parseInt(selector.value); }
     };
   };
   manualNoteOn = (noteNumber, orderInChord) => {
-    const ch = this.midiChannelSelecter.selectedChannel;
+    const ch = this.midiChannelSelector.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, velocity]);
     this.selectedMidiOutputPorts?.noteOn(ch, noteNumber, velocity);
@@ -667,7 +711,7 @@ const PianoKeyboard = class {
     if( ! window.isSecureContext ) {
       console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
     }
-    // MIDI port selecter
+    // MIDI port selector
     const midiMessageListener = msg => this.handleMidiMessage(msg.data);
     const selectedMidiOutputPorts = this.selectedMidiOutputPorts = this.createSelectedMidiOutputPorts();
     const checkboxes = {
@@ -1451,7 +1495,7 @@ const PianoKeyboard = class {
     this.synth = new SimpleSynthesizer();
     const {
       chord,
-      createMidiChannelSelecter,
+      createMidiChannelSelector,
       setupMidiPorts,
       setupWebMidiLink,
       setupMidiSequencer,
@@ -1459,7 +1503,7 @@ const PianoKeyboard = class {
     } = this;
     this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
     chord.setup();
-    this.midiChannelSelecter = createMidiChannelSelecter();
+    this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
     setupMidiSequencer(beatCanvas, darkModeSelect);
