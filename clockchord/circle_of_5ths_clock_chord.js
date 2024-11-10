@@ -92,7 +92,11 @@ const SimpleSynthesizer = class {
       envelope.gain.value = 0;
       envelope.connect(velocityGain);
       let source, modulator, modulatorGain;
-      if( frequency ) {
+      if( !frequency || instrument.wave === 'noise' ) {
+        source = context.createBufferSource();
+        source.buffer = this.noiseBuffer ??= createNoiseBuffer();
+        source.loop = true;
+      } else {
         source = context.createOscillator();
         source.frequency.value = frequency;
         modulator = context.createOscillator();
@@ -101,10 +105,6 @@ const SimpleSynthesizer = class {
         modulatorGain.gain.value = 0;
         modulator.connect(modulatorGain);
         modulatorGain.connect(source.frequency);
-      } else {
-        source = context.createBufferSource();
-        source.buffer = this.noiseBuffer ??= createNoiseBuffer();
-        source.loop = true;
       }
       source.connect(envelope);
       source.start();
@@ -172,10 +172,10 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
         detune: cent => {
-          frequency && (source.detune.value = cent);
+          if( source instanceof OscillatorNode ) source.detune.value = cent;
         },
         changeModulation: gainValue => {
-          modulatorGain && (modulatorGain.gain.value = gainValue);
+          if( modulatorGain ) modulatorGain.gain.value = gainValue;
         },
       };
       return voice;
@@ -279,10 +279,7 @@ const SimpleSynthesizer = class {
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
-              voice = createVoice(
-                this,
-                isDrum ? undefined : MIDI.FREQUENCIES[noteNumber]
-              );
+              voice = createVoice(this, MIDI.FREQUENCIES[noteNumber]);
               if( pitchBendCent ) voice.detune(pitchBendCent);
               voices.set(noteNumber, voice);
             }
@@ -291,12 +288,17 @@ const SimpleSynthesizer = class {
           },
         };
         channel.instrument = channel.isDrum ? {
+          wave: "noise",
           envelope: {
             attackTime: 0,
             decayTime: NOISE_TIME,
             sustainLevel: 0,
             releaseTime: NOISE_TIME,
           },
+          terms: [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0],
+          ],
         } : {
           wave: "sawtooth",
           envelope: {
@@ -415,7 +417,7 @@ const PianoKeyboard = class {
         waves[key] = { icon: iconPathOf(key) };
         return waves;
       }, {});
-      waves.custom = { icon: iconPathOf("wave") };
+      waves.custom = waves.noise = { icon: iconPathOf("wave") };
       const termsSliders = this.termsSliders = ['Real', 'Imag'].map(
         (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
       );
