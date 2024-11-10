@@ -171,8 +171,8 @@ const SimpleSynthesizer = class {
           gain.setTargetAtTime(0, context.currentTime, releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
-        changeFrequency: newFrequency => {
-          frequency && (source.frequency.value = newFrequency);
+        detune: cent => {
+          frequency && (source.detune.value = cent);
         },
         changeModulation: gainValue => {
           modulatorGain && (modulatorGain.gain.value = gainValue);
@@ -209,13 +209,14 @@ const SimpleSynthesizer = class {
               this.pitchBendSensitivity = value;
             }
           },
+          _pitchBendValue: 0,
+          get pitchBendValue() { return this._pitchBendValue; },
           pitchBendSensitivity: 2,
-          pitchRatio: 1,
+          get pitchBendCent() { return 100 * this.pitchBendSensitivity * this.pitchBendValue / (1 << 13); },
           set pitchBendValue(value) {
-            const r = this.pitchRatio = Math.pow(2, value * this.pitchBendSensitivity / ((1 << 13) * 12));
-            this.voices.forEach(
-              (voice, noteNumber) => voice.changeFrequency(MIDI.FREQUENCIES[noteNumber] * r)
-            );
+            this._pitchBendValue = value;
+            const cent = this.pitchBendCent;
+            this.voices.forEach((voice) => voice.detune(cent));
           },
           set modulationDepth(value) {
             this.voices.forEach(
@@ -255,8 +256,8 @@ const SimpleSynthesizer = class {
           },
           resetAllControllers() {
             delete this.parameterNumber;
-            this.pitchRatio = 1;
             this.pitchBendSensitivity = 2;
+            this.pitchBendValue = 0;
             this.volume = 100;
             this.expression = 0x7F;
             this.pan = 0x40;
@@ -274,14 +275,15 @@ const SimpleSynthesizer = class {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
           },
           noteOn(noteNumber, velocity) {
-            const { isDrum, pitchRatio, voices } = this;
+            const { isDrum, pitchBendCent, voices } = this;
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
               voice = createVoice(
                 this,
-                isDrum ? undefined : MIDI.FREQUENCIES[noteNumber] * pitchRatio
+                isDrum ? undefined : MIDI.FREQUENCIES[noteNumber]
               );
+              if( pitchBendCent ) voice.detune(pitchBendCent);
               voices.set(noteNumber, voice);
             }
             voice.attack(velocity);
