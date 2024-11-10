@@ -436,7 +436,7 @@ const PianoKeyboard = class {
         const cl = termsSliders[0][0].parentElement.parentElement.classList;
         const showNewWave = this.showNewWave = (wave) => {
           wave === 'custom' ? cl.remove("hidden") : cl.add("hidden");
-          img && (img.src = waves[wave].icon);
+          img && (img.src = waves[wave ?? "custom"].icon);
         };
         waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       }
@@ -459,7 +459,7 @@ const PianoKeyboard = class {
       Object.entries(envelope).forEach(([key, slider]) => {
         slider.value = envelopeModel[key];
       });
-      m.terms.forEach((group, groupIndex) => {
+      m.terms?.forEach((group, groupIndex) => {
         group.forEach((value, index) => {
           index && (termsSliders[groupIndex][index - 1].value = value);
         });
