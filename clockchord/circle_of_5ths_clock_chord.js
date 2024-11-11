@@ -44,6 +44,35 @@ const MIDI = class {
   );
 };
 
+const GENERIC_INSTRUMENT = ({
+  name: "Generic tone instrument",
+  wave: "sawtooth",
+  envelope: {
+    attackTime: 0.01,
+    decayTime: 0.5,
+    sustainLevel: 0.3,
+    releaseTime: 0.3,
+  },
+  terms: [
+    [0, 0.5, 1, 0.5, 0.5, 0.5, 0],
+    [0, 1, 0.5, 1, 0.5, 0.5, 0],
+  ],
+});
+const GENERIC_PERCUSSION = ({
+  name: "Generic percussion",
+  wave: "noise",
+  envelope: {
+    attackTime: 0,
+    decayTime: 0.1,
+    sustainLevel: 0,
+    releaseTime: 0.1,
+  },
+  terms: [
+    [0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0],
+  ],
+});
+
 const SimpleSynthesizer = class {
   static get audioContext() {
     if( ! SimpleSynthesizer._audioContext ) {
@@ -57,6 +86,13 @@ const SimpleSynthesizer = class {
     }
     return SimpleSynthesizer._audioContext;
   };
+  static INSTRUMENTS = Array.from(
+    {length: 128},
+    (_, programNumber) => ({
+      ...GENERIC_INSTRUMENT,
+      name: `Generic tone instrument - Program #${programNumber + 1}`,
+    })
+  );
   constructor() {
     const getMixer = () => {
       if( !this.mixer ) {
@@ -71,10 +107,9 @@ const SimpleSynthesizer = class {
       }
       return this.mixer;
     }
-    const NOISE_TIME = 0.1; // [sec]
     const createNoiseBuffer = () => {
       const { sampleRate } = SimpleSynthesizer.audioContext;
-      const length = sampleRate * NOISE_TIME;
+      const length = sampleRate * GENERIC_PERCUSSION.envelope.releaseTime;
       const noiseBuffer = new AudioBuffer({ length, sampleRate });
       const data = noiseBuffer.getChannelData(0);
       for( let i = 0; i < length; i++ ) {
@@ -254,6 +289,10 @@ const SimpleSynthesizer = class {
             // Web Audio API's panner value: -1(L) ... 1(R)
             this.ampan.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
           },
+          set program(value) {
+            if( channel.isForPercussion ) return;
+            this.instrument = SimpleSynthesizer.INSTRUMENTS[value];
+          },
           resetAllControllers() {
             delete this.parameterNumber;
             this.pitchBendSensitivity = 2;
@@ -287,33 +326,7 @@ const SimpleSynthesizer = class {
             return isNewVoice;
           },
         };
-        channel.instrument = channel.isForPercussion ? {
-          name: "Generic percussion",
-          wave: "noise",
-          envelope: {
-            attackTime: 0,
-            decayTime: NOISE_TIME,
-            sustainLevel: 0,
-            releaseTime: NOISE_TIME,
-          },
-          terms: [
-            [0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0, 0, 0],
-          ],
-        } : {
-          name: `Generic tone instrument - Ch.${channelNumber + 1}`,
-          wave: "sawtooth",
-          envelope: {
-            attackTime: 0.01,
-            decayTime: 0.5,
-            sustainLevel: 0.3,
-            releaseTime: 0.3,
-          },
-          terms: [
-            [0, 0.5, 1, 0.5, 0.5, 0.5, 0],
-            [0, 1, 0.5, 1, 0.5, 0.5, 0],
-          ],
-        };
+        channel.instrument = channel.isForPercussion ? GENERIC_PERCUSSION : SimpleSynthesizer.INSTRUMENTS[0];
         return channel;
       } // Array.from
     ); // midiChannels
@@ -405,6 +418,15 @@ const PianoKeyboard = class {
               allNotesOff(channel);
             }
             break;
+        }
+        break;
+      case 0xC0: // Program Change
+        {
+          const c = synth.midiChannels[channel];
+          c.program = data[0];
+          if( channel === this.midiChannelSelector.selectedChannel ) {
+            this.instrumentView.model = c.instrument;
+          };
         }
         break;
       case 0xE0: // Pitch Bend Change
