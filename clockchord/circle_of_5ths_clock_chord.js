@@ -288,6 +288,7 @@ const SimpleSynthesizer = class {
           },
         };
         channel.instrument = channel.isDrum ? {
+          name: "Generic rhythm instrument",
           wave: "noise",
           envelope: {
             attackTime: 0,
@@ -300,6 +301,7 @@ const SimpleSynthesizer = class {
             [0, 1, 0, 0, 0, 0, 0],
           ],
         } : {
+          name: `Generic tone instrument - Ch.${channelNumber + 1}`,
           wave: "sawtooth",
           envelope: {
             attackTime: 0.01,
@@ -412,6 +414,7 @@ const PianoKeyboard = class {
   };
   instrumentView = {
     setup() {
+      this.instrumentName = document.getElementById('instrument_name');
       const iconPathOf = (key) => `image/${key}.svg`;
       const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
         waves[key] = { icon: iconPathOf(key) };
@@ -455,8 +458,9 @@ const PianoKeyboard = class {
     get model() { return this._model; },
     set model(m) {
       this._model = m;
-      const { envelope, waveSelector, waves, termsSliders, showNewWave } = this;
-      const { wave } = m;
+      const { instrumentName, envelope, waveSelector, waves, termsSliders, showNewWave } = this;
+      const { name, wave } = m;
+      instrumentName && (instrumentName.innerHTML = name);
       waveSelector && (waveSelector.value = wave)
       showNewWave(wave);
       const envelopeModel = m.envelope;
