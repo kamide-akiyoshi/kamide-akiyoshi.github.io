@@ -36,7 +36,7 @@ const Music = class {
 }
 
 const MIDI = class {
-  static DRUM_CHANNEL = 9;
+  static PERCUSSION_CHANNEL = 9;
   static NUMBER_OF_CHANNELS = 16;
   static FREQUENCIES = Array.from(
     {length: 128},
@@ -184,7 +184,7 @@ const SimpleSynthesizer = class {
       {length: MIDI.NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
         const channel = {
-          isDrum: channelNumber == MIDI.DRUM_CHANNEL,
+          isForPercussion: channelNumber == MIDI.PERCUSSION_CHANNEL,
           voices: new Map(),
           setParameterNumber(control, value) {
             // Control#
@@ -275,7 +275,7 @@ const SimpleSynthesizer = class {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
           },
           noteOn(noteNumber, velocity) {
-            const { isDrum, pitchBendCent, voices } = this;
+            const { pitchBendCent, voices } = this;
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
@@ -287,8 +287,8 @@ const SimpleSynthesizer = class {
             return isNewVoice;
           },
         };
-        channel.instrument = channel.isDrum ? {
-          name: "Generic rhythm instrument",
+        channel.instrument = channel.isForPercussion ? {
+          name: "Generic percussion",
           wave: "noise",
           envelope: {
             attackTime: 0,
@@ -323,13 +323,13 @@ const SimpleSynthesizer = class {
 const PianoKeyboard = class {
   noteOn = (channel, noteNumber, velocity) => {
     const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
-    if( channel != MIDI.DRUM_CHANNEL && isNewVoice ) {
+    if( channel != MIDI.PERCUSSION_CHANNEL && isNewVoice ) {
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
   };
   noteOff = (channel, noteNumber) => {
     this.synth.midiChannels[channel].noteOff(noteNumber);
-    if( channel != MIDI.DRUM_CHANNEL ) {
+    if( channel != MIDI.PERCUSSION_CHANNEL ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
   };
@@ -481,7 +481,7 @@ const PianoKeyboard = class {
       (_, ch) => {
         const option = document.createElement("option");
         option.value = ch;
-        option.appendChild(document.createTextNode(`${ch + 1}${ch == MIDI.DRUM_CHANNEL ? ' (Drum)' : ''}`));
+        option.appendChild(document.createTextNode(`${ch + 1}`));
         selector.appendChild(option);
       }
     );
