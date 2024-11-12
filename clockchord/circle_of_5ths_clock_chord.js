@@ -54,8 +54,8 @@ const GENERIC_INSTRUMENT = ({
     releaseTime: 0.3,
   },
   terms: [
-    [0, 0.5, 1, 0.5, 0.5, 0.5, 0],
-    [0, 1, 0.5, 1, 0.5, 0.5, 0],
+    [0, 0.5, 1, 0.5, 0.5, 0.5],
+    [0, 1, 0.5, 1, 0.5, 0.5],
   ],
 });
 const GENERIC_PERCUSSION = ({
@@ -68,8 +68,8 @@ const GENERIC_PERCUSSION = ({
     releaseTime: 0.1,
   },
   terms: [
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0],
+    [0, 0],
+    [0, 1],
   ],
 });
 
@@ -444,15 +444,32 @@ const PianoKeyboard = class {
       }, {});
       waves.custom = waves.noise = { icon: iconPathOf("wave") };
       const termsSliders = this.termsSliders = ['Real', 'Imag'].map(
-        (group) => Array.from(document.querySelectorAll(`#periodicWave${group}Terms input`))
-      );
-      termsSliders.forEach((group, groupIndex) => {
-        group.forEach((slider, index) => {
-          slider.addEventListener('change', (event) => {
-            this.model.terms[groupIndex][index + 1] = parseFloat(event.target.value);
+        (group, isImag) => {
+          const baseSlider = document.querySelectorAll(`#periodicWave${group}Terms input`)?.[0];
+          if( !baseSlider ) return [];
+          const sliders = [baseSlider];
+          const groupElement = baseSlider.parentElement;
+          for( let i = 2; i <= 10; i++ ) {
+            const slider = baseSlider.cloneNode();
+            groupElement.appendChild(slider);
+            sliders.push(slider);
+          }
+          sliders.forEach((slider, sliderIndex) => {
+            const index = sliderIndex + 1;
+            slider.addEventListener('change', (event) => {
+              const { terms } = this.model;
+              const requiredPaddingLength = index - terms[0].length;
+              if( requiredPaddingLength > 0 ) {
+                const padding = Array(requiredPaddingLength).fill(0);
+                terms.forEach((subTerms) => subTerms.push(...padding));
+              }
+              terms[isImag][index] = parseFloat(event.target.value);
+              terms[1 - isImag][index] ??= 0;
+            });
           });
-        });
-      });
+          return sliders;
+        }
+      );
       const waveSelector = document.getElementById('waveselect');
       if( waveSelector ) {
         this.waveSelector = waveSelector;
@@ -489,9 +506,9 @@ const PianoKeyboard = class {
       Object.entries(envelope).forEach(([key, slider]) => {
         slider.value = envelopeModel[key];
       });
-      m.terms?.forEach((group, groupIndex) => {
-        group.forEach((value, index) => {
-          index && (termsSliders[groupIndex][index - 1].value = value);
+      termsSliders.forEach((group, isImag) => {
+        group.forEach((slider, sliderIndex) => {
+          slider.value = m.terms[isImag][sliderIndex + 1] ?? 0;
         });
       });
     },
