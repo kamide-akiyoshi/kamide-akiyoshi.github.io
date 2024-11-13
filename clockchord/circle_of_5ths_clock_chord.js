@@ -152,28 +152,25 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = undefined;
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
-          const {
-            attackTime,
-            decayTime,
-            sustainLevel,
-          } = instrument.envelope;
+          const envelopeValues = instrument.envelope;
+          const { attackTime, sustainLevel } = envelopeValues;
           if( source instanceof OscillatorNode ) {
-            const waveKey = instrument.wave;
-            if( waveKey === 'custom' ) {
+            const { wave } = instrument;
+            if( wave === 'custom' ) {
               source.setPeriodicWave(context.createPeriodicWave(...instrument.terms));
             } else {
-              source.type = waveKey;
+              source.type = wave;
             }
           }
           velocityGain.gain.value = velocity / 0x7F;
-          const t1 = context.currentTime + (attackTime - 0);
+          const t1 = context.currentTime + attackTime;
           if( attackTime ) {
             gain.linearRampToValueAtTime(1, t1);
           } else {
             gain.value = 1;
           }
           if( sustainLevel < 1 ) {
-            gain.setTargetAtTime(sustainLevel, t1, decayTime);
+            gain.setTargetAtTime(sustainLevel, t1, envelopeValues.decayTime);
           }
         },
         release: (stopped, immediately) => {
