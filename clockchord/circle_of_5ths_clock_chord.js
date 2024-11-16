@@ -58,6 +58,7 @@ const GENERIC_INSTRUMENT = ({
     [0, 1, 0.5, 1, 0.5, 0.5],
   ],
 });
+
 const GENERIC_PERCUSSION = ({
   name: "Generic percussion",
   wave: "noise",
@@ -67,11 +68,9 @@ const GENERIC_PERCUSSION = ({
     sustainLevel: 0,
     releaseTime: 0.1,
   },
-  terms: [
-    [0, 0],
-    [0, 1],
-  ],
 });
+
+const INSTRUMENTS = [];
 
 const SimpleSynthesizer = class {
   static get audioContext() {
@@ -86,13 +85,6 @@ const SimpleSynthesizer = class {
     }
     return SimpleSynthesizer._audioContext;
   };
-  static INSTRUMENTS = Array.from(
-    {length: 128},
-    (_, programNumber) => ({
-      ...GENERIC_INSTRUMENT,
-      name: `Generic tone instrument - Program #${programNumber + 1}`,
-    })
-  );
   constructor() {
     const getMixer = () => {
       if( !this.mixer ) {
@@ -157,7 +149,8 @@ const SimpleSynthesizer = class {
           if( source instanceof OscillatorNode ) {
             const { wave } = instrument;
             if( wave === 'custom' ) {
-              source.setPeriodicWave(context.createPeriodicWave(...instrument.terms));
+              const terms = instrument.terms ??= [[0, 0],[0, 0]];
+              source.setPeriodicWave(context.createPeriodicWave(...terms));
             } else {
               source.type = wave;
             }
@@ -288,7 +281,7 @@ const SimpleSynthesizer = class {
           },
           set program(value) {
             if( channel.isForPercussion ) return;
-            this.instrument = SimpleSynthesizer.INSTRUMENTS[value];
+            this.instrument = INSTRUMENTS[value] ?? GENERIC_INSTRUMENT;
           },
           resetAllControllers() {
             delete this.parameterNumber;
@@ -323,7 +316,11 @@ const SimpleSynthesizer = class {
             return isNewVoice;
           },
         };
-        channel.instrument = channel.isForPercussion ? GENERIC_PERCUSSION : SimpleSynthesizer.INSTRUMENTS[0];
+        if( channel.isForPercussion ) {
+          channel.instrument = GENERIC_PERCUSSION;
+        } else {
+          channel.program = 0;
+        }
         return channel;
       } // Array.from
     ); // midiChannels
@@ -452,16 +449,16 @@ const PianoKeyboard = class {
             sliders.push(slider);
           }
           sliders.forEach((slider, sliderIndex) => {
-            const index = sliderIndex + 1;
+            const termIndex = sliderIndex + 1;
             slider.addEventListener('change', (event) => {
-              const { terms } = this.model;
-              const requiredPaddingLength = index - terms[0].length;
-              if( requiredPaddingLength > 0 ) {
-                const padding = Array(requiredPaddingLength).fill(0);
+              const terms = this.model.terms ??= [[0, 0],[0, 0]];
+              const paddingLength = termIndex - terms[0].length;
+              if( paddingLength > 0 ) {
+                const padding = Array(paddingLength).fill(0);
                 terms.forEach((subTerms) => subTerms.push(...padding));
               }
-              terms[isImag][index] = parseFloat(event.target.value);
-              terms[1 - isImag][index] ??= 0;
+              terms[isImag][termIndex] = parseFloat(event.target.value);
+              terms[1 - isImag][termIndex] ??= 0;
             });
           });
           return sliders;
@@ -505,7 +502,7 @@ const PianoKeyboard = class {
       });
       termsSliders.forEach((group, isImag) => {
         group.forEach((slider, sliderIndex) => {
-          slider.value = m.terms[isImag][sliderIndex + 1] ?? 0;
+          slider.value = m.terms?.[isImag][sliderIndex + 1] ?? 0;
         });
       });
     },
