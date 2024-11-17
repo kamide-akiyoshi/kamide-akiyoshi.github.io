@@ -47,27 +47,17 @@ const MIDI = class {
 const GENERIC_INSTRUMENT = ({
   name: "Generic tone instrument",
   wave: "sawtooth",
-  envelope: {
-    attackTime: 0.01,
-    decayTime: 0.5,
-    sustainLevel: 0.3,
-    releaseTime: 0.3,
-  },
   terms: [
     [0, 0.5, 1, 0.5, 0.5, 0.5],
     [0, 1, 0.5, 1, 0.5, 0.5],
   ],
+  envelope: [0.01, 0.5, 0.3, 0.3],
 });
 
 const GENERIC_PERCUSSION = ({
   name: "Generic percussion",
   wave: "noise",
-  envelope: {
-    attackTime: 0,
-    decayTime: 0.1,
-    sustainLevel: 0,
-    releaseTime: 0.1,
-  },
+  envelope: [0, 0.1, 0, 0.1],
 });
 
 const INSTRUMENTS = [];
@@ -101,7 +91,8 @@ const SimpleSynthesizer = class {
     }
     const createNoiseBuffer = () => {
       const { sampleRate } = SimpleSynthesizer.audioContext;
-      const length = sampleRate * GENERIC_PERCUSSION.envelope.releaseTime;
+      const [, , , releaseTime] = GENERIC_PERCUSSION.envelope;
+      const length = sampleRate * releaseTime;
       const noiseBuffer = new AudioBuffer({ length, sampleRate });
       const data = noiseBuffer.getChannelData(0);
       for( let i = 0; i < length; i++ ) {
@@ -144,8 +135,7 @@ const SimpleSynthesizer = class {
           timeoutIdToStop = undefined;
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
-          const envelopeValues = instrument.envelope;
-          const { attackTime, sustainLevel } = envelopeValues;
+          const [attackTime, decayTime, sustainLevel] = instrument.envelope;
           if( source instanceof OscillatorNode ) {
             const { wave } = instrument;
             if( wave === 'custom' ) {
@@ -163,7 +153,7 @@ const SimpleSynthesizer = class {
             gain.value = 1;
           }
           if( sustainLevel < 1 ) {
-            gain.setTargetAtTime(sustainLevel, t1, envelopeValues.decayTime);
+            gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
         release: (stopped, immediately) => {
@@ -188,7 +178,7 @@ const SimpleSynthesizer = class {
           delete voice.isPressing;
           const gainValueToStop = 0.001;
           if( gain.value <= gainValueToStop ) { stop(); return; }
-          const { releaseTime } = instrument.envelope;
+          const [, , , releaseTime] = instrument.envelope;
           if( !releaseTime ) { stop(); return; }
           const delay = Math.log(gain.value / gainValueToStop) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
@@ -480,25 +470,23 @@ const PianoKeyboard = class {
         };
         waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       }
-      const envelope = this.envelope = {};
-      document.querySelectorAll(`#envelope input`).forEach((slider) => {
-        const { id } = slider;
-        (envelope[id] = slider).addEventListener('change', event => {
-          this.model.envelope[id] = parseFloat(event.target.value);
+      const envelopeSliders = this.envelopeSliders = [];
+      document.querySelectorAll(`#envelope input`).forEach((slider, index) => {
+        (envelopeSliders[index] = slider).addEventListener('change', event => {
+          this.model.envelope[index] = parseFloat(event.target.value);
         });
       });
     },
     get model() { return this._model; },
     set model(m) {
       this._model = m;
-      const { instrumentName, envelope, waveSelector, waves, termsSliders, showNewWave } = this;
-      const { name, wave } = m;
+      const { instrumentName, envelopeSliders, waveSelector, waves, termsSliders, showNewWave } = this;
+      const { name, wave, envelope } = m;
       instrumentName && (instrumentName.innerHTML = name);
       waveSelector && (waveSelector.value = wave)
       showNewWave(wave);
-      const envelopeModel = m.envelope;
-      Object.entries(envelope).forEach(([key, slider]) => {
-        slider.value = envelopeModel[key];
+      envelopeSliders.forEach((slider, index) => {
+        slider.value = envelope[index];
       });
       termsSliders.forEach((group, isImag) => {
         group.forEach((slider, sliderIndex) => {
