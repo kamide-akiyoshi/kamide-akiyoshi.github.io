@@ -48,8 +48,8 @@ const GENERIC_INSTRUMENT = ({
   name: "Generic tone instrument",
   wave: "sawtooth",
   terms: [
-    [0, 0.5, 1, 0.5, 0.5, 0.5],
-    [0, 1, 0.5, 1, 0.5, 0.5],
+    [0, 0.5, 1, -0.5],
+    [0, 1, -1, 0.5],
   ],
   envelope: [0.01, 0.5, 0.3, 0.3],
 });
