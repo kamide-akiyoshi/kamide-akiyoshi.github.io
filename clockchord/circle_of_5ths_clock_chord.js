@@ -110,13 +110,20 @@ const SimpleSynthesizer = class {
       envelope.gain.value = 0;
       envelope.connect(velocityGain);
       let source, modulator, modulatorGain;
-      if( !frequency || instrument.wave === 'noise' ) {
+      const { wave } = instrument;
+      if( !frequency || wave === 'noise' ) {
         source = context.createBufferSource();
         source.buffer = this.noiseBuffer ??= createNoiseBuffer();
         source.loop = true;
       } else {
         source = context.createOscillator();
         source.frequency.value = frequency;
+        if( wave === 'custom' ) {
+          const terms = instrument.terms ??= [[0, 0],[0, 0]];
+          source.setPeriodicWave(context.createPeriodicWave(...terms));
+        } else {
+          source.type = wave;
+        }
         modulator = context.createOscillator();
         modulator.frequency.value = 6;
         modulatorGain = context.createGain();
@@ -136,15 +143,6 @@ const SimpleSynthesizer = class {
           const { gain } = envelope;
           gain.cancelScheduledValues(context.currentTime);
           const [attackTime, decayTime, sustainLevel] = instrument.envelope;
-          if( source instanceof OscillatorNode ) {
-            const { wave } = instrument;
-            if( wave === 'custom' ) {
-              const terms = instrument.terms ??= [[0, 0],[0, 0]];
-              source.setPeriodicWave(context.createPeriodicWave(...terms));
-            } else {
-              source.type = wave;
-            }
-          }
           velocityGain.gain.value = velocity / 0x7F;
           const t1 = context.currentTime + attackTime;
           if( attackTime ) {
