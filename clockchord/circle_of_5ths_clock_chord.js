@@ -470,7 +470,7 @@ const SimpleSynthesizer = class {
   constructor() {
     const getMixer = () => {
       if( !this.mixer ) {
-        const volumeSlider = document.getElementById('volume') ?? { value: 0.4 };
+        const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
         const context = SimpleSynthesizer.audioContext;
         const mixer = this.mixer = context.createGain();
         const { gain } = mixer;
