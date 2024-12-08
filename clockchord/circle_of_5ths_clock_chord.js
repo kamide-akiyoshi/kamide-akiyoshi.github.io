@@ -248,11 +248,15 @@ const INSTRUMENTS = [
     envelope: [0.01, 1, 0, 0.3],
   },
   GENERIC_INSTRUMENT, // "Glockenspiel",
-  GENERIC_INSTRUMENT, // "Music Box",
+  {
+    name: "Music Box",
+    wave: "square",
+    envelope: [0, 0.3, 0, 0.1],
+  },
   {
     name: "Vibraphone",
     wave: "sine",
-    envelope: [0, 0.7, 0, 0.5],
+    envelope: [0, 0.6, 0, 0.3],
   },
   {
     name: "Marimba",
@@ -311,7 +315,11 @@ const INSTRUMENTS = [
   GENERIC_STRING_INSTRUMENT, // "Cello",
   GENERIC_STRING_INSTRUMENT, // "Contrabass",
   GENERIC_STRING_INSTRUMENT, // "Tremolo Strings",
-  GENERIC_STRING_INSTRUMENT, // "Pizzicato Strings",
+  {
+    name: "Pizzicato Strings",
+    wave: "sawtooth",
+    envelope: [0, 0.1, 0, 0.1],
+  },
   {
     name: "Orchestral Harp",
     wave: "square",
@@ -419,30 +427,46 @@ const INSTRUMENTS = [
   GENERIC_INSTRUMENT, // "Shamisen",
   GENERIC_INSTRUMENT, // "Koto",
   GENERIC_INSTRUMENT, // "Kalimba",
-  GENERIC_INSTRUMENT, // "Bag pipe",
+  {
+    name: "Bag pipe",
+    wave: "sawtooth",
+    envelope: [0.05, 0, 1, 0.1],
+  },
   GENERIC_INSTRUMENT, // "Fiddle",
   GENERIC_INSTRUMENT, // "Shanai",
   // Percussive
   GENERIC_INSTRUMENT, // "Tinkle Bell",
   GENERIC_INSTRUMENT, // "Agogo",
   GENERIC_INSTRUMENT, // "Steel Drums",
-  GENERIC_INSTRUMENT, // "Woodblock",
-  GENERIC_INSTRUMENT, // "Taiko Drum",
-  GENERIC_INSTRUMENT, // "Melodic Tom",
-  GENERIC_INSTRUMENT, // "Synth Drum",
+  {
+    name: "Woodblock",
+    wave: "sine",
+    envelope: [0, 0.1, 0, 0.1],
+  },
+  GENERIC_PERCUSSION, // "Taiko Drum",
+  GENERIC_PERCUSSION, // "Melodic Tom",
+  GENERIC_PERCUSSION, // "Synth Drum",
   {
     name: "Reverse Cymbal",
     wave: "noise",
     envelope: [1.5, 0, 0, 0],
   },
   // Sound Effects
-  GENERIC_INSTRUMENT, // "Guitar Fret Noise",
+  GENERIC_PERCUSSION, // "Guitar Fret Noise",
   GENERIC_PERCUSSION, // "Breath Noise",
   GENERIC_PERCUSSION, // "Seashore",
-  GENERIC_INSTRUMENT, // "Bird Tweet",
-  GENERIC_INSTRUMENT, // "Telephone Ring",
-  GENERIC_PERCUSSION, // "Helicopter",
-  GENERIC_PERCUSSION, // "Applause",
+  GENERIC_PERCUSSION, // "Bird Tweet",
+  GENERIC_PERCUSSION, // "Telephone Ring",
+  {
+    name: "Helicopter",
+    wave: "noise",
+    envelope: [1.5, 0, 1, 0],
+  },
+  {
+    name: "Applause",
+    wave: "noise",
+    envelope: [1.5, 0, 1, 0],
+  },
   GENERIC_PERCUSSION, // "Gunshot",
 ];
 
