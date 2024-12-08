@@ -444,15 +444,7 @@ const INSTRUMENTS = [
   GENERIC_PERCUSSION, // "Helicopter",
   GENERIC_PERCUSSION, // "Applause",
   GENERIC_PERCUSSION, // "Gunshot",
-].map((inst, index) => {
-  const { name } = inst;
-  const programName = INSTRUMENT_NAMES[index];
-  const result = { ...inst };
-  if( programName ) {
-    result.name = programName !== name ? `${programName} (${name})` : programName;
-  }
-  return result;
-});
+];
 
 const SimpleSynthesizer = class {
   static get audioContext() {
@@ -659,9 +651,10 @@ const SimpleSynthesizer = class {
             // Web Audio API's panner value: -1(L) ... 1(R)
             this.ampan.panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
           },
+          get program() { return this._program; },
           set program(value) {
             if( channel.isForPercussion ) return;
-            this.instrument = INSTRUMENTS[value];
+            this.instrument = INSTRUMENTS[this._program = value];
           },
           resetAllControllers() {
             delete this.parameterNumber;
@@ -727,6 +720,15 @@ const PianoKeyboard = class {
   allNotesOff = (channel) => {
     this.synth.midiChannels[channel].allNotesOff();
     this.toneIndicatorCanvas.allSoundOff();
+  };
+  programChange = (channel, programNumber) => {
+    const c = this.synth.midiChannels[channel];
+    c.program = programNumber;
+    if( channel === this.midiChannelSelector.selectedChannel ) {
+      const v = this.instrumentView;
+      v.programNumber = c.program;
+      v.model = c.instrument;
+    };
   };
   handleMidiMessage = (msg) => {
     const {
@@ -795,13 +797,7 @@ const PianoKeyboard = class {
         }
         break;
       case 0xC0: // Program Change
-        {
-          const c = synth.midiChannels[channel];
-          c.program = data[0];
-          if( channel === this.midiChannelSelector.selectedChannel ) {
-            this.instrumentView.model = c.instrument;
-          };
-        }
+        this.programChange(channel, data[0]);
         break;
       case 0xE0: // Pitch Bend Change
         synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
@@ -809,7 +805,18 @@ const PianoKeyboard = class {
     }
   };
   instrumentView = {
-    setup() {
+    setup(manualProgramChangeListener) {
+      const programSelector = document.getElementById('program_select');
+      if( programSelector ) {
+        this.programSelector = programSelector;
+        INSTRUMENT_NAMES.forEach((name, index) => {
+          const option = document.createElement("option");
+          option.value = index;
+          option.appendChild(document.createTextNode(name));
+          programSelector.appendChild(option);
+        });
+        programSelector.addEventListener("change", manualProgramChangeListener);
+      }
       this.instrumentName = document.getElementById('instrument_name');
       const iconPathOf = (key) => `image/${key}.svg`;
       const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
@@ -867,12 +874,27 @@ const PianoKeyboard = class {
         });
       });
     },
+    set programNumber(pn) {
+      const { programSelector } = this;
+      programSelector && (programSelector.value = pn);
+    },
     get model() { return this._model; },
     set model(m) {
       this._model = m;
-      const { instrumentName, envelopeSliders, waveSelector, waves, termsSliders, showNewWave } = this;
+      const {
+        programSelector,
+        instrumentName,
+        envelopeSliders,
+        waveSelector,
+        waves,
+        termsSliders,
+        showNewWave
+      } = this;
       const { name, wave, envelope } = m;
-      instrumentName && (instrumentName.innerHTML = name);
+      if( instrumentName ) {
+        const programName = INSTRUMENT_NAMES[programSelector.value];
+        instrumentName.innerHTML = programName === name ? "" : `(${name})`;
+      }
       waveSelector && (waveSelector.value = wave)
       showNewWave(wave);
       envelopeSliders.forEach((slider, index) => {
@@ -897,9 +919,17 @@ const PianoKeyboard = class {
       }
     );
     const { instrumentView } = this;
-    instrumentView.setup();
+    instrumentView.setup((event) => {
+      const programNumber = parseInt(event.target.value);
+      const ch = this.midiChannelSelector.selectedChannel;
+      this.sendWebMidiLinkMessage?.([0xC0 | ch, programNumber]);
+      this.selectedMidiOutputPorts?.programChange(ch, programNumber);
+      this.programChange(ch, programNumber);
+    });
     const setInstrumentModelOf = (ch) => {
-      instrumentView.model = this.synth.midiChannels[ch].instrument;
+      const { program, instrument } = this.synth.midiChannels[ch];
+      instrumentView.programNumber = program;
+      instrumentView.model = instrument;
     };
     selector.addEventListener(
       'change',
@@ -1122,6 +1152,7 @@ const PianoKeyboard = class {
     ports.send = (message) => ports.forEach(port => port.send(message));
     ports.noteOn = (channel, noteNumber, velocity = 64) => ports.send([0x90 + channel, noteNumber, velocity]);
     ports.noteOff = (channel, noteNumber) => ports.send([0x90 + channel, noteNumber, 0]);
+    ports.programChange = (channel, programNumber) => ports.send([0xC0 + channel, programNumber]);
     return ports;
   };
   setupMidiPorts = () => {
