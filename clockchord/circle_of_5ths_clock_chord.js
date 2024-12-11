@@ -42,6 +42,7 @@ const MIDI = class {
     {length: 128},
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
+  static pitchBendToCent(value, sensitivity) { return 100 * sensitivity * value / (1 << 13); };
 };
 
 const INSTRUMENT_NAMES = [
@@ -630,13 +631,13 @@ const SimpleSynthesizer = class {
               this.pitchBendSensitivity = value;
             }
           },
+          pitchBendCent: 0,
           _pitchBendValue: 0,
-          get pitchBendValue() { return this._pitchBendValue; },
-          pitchBendSensitivity: 2,
-          get pitchBendCent() { return 100 * this.pitchBendSensitivity * this.pitchBendValue / (1 << 13); },
           set pitchBendValue(value) {
-            this._pitchBendValue = value;
-            const cent = this.pitchBendCent;
+            const cent = this.pitchBendCent = MIDI.pitchBendToCent(
+              this._pitchBendValue = value,
+              this._pitchBendSensitivity
+            );
             this.voices.forEach((voice) => voice.detune(cent));
           },
           set modulationDepth(value) {
@@ -680,10 +681,17 @@ const SimpleSynthesizer = class {
             if( channel.isForPercussion ) return;
             this.instrument = INSTRUMENTS[this._program = value];
           },
+          _pitchBendSensitivity: 2,
+          set pitchBendSensitivity(value) {
+            this.pitchBendCent = MIDI.pitchBendToCent(
+              this._pitchBendValue,
+              this._pitchBendSensitivity = value
+            );
+          },
           resetAllControllers() {
             delete this.parameterNumber;
-            this.pitchBendSensitivity = 2;
-            this.pitchBendValue = 0;
+            this._pitchBendSensitivity = 2;
+            this._pitchBendValue = this.pitchBendCent = 0;
             this.volume = 100;
             this.expression = 0x7F;
             this.pan = 0x40;
@@ -705,9 +713,9 @@ const SimpleSynthesizer = class {
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
-              const { pitchBendCent } = this;
+              const cent = this.pitchBendCent
               voice = createVoice(this, MIDI.FREQUENCIES[noteNumber]);
-              pitchBendCent && voice.detune(pitchBendCent);
+              cent && voice.detune(cent);
               voices.set(noteNumber, voice);
             }
             voice.attack(velocity);
@@ -769,6 +777,9 @@ const PianoKeyboard = class {
       case 0x80:
         this.noteOff(channel, data[0]);
         break;
+      case 0xE0: // Pitch Bend Change
+        this.synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
+        break;
       case 0xB0: // Control Change
         switch(data[0]) {
           // MSB: 0x00 ... 0x1F
@@ -816,9 +827,6 @@ const PianoKeyboard = class {
         break;
       case 0xC0: // Program Change
         this.programChange(channel, data[0]);
-        break;
-      case 0xE0: // Pitch Bend Change
-        this.synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
         break;
     }
   };
