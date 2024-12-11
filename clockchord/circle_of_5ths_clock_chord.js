@@ -701,12 +701,13 @@ const SimpleSynthesizer = class {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
           },
           noteOn(noteNumber, velocity) {
-            const { pitchBendCent, voices } = this;
+            const { voices } = this;
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
+              const { pitchBendCent } = this;
               voice = createVoice(this, MIDI.FREQUENCIES[noteNumber]);
-              if( pitchBendCent ) voice.detune(pitchBendCent);
+              pitchBendCent && voice.detune(pitchBendCent);
               voices.set(noteNumber, voice);
             }
             voice.attack(velocity);
