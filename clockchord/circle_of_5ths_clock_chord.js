@@ -755,43 +755,36 @@ const PianoKeyboard = class {
     };
   };
   handleMidiMessage = (msg) => {
-    const {
-      noteOff,
-      noteOn,
-      allSoundOff,
-      allNotesOff,
-      synth,
-    } = this;
     const [statusWithCh, ...data] = msg;
     const channel = statusWithCh & 0xF;
     const status = statusWithCh & 0xF0;
     switch(status) {
       case 0x90:
         if( data[1] ) { // velocity > 0
-          noteOn(channel, data[0], data[1]);
+          this.noteOn(channel, data[0], data[1]);
           break;
         }
         // fallthrough: velocity === 0 means Note Off
       case 0x80:
-        noteOff(channel, data[0]);
+        this.noteOff(channel, data[0]);
         break;
       case 0xB0: // Control Change
         switch(data[0]) {
           // MSB: 0x00 ... 0x1F
           case 0x01: // Modulation
-            synth.midiChannels[channel].modulationDepth = data[1];
+            this.synth.midiChannels[channel].modulationDepth = data[1];
             break;
           case 0x06: // RPN/NRPN Data Entry
-            synth.midiChannels[channel].parameterValue = data[1];
+            this.synth.midiChannels[channel].parameterValue = data[1];
             break;
           case 0x07: // Channel Volume
-            synth.midiChannels[channel].volume = data[1];
+            this.synth.midiChannels[channel].volume = data[1];
             break;
           case 0x0A: // Pan
-            synth.midiChannels[channel].pan = data[1];
+            this.synth.midiChannels[channel].pan = data[1];
             break;
           case 0x0B: // Expression
-            synth.midiChannels[channel].expression = data[1];
+            this.synth.midiChannels[channel].expression = data[1];
             break;
           // LSB: 0x20 ... 0x3F
           //  :
@@ -803,19 +796,19 @@ const PianoKeyboard = class {
           case 0x63:
           case 0x64:
           case 0x65:
-            synth.midiChannels[channel].setParameterNumber(...data);
+            this.synth.midiChannels[channel].setParameterNumber(...data);
             break;
           case 0x78: // All Sound Off
             if( data[1] == 0 ) { // Must be 0
-              allSoundOff(channel);
+              this.allSoundOff(channel);
             }
             break;
           case 0x79: // Reset All Controllers
-            synth.midiChannels[channel].resetAllControllers();
+            this.synth.midiChannels[channel].resetAllControllers();
             break;
           case 0x7B: // All Notes Off
             if( data[1] == 0 ) { // Must be 0
-              allNotesOff(channel);
+              this.allNotesOff(channel);
             }
             break;
         }
@@ -824,7 +817,7 @@ const PianoKeyboard = class {
         this.programChange(channel, data[0]);
         break;
       case 0xE0: // Pitch Bend Change
-        synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
+        this.synth.midiChannels[channel].pitchBendValue = (data[1] * (1 << 7) + data[0]) - (1 << 13);
         break;
     }
   };
