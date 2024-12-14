@@ -1660,7 +1660,7 @@ const PianoKeyboard = class {
     document.getElementById("top")?.addEventListener('click', () => setTickPosition(0));
     document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
     const playPauseIcon = document.getElementById("play_pause_icon");
-    tickPositionSlider.addEventListener?.("change", (event) => {
+    tickPositionSlider.addEventListener?.("input", (event) => {
       !intervalId && setTickPosition(parseInt(event.target.value));
     });
     const midiSequencerElement = midiSequenceElement.parentElement;
