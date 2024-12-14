@@ -1996,7 +1996,7 @@ const CircleOfFifthsClock = class {
       grayoutForeground: 'gray',
       background: {
         donut: ['#99CCFF', '#FB99CC', '#FFFF99'],
-        pie: ['#FB99CC', '#FFFF66', '#CCFFCC', '#99CCFF'],
+        pie: ['#FB99CC', '#FFFF99', '#CCFFCC', '#99CCFF'],
       },
       hourBorder: {
         fine: 'rgb(0, 0, 0, 0.2)',
@@ -2013,8 +2013,8 @@ const CircleOfFifthsClock = class {
       foreground: '#C0C0C0',
       grayoutForeground: '#404040',
       background: {
-        donut: ['#102030', '#301020', '#302000'],
-        pie: ['#301020', '#302000', '#103010', '#102030'],
+        donut: ['#102030', '#301020', '#301800'],
+        pie: ['#301020', '#301800', '#103010', '#102030'],
       },
       hourBorder: {
         fine: 'rgb(255, 255, 255, 0.2)',
