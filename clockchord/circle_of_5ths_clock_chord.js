@@ -893,13 +893,13 @@ const PianoKeyboard = class {
         };
         waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       }
-      const envelopeSliders = this.envelopeSliders = [];
+      const envelopeViewers = this.envelopeViewers = [];
       document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
         const [valueElement, slider] = param.querySelectorAll(".envelope_value,input");
-        valueElement.textContent = slider.value;
-        (envelopeSliders[index] = slider).addEventListener('input', event => {
+        slider.addEventListener('input', event => {
           valueElement.textContent = this.model.envelope[index] = parseFloat(event.target.value);
         });
+        envelopeViewers.push({ valueElement, slider });
       });
     },
     set programNumber(pn) {
@@ -912,7 +912,7 @@ const PianoKeyboard = class {
       const {
         programSelector,
         instrumentName,
-        envelopeSliders,
+        envelopeViewers,
         waveSelector,
         waves,
         termsSliders,
@@ -925,8 +925,8 @@ const PianoKeyboard = class {
       }
       waveSelector && (waveSelector.value = wave)
       showNewWave(wave);
-      envelopeSliders.forEach((slider, index) => {
-        slider.value = envelope[index];
+      envelopeViewers.forEach(({ valueElement, slider }, index) => {
+        valueElement.textContent = slider.value = envelope[index];
       });
       termsSliders.forEach((group, isImag) => {
         group.forEach((slider, sliderIndex) => {
