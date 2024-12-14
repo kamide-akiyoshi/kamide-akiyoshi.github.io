@@ -894,9 +894,11 @@ const PianoKeyboard = class {
         waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       }
       const envelopeSliders = this.envelopeSliders = [];
-      document.querySelectorAll(`#envelope input`).forEach((slider, index) => {
-        (envelopeSliders[index] = slider).addEventListener('change', event => {
-          this.model.envelope[index] = parseFloat(event.target.value);
+      document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
+        const [valueElement, slider] = param.querySelectorAll(".envelope_value,input");
+        valueElement.textContent = slider.value;
+        (envelopeSliders[index] = slider).addEventListener('input', event => {
+          valueElement.textContent = this.model.envelope[index] = parseFloat(event.target.value);
         });
       });
     },
