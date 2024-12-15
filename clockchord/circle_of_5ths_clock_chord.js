@@ -183,19 +183,19 @@ const GENERIC_INSTRUMENT = ({
     [0, 0.5, 1, -0.5],
     [0, 1, -1, 0.5],
   ],
-  envelope: [0.01, 0.5, 0.3, 0.2],
+  envelope: [0.01, 0.5, 0.3, 0.25],
 });
 
 const GENERIC_STRING_INSTRUMENT = ({
   name: "Generic strings",
   wave: "sawtooth",
-  envelope: [0.04, 0.6, 0.6, 0.2],
+  envelope: [0.04, 0.6, 0.6, 0.25],
 });
 
 const GENERIC_PIPE_INSTRUMENT = ({
   name: "Generic pipe",
   wave: "sine",
-  envelope: [0.04, 0.6, 0.6, 0.2],
+  envelope: [0.04, 0.6, 0.6, 0.25],
 });
 
 const GENERIC_PERCUSSION = ({
@@ -293,12 +293,12 @@ const INSTRUMENTS = [
   {
     name: "Overdriven Guitar",
     wave: "sawtooth",
-    envelope: [0.01, 0, 1, 0.2],
+    envelope: [0.01, 0, 1, 0.25],
   },
   {
     name: "Distortion Guitar",
     wave: "sawtooth",
-    envelope: [0.01, 0, 1, 0.2],
+    envelope: [0.01, 0, 1, 0.25],
   },
   GENERIC_INSTRUMENT, // "Guitar harmonics",
   // Bass
@@ -324,7 +324,7 @@ const INSTRUMENTS = [
   {
     name: "Orchestral Harp",
     wave: "square",
-    envelope: [0, 0.3, 0, 0.2],
+    envelope: [0, 0.3, 0, 0.25],
   },
   {
     name: "Timpani",
@@ -387,12 +387,12 @@ const INSTRUMENTS = [
   {
     name: "Lead 1 (square)",
     wave: "square",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   {
     name: "Lead 2 (sawtooth)",
     wave: "sawtooth",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   GENERIC_INSTRUMENT, // "Lead 3 (calliope)",
   GENERIC_INSTRUMENT, // "Lead 4 (chiff)",
