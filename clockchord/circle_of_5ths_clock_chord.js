@@ -894,12 +894,18 @@ const PianoKeyboard = class {
         waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       }
       const envelopeViewers = this.envelopeViewers = [];
+      const asSecond = (num) => `${num}s`;
+      const asPercent = (num) => `${Math.round(num * 100)}%`;
       document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
-        const [valueElement, slider] = param.querySelectorAll(".envelope_value,input");
+        const [textElement, slider] = param.querySelectorAll(".envelope_value,input");
+        const asText = slider.id.includes("sustain") ? asPercent : asSecond;
+        const text = {
+          set value(n) { textElement.textContent = asText(n); }
+        };
         slider.addEventListener('input', event => {
-          valueElement.textContent = this.model.envelope[index] = parseFloat(event.target.value);
+          text.value = this.model.envelope[index] = parseFloat(event.target.value);
         });
-        envelopeViewers.push({ valueElement, slider });
+        envelopeViewers.push({ text, slider });
       });
     },
     set programNumber(pn) {
@@ -925,8 +931,10 @@ const PianoKeyboard = class {
       }
       waveSelector && (waveSelector.value = wave)
       showNewWave(wave);
-      envelopeViewers.forEach(({ valueElement, slider }, index) => {
-        valueElement.textContent = slider.value = envelope[index];
+      envelopeViewers.forEach(({ text, slider }, index) => {
+        const numericValue = envelope[index];
+        slider.value = numericValue;
+        text.value = numericValue;
       });
       termsSliders.forEach((group, isImag) => {
         group.forEach((slider, sliderIndex) => {
