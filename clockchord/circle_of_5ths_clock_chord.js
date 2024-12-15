@@ -189,13 +189,13 @@ const GENERIC_INSTRUMENT = ({
 const GENERIC_STRING_INSTRUMENT = ({
   name: "Generic strings",
   wave: "sawtooth",
-  envelope: [0.04, 0.6, 0.6, 0.25],
+  envelope: [0.02, 0, 1, 0.3],
 });
 
 const GENERIC_PIPE_INSTRUMENT = ({
   name: "Generic pipe",
   wave: "sine",
-  envelope: [0.04, 0.6, 0.6, 0.25],
+  envelope: [0.03, 0, 1, 0.25],
 });
 
 const GENERIC_PERCUSSION = ({
@@ -257,7 +257,7 @@ const INSTRUMENTS = [
   {
     name: "Vibraphone",
     wave: "sine",
-    envelope: [0, 0.6, 0, 0.3],
+    envelope: [0, 0.7, 0, 0.3],
   },
   {
     name: "Marimba",
@@ -269,17 +269,53 @@ const INSTRUMENTS = [
     wave: "sine",
     envelope: [0, 0.1, 0, 0.1],
   },
-  GENERIC_INSTRUMENT, // "Tubular Bells",
+  {
+    name: "Tubular Bells",
+    wave: "sawtooth",
+    envelope: [0, 1, 0, 0.5],
+  },
   GENERIC_INSTRUMENT, // "Dulcimer",
   // Organ
-  GENERIC_STRING_INSTRUMENT, // "Drawbar Organ",
-  GENERIC_STRING_INSTRUMENT, // "Percussive Organ",
-  GENERIC_STRING_INSTRUMENT, // "Rock Organ",
-  GENERIC_STRING_INSTRUMENT, // "Church Organ",
-  GENERIC_STRING_INSTRUMENT, // "Reed Organ",
-  GENERIC_STRING_INSTRUMENT, // "Accordion",
-  GENERIC_STRING_INSTRUMENT, // "Harmonica",
-  GENERIC_STRING_INSTRUMENT, // "Tango Accordion",
+  {
+    name: "Drawbar Organ",
+    wave: "sawtooth",
+    envelope: [0.1, 0, 1, 0.2],
+  },
+  {
+    name: "Percussive Organ",
+    wave: "sawtooth",
+    envelope: [0.1, 0, 1, 0.2],
+  },
+  {
+    name: "Rock Organ",
+    wave: "sawtooth",
+    envelope: [0.1, 0, 1, 0.2],
+  },
+  {
+    name: "Church Organ",
+    wave: "sawtooth",
+    envelope: [0.1, 0, 1, 0.2],
+  },
+  {
+    name: "Reed Organ",
+    wave: "sawtooth",
+    envelope: [0.1, 0, 1, 0.2],
+  },
+  {
+    name: "Accordion",
+    wave: "sawtooth",
+    envelope: [0.15, 0, 1, 0.2],
+  },
+  {
+    name: "Harmonica",
+    wave: "sawtooth",
+    envelope: [0.15, 0, 1, 0.2],
+  },
+  {
+    name: "Tango Accordion",
+    wave: "sawtooth",
+    envelope: [0.15, 0, 1, 0.2],
+  },
   // Guitar
   GENERIC_INSTRUMENT, // "Acoustic Guitar (nylon)",
   GENERIC_INSTRUMENT, // "Acoustic Guitar (steel)",
