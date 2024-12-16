@@ -271,7 +271,7 @@ const INSTRUMENTS = [
   },
   {
     name: "Tubular Bells",
-    wave: "sawtooth",
+    wave: "square",
     envelope: [0, 1, 0, 0.5],
   },
   GENERIC_INSTRUMENT, // "Dulcimer",
