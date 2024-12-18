@@ -179,10 +179,6 @@ const INSTRUMENT_NAMES = [
 const GENERIC_INSTRUMENT = ({
   name: "Generic tone instrument",
   wave: "sawtooth",
-  terms: [
-    [0, 0.5, 1, -0.5],
-    [0, 1, -1, 0.5],
-  ],
   envelope: [0.01, 0.5, 0.3, 0.25],
 });
 
@@ -271,50 +267,74 @@ const INSTRUMENTS = [
   },
   {
     name: "Tubular Bells",
-    wave: "square",
-    envelope: [0, 1, 0, 0.5],
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, -0.5, 1, 0, 1, 0, 1],
+    ],
+    envelope: [0, 0.75, 0, 0.5],
   },
   GENERIC_INSTRUMENT, // "Dulcimer",
   // Organ
   {
     name: "Drawbar Organ",
-    wave: "sawtooth",
-    envelope: [0.1, 0, 1, 0.2],
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0.5, 0.5],
+    ],
+    envelope: [0.05, 0, 1, 0.2],
   },
   {
     name: "Percussive Organ",
-    wave: "sawtooth",
-    envelope: [0.1, 0, 1, 0.2],
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0.5, 0.5],
+    ],
+    envelope: [0.05, 0, 1, 0.2],
   },
   {
     name: "Rock Organ",
     wave: "sawtooth",
-    envelope: [0.1, 0, 1, 0.2],
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0.5, 0.5],
+    ],
+    envelope: [0.05, 0, 1, 0.2],
   },
   {
     name: "Church Organ",
     wave: "sawtooth",
-    envelope: [0.1, 0, 1, 0.2],
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0.5, 0.5],
+    ],
+    envelope: [0.05, 0, 1, 0.2],
   },
   {
     name: "Reed Organ",
-    wave: "sawtooth",
-    envelope: [0.1, 0, 1, 0.2],
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0.5, 0.5],
+    ],
+    envelope: [0.05, 0, 1, 0.2],
   },
   {
     name: "Accordion",
     wave: "sawtooth",
-    envelope: [0.15, 0, 1, 0.2],
+    envelope: [0.1, 0, 1, 0.2],
   },
   {
     name: "Harmonica",
     wave: "sawtooth",
-    envelope: [0.15, 0, 1, 0.2],
+    envelope: [0.1, 0, 1, 0.2],
   },
   {
     name: "Tango Accordion",
     wave: "sawtooth",
-    envelope: [0.15, 0, 1, 0.2],
+    envelope: [0.1, 0, 1, 0.2],
   },
   // Guitar
   GENERIC_INSTRUMENT, // "Acoustic Guitar (nylon)",
@@ -368,24 +388,56 @@ const INSTRUMENTS = [
     envelope: [0, 0.5, 0, 0.1],
   },
   // Ensemble
-  GENERIC_STRING_INSTRUMENT, // "String Ensemble 1",
-  GENERIC_STRING_INSTRUMENT, // "String Ensemble 2",
-  GENERIC_STRING_INSTRUMENT, // "SynthStrings 1",
-  GENERIC_STRING_INSTRUMENT, // "SynthStrings 2",
+  {
+    name: "String Ensemble 1",
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.6, 0.3, 0.1],
+    ],
+    envelope: [0.02, 0, 1, 0.3],
+  },
+  {
+    name: "String Ensemble 2",
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.6, 0.3, 0.1],
+    ],
+    envelope: [0.02, 0, 1, 0.3],
+  },
+  {
+    name: "SynthStrings 1",
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.6, 0.3, 0.1],
+    ],
+    envelope: [0.02, 0, 1, 0.3],
+  },
+  {
+    name: "SynthStrings 2",
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 0.6, 0.3, 0.1],
+    ],
+    envelope: [0.02, 0, 1, 0.3],
+  },
   {
     name: "Choir Aahs",
     wave: "triangle",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   {
     name: "Voice Oohs",
     wave: "triangle",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   {
     name: "Synth Voice",
     wave: "triangle",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   {
     name: "Orchestra Hit",
@@ -409,7 +461,7 @@ const INSTRUMENTS = [
   GENERIC_STRING_INSTRUMENT, // "Oboe",
   GENERIC_STRING_INSTRUMENT, // "English Horn",
   GENERIC_STRING_INSTRUMENT, // "Bassoon",
-  GENERIC_STRING_INSTRUMENT, // "Clarinet",
+  GENERIC_PIPE_INSTRUMENT, // "Clarinet",
   // Pipe
   GENERIC_PIPE_INSTRUMENT, // "Piccolo",
   GENERIC_PIPE_INSTRUMENT, // "Flute",
@@ -436,7 +488,7 @@ const INSTRUMENTS = [
   {
     name: "Lead 6 (voice)",
     wave: "triangle",
-    envelope: [0.04, 0.6, 0.6, 0.2],
+    envelope: [0.04, 0.6, 0.6, 0.25],
   },
   GENERIC_INSTRUMENT, // "Lead 7 (fifths)",
   GENERIC_INSTRUMENT, // "Lead 8 (bass + lead)",
@@ -619,7 +671,7 @@ const SimpleSynthesizer = class {
           }
           if( timeoutIdToStop ) return;
           delete voice.isPressing;
-          const gainValueToStop = 0.001;
+          const gainValueToStop = 0.01;
           if( gain.value <= gainValueToStop ) { stop(); return; }
           const [, , , releaseTime] = instrument.envelope;
           if( !releaseTime ) { stop(); return; }
