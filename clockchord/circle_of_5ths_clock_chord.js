@@ -392,8 +392,8 @@ const INSTRUMENTS = [
     name: "String Ensemble 1",
     wave: "custom",
     terms: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 0.6, 0.3, 0.1],
+      [0, 0, 0, 0],
+      [0, 1, 0.6, 0.3],
     ],
     envelope: [0.02, 0, 1, 0.3],
   },
@@ -401,8 +401,8 @@ const INSTRUMENTS = [
     name: "String Ensemble 2",
     wave: "custom",
     terms: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 0.6, 0.3, 0.1],
+      [0, 0, 0, 0],
+      [0, 1, 0.6, 0.3],
     ],
     envelope: [0.02, 0, 1, 0.3],
   },
@@ -410,8 +410,8 @@ const INSTRUMENTS = [
     name: "SynthStrings 1",
     wave: "custom",
     terms: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 0.6, 0.3, 0.1],
+      [0, 0, 0, 0],
+      [0, 1, 0.6, 0.3],
     ],
     envelope: [0.02, 0, 1, 0.3],
   },
@@ -419,14 +419,18 @@ const INSTRUMENTS = [
     name: "SynthStrings 2",
     wave: "custom",
     terms: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 0.6, 0.3, 0.1],
+      [0, 0, 0, 0],
+      [0, 1, 0.6, 0.3],
     ],
     envelope: [0.02, 0, 1, 0.3],
   },
   {
     name: "Choir Aahs",
-    wave: "triangle",
+    wave: "custom",
+    terms: [
+      [0, 0, 0, 0],
+      [0, 1, 1, 0.5],
+    ],
     envelope: [0.04, 0.6, 0.6, 0.25],
   },
   {
