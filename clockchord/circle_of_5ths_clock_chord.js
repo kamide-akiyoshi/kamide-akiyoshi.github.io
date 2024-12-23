@@ -283,7 +283,7 @@ const INSTRUMENTS = [
       [0, 0, 0, 0, 0],
       [0, 1, 0.5, 0.5, 0.5],
     ],
-    envelope: [0.05, 0, 1, 0.2],
+    envelope: [0.03, 0, 1, 0.2],
   },
   {
     name: "Percussive Organ",
@@ -292,7 +292,7 @@ const INSTRUMENTS = [
       [0, 0, 0, 0, 0],
       [0, 1, 0.5, 0.5, 0.5],
     ],
-    envelope: [0.05, 0, 1, 0.2],
+    envelope: [0.03, 0, 1, 0.2],
   },
   {
     name: "Rock Organ",
@@ -301,16 +301,16 @@ const INSTRUMENTS = [
       [0, 0, 0, 0, 0],
       [0, 1, 0.5, 0.5, 0.5],
     ],
-    envelope: [0.05, 0, 1, 0.2],
+    envelope: [0.03, 0, 1, 0.2],
   },
   {
     name: "Church Organ",
-    wave: "sawtooth",
+    wave: "custom",
     terms: [
-      [0, 0, 0, 0, 0],
-      [0, 1, 0.5, 0.5, 0.5],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0.5, 0, 0.5, 0, 0.5, 0, 0.5],
     ],
-    envelope: [0.05, 0, 1, 0.2],
+    envelope: [0.03, 0, 1, 0.25],
   },
   {
     name: "Reed Organ",
