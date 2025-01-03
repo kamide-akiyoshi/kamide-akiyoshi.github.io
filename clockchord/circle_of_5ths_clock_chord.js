@@ -942,33 +942,60 @@ const PianoKeyboard = class {
         return waves;
       }, {});
       waves.custom = waves.noise = { icon: iconPathOf("wave") };
-      const termsSliders = this.termsSliders = ['Real', 'Imag'].map(
-        (group, isImag) => {
-          const baseSlider = document.querySelectorAll(`#periodicWave${group}Terms input`)?.[0];
-          if( !baseSlider ) return [];
-          const sliders = [baseSlider];
-          const groupElement = baseSlider.parentElement;
-          for( let i = 2; i <= 10; i++ ) {
-            const slider = baseSlider.cloneNode();
-            groupElement.appendChild(slider);
-            sliders.push(slider);
-          }
-          sliders.forEach((slider, sliderIndex) => {
-            const termIndex = sliderIndex + 1;
-            slider.addEventListener('change', (event) => {
-              const terms = this.model.terms ??= [[0, 0],[0, 0]];
-              const paddingLength = termIndex - terms[0].length;
-              if( paddingLength > 0 ) {
-                const padding = Array(paddingLength).fill(0);
-                terms.forEach((subTerms) => subTerms.push(...padding));
-              }
-              terms[isImag][termIndex] = parseFloat(event.target.value);
-              terms[1 - isImag][termIndex] ??= 0;
-            });
-          });
-          return sliders;
+      const termElementTree = this.termElementTree = [];
+      termElementTree.rootElement = document.getElementById('periodicWaveTerms');
+      const termSeedElement = termElementTree.rootElement.firstElementChild;
+      const appendTermButtonElement = termSeedElement.lastElementChild;
+      termElementTree.showValue = (termIndex) => {
+        const { model } = this;
+        if( !model ) return;
+        const [real, imag] = model.terms;
+        const realValue = (real[termIndex] ??= 0);
+        const imagValue = (imag[termIndex] ??= 0);
+        const realText = !realValue && imagValue ? "" : `${realValue}`;
+        const imagText = !imagValue ? "" : imagValue < 0 || !realValue ? `${imagValue}i` : `+${imagValue}i`;
+        const k = `${realText}${imagText}`;
+        const kParen = realText && imagText ? `(${k})` : k;
+        const formula = termElementTree[termIndex - 1][2];
+        formula.firstChild.nodeValue = `${kParen}e`; // Text node
+        formula.firstElementChild.textContent = `${termIndex === 1 ? "" : termIndex}i`; // <sup> element
+      };
+      const addTermElement = (termElement, termIndex) => {
+        const children = termElement.querySelectorAll('input,span.periodicWaveFormula');
+        termElementTree.push(children);
+        termElementTree.showValue(termIndex);
+        children.forEach((child, imag) => {
+          const tagName = child.tagName.toLowerCase();
+          tagName === "input" && child.addEventListener('input',
+            (event) => {
+              this.model.terms[imag][termIndex] = parseFloat(event.target.value);
+              termElementTree.showValue(termIndex);
+            }
+          );
+        });
+      };
+      addTermElement(termSeedElement, 1);
+      termElementTree.appendTerm = () => {
+        const { rootElement } = termElementTree;
+        let termElement = termElementTree[rootElement.childElementCount]?.[0].parentNode;
+        if( !termElement ) {
+          termSeedElement.contains(appendTermButtonElement) && termSeedElement.removeChild(appendTermButtonElement);
+          termElement = termSeedElement.cloneNode(true);
+          termElement.querySelectorAll('input').forEach((slider) => { slider.value = 0; });
+          addTermElement(termElement, termElementTree.length + 1);
         }
-      );
+        termElement.appendChild(appendTermButtonElement);
+        rootElement.appendChild(termElement);
+      };
+      termElementTree.removeLastVisibleTerms = (length) => {
+        const { rootElement } = termElementTree;
+        const limitedLength = Math.min(length, rootElement.childElementCount - 1);
+        for( let i = limitedLength; i > 0; i-- ) {
+          rootElement.removeChild(rootElement.lastElementChild);
+        }
+        rootElement.lastElementChild.appendChild(appendTermButtonElement);
+      };
+      appendTermButtonElement.addEventListener('click', (event) => { termElementTree.appendTerm(); });
       const waveSelector = document.getElementById('waveselect');
       if( waveSelector ) {
         this.waveSelector = waveSelector;
@@ -978,12 +1005,15 @@ const PianoKeyboard = class {
           waveSelector.appendChild(option);
         });
         const img = document.getElementById('waveIcon');
-        const cl = termsSliders[0][0].parentElement.parentElement.classList;
-        const showNewWave = this.showNewWave = (wave) => {
-          wave === 'custom' ? cl.remove("hidden") : cl.add("hidden");
-          img && (img.src = waves[wave ?? "custom"].icon);
-        };
-        waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
+        const terms = document.getElementById('periodicWaveTerms');
+        if( terms ) {
+          const cl = terms.classList;
+          const showNewWave = this.showNewWave = (wave) => {
+            wave === 'custom' ? cl.remove("hidden") : cl.add("hidden");
+            img && (img.src = waves[wave ?? "custom"].icon);
+          };
+          waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
+        }
       }
       const envelopeViewers = this.envelopeViewers = [];
       const asSecond = (num) => `${num}s`;
@@ -1013,7 +1043,7 @@ const PianoKeyboard = class {
         envelopeViewers,
         waveSelector,
         waves,
-        termsSliders,
+        termElementTree,
         showNewWave
       } = this;
       const { name, wave, envelope } = m;
@@ -1028,10 +1058,20 @@ const PianoKeyboard = class {
         slider.value = numericValue;
         text.value = numericValue;
       });
-      termsSliders.forEach((group, isImag) => {
-        group.forEach((slider, sliderIndex) => {
-          slider.value = m.terms?.[isImag][sliderIndex + 1] ?? 0;
-        });
+      const terms = (m.terms ??= [[0, 0], [0, 0]]);
+      const realTerms = terms[0];
+      const diff = realTerms.length - (termElementTree.rootElement.childElementCount + 1);
+      if( diff > 0 ) {
+        for( let i = diff; i > 0; i-- ) termElementTree.appendTerm();
+      } else if( diff < 0 ) {
+        termElementTree.removeLastVisibleTerms(-diff);
+      }
+      realTerms?.forEach((realTerm, index) => {
+        if( !index ) return;
+        const sliderPair = termElementTree[index - 1];
+        sliderPair[0].value = realTerm;
+        sliderPair[1].value = terms[1][index];
+        termElementTree.showValue(index);
       });
     },
   };

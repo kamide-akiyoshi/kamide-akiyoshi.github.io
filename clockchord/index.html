@@ -207,16 +207,18 @@
 	  display: flex;
 	  flex-direction: column;
 	}
+	#wave {
+    margin-top: 8px;
+  }
 	#periodicWaveTerms {
 		display: flex;
+		flex-direction: column;
 	}
 	#periodicWaveTerms.hidden {
 		display: none;
 	}
-	.periodicWaveTermSliders {
+	#periodicWaveTerms > div {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
 	}
 	#midi {
 		display: flex;
@@ -395,29 +397,27 @@
       </label>
       <div id="instrument_name"></div>
     </div>
-    <div id="wave" style="margin-top: 8px; display: flex;">
+    <div id="wave">
       <label for="waveselect" title="wave">
         <img id="waveIcon" alt="wave" height="32" align="center"/>
         <select id="waveselect" style="height: 32px;">
         </select>
       </label>
       <div id="periodicWaveTerms">
-        <div id="periodicWaveRealTerms" class="periodicWaveTermSliders">
-          <div>cos (real)</div>
+        <div>
           <input type="range" value="0" min="-1" max="1" step="0.01" list="terms_datalist"/>
-        </div>
-        <div id="periodicWaveImagTerms" class="periodicWaveTermSliders">
-          <div>sin (imag)</div>
           <input type="range" value="0" min="-1" max="1" step="0.01" list="terms_datalist"/>
+          <span class="periodicWaveFormula">0<sup></sup></span>
+          <button style="margin-left: 8px;">+</button>
         </div>
-        <datalist id="terms_datalist">
-          <option value="-1"></option>
-          <option value="-0.5"></option>
-          <option value="0"></option>
-          <option value="0.5"></option>
-          <option value="1"></option>
-        </datalist>
       </div>
+      <datalist id="terms_datalist">
+        <option value="-1"></option>
+        <option value="-0.5"></option>
+        <option value="0"></option>
+        <option value="0.5"></option>
+        <option value="1"></option>
+      </datalist>
     </div>
     <div id="envelope">
       <img id="envelopeIcon" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
