@@ -954,8 +954,8 @@ const PianoKeyboard = class {
         const realValue = (real[termIndex] ??= 0);
         const imagValue = (imag[termIndex] ??= 0);
         const realText = !realValue && imagValue ? "" : `${realValue}`;
-        const imagText = !imagValue ? "" : imagValue < 0 || !realValue ? `${imagValue}i` : `+${imagValue}i`;
-        const k = `${realText}${imagText}`;
+        const imagText = !imagValue ? "" : imagValue === 1 ? "i" : imagValue === -1 ? "-i" : `${imagValue}i`;
+        const k = `${realText}${realValue && imagValue > 0 ? "+" : ""}${imagText}`;
         const kParen = realText && imagText ? `(${k})` : k;
         const formula = termElementTree[termIndex - 1][2];
         formula.firstChild.nodeValue = `${kParen}e`; // Text node
