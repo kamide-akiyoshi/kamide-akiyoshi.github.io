@@ -947,6 +947,7 @@ const PianoKeyboard = class {
       const termsElement = document.getElementById('periodicWaveTerms');
       const termSeedElement = termsElement.querySelector('.periodicWaveTerm');
       termElementTree.appendButton = termSeedElement.lastElementChild;
+      const getVisibleTermCount = () => termsElement.querySelectorAll('.periodicWaveTerm').length;
       const showTermValueAt = (termIndex) => {
         const { model } = this;
         if( !model ) return;
@@ -977,7 +978,7 @@ const PianoKeyboard = class {
       showTermValueAt(1);
       const appendTerm = () => {
         const { appendButton } = termElementTree;
-        let termElement = termElementTree[termsElement.querySelectorAll('.periodicWaveTerm').length]?.[0].parentNode;
+        let termElement = termElementTree[getVisibleTermCount()]?.[0].parentNode;
         if( !termElement ) {
           termSeedElement.contains(appendButton) && termSeedElement.removeChild(appendButton);
           termElement = termSeedElement.cloneNode(true);
@@ -986,11 +987,11 @@ const PianoKeyboard = class {
         termElement.querySelectorAll('input').forEach((slider) => { slider.value = 0; });
         termElement.appendChild(appendButton);
         termsElement.appendChild(termElement);
-        showTermValueAt(termsElement.querySelectorAll('.periodicWaveTerm').length);
+        showTermValueAt(getVisibleTermCount());
       };
       termElementTree.appendButton.addEventListener('click', (event) => { appendTerm(); });
       const removeTerms = (length) => {
-        const limitedLength = Math.min(length, termsElement.querySelectorAll('.periodicWaveTerm').length - 1);
+        const limitedLength = Math.min(length, getVisibleTermCount() - 1);
         for( let i = limitedLength; i > 0; i-- ) {
           termsElement.removeChild(termsElement.lastElementChild);
         }
@@ -998,7 +999,7 @@ const PianoKeyboard = class {
       };
       termElementTree.setModel = (terms) => {
         const [realTerms, imagTerms] = terms;
-        const diff = realTerms.length - (termsElement.querySelectorAll('.periodicWaveTerm').length + 1);
+        const diff = realTerms.length - (getVisibleTermCount() + 1);
         if( diff > 0 ) {
           for( let i = diff; i > 0; i-- ) appendTerm();
         } else if( diff < 0 ) {
