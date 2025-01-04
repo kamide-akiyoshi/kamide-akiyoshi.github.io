@@ -936,15 +936,16 @@ const PianoKeyboard = class {
         programSelector.addEventListener("change", manualProgramChangeListener);
       }
       this.instrumentName = document.getElementById('instrument_name');
-      const iconPathOf = (key) => `image/${key}.svg`;
+      const waveElement = document.getElementById('wave');
+      const waveIconPathOf = (key) => `image/${key}.svg`;
       const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
-        waves[key] = { icon: iconPathOf(key) };
+        waves[key] = { icon: waveIconPathOf(key) };
         return waves;
       }, {});
-      waves.custom = waves.noise = { icon: iconPathOf("wave") };
+      waves.custom = waves.noise = { icon: waveIconPathOf("wave") };
       const termElementTree = this.termElementTree = [];
       termElementTree.rootElement = document.getElementById('periodicWaveTerms');
-      const termSeedElement = termElementTree.rootElement.firstElementChild;
+      const termSeedElement = termElementTree.rootElement.querySelector('.periodicWaveTerm');
       const appendTermButtonElement = termSeedElement.lastElementChild;
       termElementTree.showValue = (termIndex) => {
         const { model } = this;
@@ -977,7 +978,8 @@ const PianoKeyboard = class {
       addTermElement(termSeedElement, 1);
       termElementTree.appendTerm = () => {
         const { rootElement } = termElementTree;
-        let termElement = termElementTree[rootElement.childElementCount]?.[0].parentNode;
+        const termElementCount = rootElement.querySelectorAll('.periodicWaveTerm').length;
+        let termElement = termElementTree[termElementCount]?.[0].parentNode;
         if( !termElement ) {
           termSeedElement.contains(appendTermButtonElement) && termSeedElement.removeChild(appendTermButtonElement);
           termElement = termSeedElement.cloneNode(true);
@@ -989,32 +991,31 @@ const PianoKeyboard = class {
       };
       termElementTree.removeLastVisibleTerms = (length) => {
         const { rootElement } = termElementTree;
-        const limitedLength = Math.min(length, rootElement.childElementCount - 1);
+        const termElementCount = rootElement.querySelectorAll('.periodicWaveTerm').length;
+        const limitedLength = Math.min(length, termElementCount - 1);
         for( let i = limitedLength; i > 0; i-- ) {
           rootElement.removeChild(rootElement.lastElementChild);
         }
         rootElement.lastElementChild.appendChild(appendTermButtonElement);
       };
       appendTermButtonElement.addEventListener('click', (event) => { termElementTree.appendTerm(); });
-      const waveSelector = document.getElementById('waveselect');
-      if( waveSelector ) {
-        this.waveSelector = waveSelector;
-        Object.keys(waves).forEach(key => {
-          const option = document.createElement("option");
-          option.appendChild(document.createTextNode(key));
-          waveSelector.appendChild(option);
-        });
-        const img = document.getElementById('waveIcon');
-        const terms = document.getElementById('periodicWaveTerms');
-        if( terms ) {
-          const cl = terms.classList;
-          const showNewWave = this.showNewWave = (wave) => {
-            wave === 'custom' ? cl.remove("hidden") : cl.add("hidden");
-            img && (img.src = waves[wave ?? "custom"].icon);
-          };
-          waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
+      const waveSelector = this.waveSelector = document.getElementById('waveselect');
+      Object.keys(waves).forEach(key => {
+        const option = document.createElement("option");
+        option.appendChild(document.createTextNode(key));
+        waveSelector.appendChild(option);
+      });
+      const img = document.getElementById('waveIcon');
+      const showNewWave = this.showNewWave = (wave) => {
+        const termsElement = termElementTree.rootElement;
+        if( wave === 'custom' ) {
+          waveElement.appendChild(termsElement);
+        } else {
+          waveElement.contains(termsElement) && waveElement.removeChild(termsElement);
         }
-      }
+        img && (img.src = waves[wave ?? "custom"].icon);
+      };
+      waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
       const envelopeViewers = this.envelopeViewers = [];
       const asSecond = (num) => `${num}s`;
       const asPercent = (num) => `${Math.round(num * 100)}%`;
@@ -1060,7 +1061,8 @@ const PianoKeyboard = class {
       });
       const terms = (m.terms ??= [[0, 0], [0, 0]]);
       const realTerms = terms[0];
-      const diff = realTerms.length - (termElementTree.rootElement.childElementCount + 1);
+      const visibleTerms = termElementTree.rootElement.querySelectorAll('.periodicWaveTerm');
+      const diff = realTerms.length - (visibleTerms.length + 1);
       if( diff > 0 ) {
         for( let i = diff; i > 0; i-- ) termElementTree.appendTerm();
       } else if( diff < 0 ) {
