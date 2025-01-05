@@ -945,9 +945,8 @@ const PianoKeyboard = class {
       waves.custom = waves.noise = { icon: waveIconPathOf("wave") };
       const termElementTree = this.termElementTree = [];
       const termsElement = document.getElementById('periodicWaveTerms');
-      const termSeedElement = termsElement.querySelector('.periodicWaveTerm');
-      termElementTree.appendButton = termSeedElement.lastElementChild;
-      const getVisibleTermCount = () => termsElement.querySelectorAll('.periodicWaveTerm').length;
+      const firstTermElement = termsElement.querySelector('.periodicWaveTerm');
+      termElementTree.appendButton = firstTermElement.lastElementChild;
       const showTermValueAt = (termIndex) => {
         const { model } = this;
         if( !model ) return;
@@ -974,24 +973,32 @@ const PianoKeyboard = class {
           );
         });
       };
-      termElementTree.pushChildrenOf(termSeedElement);
+      termElementTree.pushChildrenOf(firstTermElement);
       showTermValueAt(1);
-      const appendTerm = () => {
+      const appendTerms = (length) => {
         const { appendButton } = termElementTree;
-        let termElement = termElementTree[getVisibleTermCount()]?.[0].parentNode;
-        if( !termElement ) {
-          termSeedElement.contains(appendButton) && termSeedElement.removeChild(appendButton);
-          termElement = termSeedElement.cloneNode(true);
-          termElementTree.pushChildrenOf(termElement);
+        let termElement;
+        for( let i = length; i > 0; i-- ) {
+          const newTermIndex = termsElement.childElementCount; // === <datalist> + (visible term elements)
+          // Check whether the appending element already exists in local tree
+          termElement = termElementTree[newTermIndex - 1]?.[0].parentNode;
+          if( !termElement ) {
+            // Not exists - cloning required
+            if( firstTermElement.contains(appendButton) ) {
+              // Detach to avoid cloning the [+] button
+              firstTermElement.removeChild(appendButton);
+            }
+            termElementTree.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
+          }
+          termElement.querySelectorAll('input').forEach((slider) => { slider.value = 0; });
+          showTermValueAt(newTermIndex);
+          termsElement.appendChild(termElement);
         }
-        termElement.querySelectorAll('input').forEach((slider) => { slider.value = 0; });
-        termElement.appendChild(appendButton);
-        termsElement.appendChild(termElement);
-        showTermValueAt(getVisibleTermCount());
+        termElement?.appendChild(appendButton);
       };
-      termElementTree.appendButton.addEventListener('click', (event) => { appendTerm(); });
+      termElementTree.appendButton.addEventListener('click', (event) => { appendTerms(1); });
       const removeTerms = (length) => {
-        const limitedLength = Math.min(length, getVisibleTermCount() - 1);
+        const limitedLength = Math.min(length, termsElement.childElementCount - 2);
         for( let i = limitedLength; i > 0; i-- ) {
           termsElement.removeChild(termsElement.lastElementChild);
         }
@@ -999,12 +1006,8 @@ const PianoKeyboard = class {
       };
       termElementTree.setModel = (terms) => {
         const [realTerms, imagTerms] = terms;
-        const diff = realTerms.length - (getVisibleTermCount() + 1);
-        if( diff > 0 ) {
-          for( let i = diff; i > 0; i-- ) appendTerm();
-        } else if( diff < 0 ) {
-          removeTerms(-diff);
-        }
+        const diff = realTerms.length - termsElement.childElementCount;
+        diff > 0 ? appendTerms(diff) : diff < 0 ? removeTerms(-diff) : undefined;
         realTerms?.forEach((realTerm, index) => {
           if( !index ) return;
           const sliderPair = termElementTree[index - 1];
