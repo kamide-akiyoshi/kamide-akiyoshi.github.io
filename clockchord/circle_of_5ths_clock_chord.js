@@ -938,14 +938,6 @@ const PianoKeyboard = class {
       }
       // Instrument Name
       this.instrumentName = document.getElementById('instrument_name');
-      // Wave
-      const waveElement = document.getElementById('wave');
-      const waveIconPathOf = (key) => `image/${key}.svg`;
-      const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
-        waves[key] = { icon: waveIconPathOf(key) };
-        return waves;
-      }, {});
-      waves.custom = waves.noise = { icon: waveIconPathOf("wave") };
       // Terms of custom periodic wave
       const termElementTree = this.termElementTree = [];
       const termsElement = document.getElementById('periodicWaveTerms');
@@ -1015,6 +1007,14 @@ const PianoKeyboard = class {
           showTermValueAt(index);
         });
       };
+      // Wave
+      const waveElement = document.getElementById('wave');
+      const waveIconPathOf = (key) => `image/${key}.svg`;
+      const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
+        waves[key] = { icon: waveIconPathOf(key) };
+        return waves;
+      }, {});
+      waves.custom = waves.noise = { icon: waveIconPathOf("wave") };
       const waveSelector = this.waveSelector = document.getElementById('waveselect');
       Object.keys(waves).forEach(key => {
         const option = document.createElement("option");
