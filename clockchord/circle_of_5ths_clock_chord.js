@@ -924,6 +924,7 @@ const PianoKeyboard = class {
   };
   instrumentView = {
     setup(manualProgramChangeListener) {
+      // Program
       const programSelector = document.getElementById('program_select');
       if( programSelector ) {
         this.programSelector = programSelector;
@@ -935,7 +936,9 @@ const PianoKeyboard = class {
         });
         programSelector.addEventListener("change", manualProgramChangeListener);
       }
+      // Instrument Name
       this.instrumentName = document.getElementById('instrument_name');
+      // Wave
       const waveElement = document.getElementById('wave');
       const waveIconPathOf = (key) => `image/${key}.svg`;
       const waves = this.waves = ["sawtooth", "square", "triangle", "sine"].reduce((waves, key) => {
@@ -943,6 +946,7 @@ const PianoKeyboard = class {
         return waves;
       }, {});
       waves.custom = waves.noise = { icon: waveIconPathOf("wave") };
+      // Terms of custom periodic wave
       const termElementTree = this.termElementTree = [];
       const termsElement = document.getElementById('periodicWaveTerms');
       const firstTermElement = termsElement.querySelector('.periodicWaveTerm');
@@ -950,12 +954,10 @@ const PianoKeyboard = class {
       const showTermValueAt = (termIndex) => {
         const { model } = this;
         if( !model ) return;
-        const [real, imag] = model.terms;
-        const realValue = (real[termIndex] ??= 0);
-        const imagValue = (imag[termIndex] ??= 0);
+        const [realValue, imagValue] = model.terms.map((a) => a[termIndex] ??= 0);
         const realText = !realValue && imagValue ? "" : `${realValue}`;
         const imagText = !imagValue ? "" : imagValue === 1 ? "i" : imagValue === -1 ? "-i" : `${imagValue}i`;
-        const k = `${realText}${realValue && imagValue > 0 ? "+" : ""}${imagText}`;
+        const k = `${realText}${realText && imagValue > 0 ? "+" : ""}${imagText}`;
         const kParen = realText && imagText ? `(${k})` : k;
         const formulaElement = termElementTree[termIndex - 1][2];
         formulaElement.firstChild.nodeValue = `${kParen}e`; // Text node
@@ -965,12 +967,12 @@ const PianoKeyboard = class {
         const children = termElement.querySelectorAll('input,span.periodicWaveFormula');
         const termIndex = termElementTree.push(children);
         children.forEach((child, imag) => {
-          child.tagName.toLowerCase() === "input" && child.addEventListener('input',
-            (event) => {
+          if( child.tagName.toLowerCase() === "input" ) {
+            child.addEventListener('input', (event) => {
               this.model.terms[imag][termIndex] = parseFloat(event.target.value);
               showTermValueAt(termIndex);
-            }
-          );
+            });
+          }
         });
       };
       termElementTree.pushChildrenOf(firstTermElement);
@@ -980,12 +982,9 @@ const PianoKeyboard = class {
         let termElement;
         for( let i = length; i > 0; i-- ) {
           const newTermIndex = termsElement.childElementCount; // === <datalist> + (visible term elements)
-          // Check whether the appending element already exists in local tree
           termElement = termElementTree[newTermIndex - 1]?.[0].parentNode;
           if( !termElement ) {
-            // Not exists - cloning required
             if( firstTermElement.contains(appendButton) ) {
-              // Detach to avoid cloning the [+] button
               firstTermElement.removeChild(appendButton);
             }
             termElementTree.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
@@ -1032,6 +1031,7 @@ const PianoKeyboard = class {
         img && (img.src = waves[wave ?? "custom"].icon);
       };
       waveSelector.addEventListener('change', (event) => showNewWave(this.model.wave = event.target.value));
+      // Envelope
       const envelopeViewers = this.envelopeViewers = [];
       const asSecond = (num) => `${num}s`;
       const asPercent = (num) => `${Math.round(num * 100)}%`;
