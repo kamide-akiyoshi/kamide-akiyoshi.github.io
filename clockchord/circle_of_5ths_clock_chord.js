@@ -1038,13 +1038,17 @@ const PianoKeyboard = class {
       document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
         const [textElement, slider] = param.querySelectorAll(".envelope_value,input");
         const asText = slider.id.includes("sustain") ? asPercent : asSecond;
-        const text = {
-          set value(n) { textElement.textContent = asText(n); }
-        };
         slider.addEventListener('input', event => {
-          text.value = this.model.envelope[index] = parseFloat(event.target.value);
+          textElement.textContent = asText(
+            this.model.envelope[index] = parseFloat(event.target.value)
+          );
         });
-        envelopeViewers.push({ text, slider });
+        envelopeViewers.push({
+          set value(n) {
+            textElement.textContent = asText(n);
+            slider.value = n;
+          }
+        });
       });
     },
     set programNumber(pn) {
@@ -1070,10 +1074,8 @@ const PianoKeyboard = class {
       }
       showNewWave(waveSelector.value = wave);
       termElementTree.setModel(m.terms ??= [[0, 0], [0, 0]]);
-      envelopeViewers.forEach(({ text, slider }, index) => {
-        const numericValue = envelope[index];
-        slider.value = numericValue;
-        text.value = numericValue;
+      envelopeViewers.forEach((viewer, index) => {
+        viewer.value = envelope[index];
       });
     },
   };
