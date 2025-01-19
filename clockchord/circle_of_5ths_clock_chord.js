@@ -1035,7 +1035,7 @@ const PianoKeyboard = class {
         },
       };
       // Envelope
-      const envelopeViewers = this.envelopeViewers = [];
+      const envelopeViews = [];
       const asSecond = (num) => `${num}s`;
       const asPercent = (num) => `${Math.round(num * 100)}%`;
       document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
@@ -1046,17 +1046,19 @@ const PianoKeyboard = class {
             this.model.envelope[index] = parseFloat(event.target.value)
           );
         });
-        envelopeViewers.push({
+        envelopeViews.push({
           set value(n) {
             textElement.textContent = asText(n);
             slider.value = n;
           }
         });
       });
-      envelopeViewers.setModel = (model) => {
-        envelopeViewers.forEach((viewer, index) => {
-          viewer.value = model[index];
-        })
+      this.envelopeView = {
+        set model(m) {
+          envelopeViews.forEach((viewer, index) => {
+            viewer.value = m[index];
+          })
+        },
       };
     },
     set programNumber(pn) {
@@ -1070,7 +1072,7 @@ const PianoKeyboard = class {
         programSelector,
         instrumentName,
         waveformView,
-        envelopeViewers,
+        envelopeView,
       } = this;
       const { name } = m;
       if( instrumentName ) {
@@ -1079,7 +1081,7 @@ const PianoKeyboard = class {
       }
       waveformView.type = m.wave;
       waveformView.terms = m.terms ??= [[0, 0], [0, 0]];
-      envelopeViewers.setModel(m.envelope);
+      envelopeView.model = m.envelope;
     },
   };
   createMidiChannelSelector = () => {
