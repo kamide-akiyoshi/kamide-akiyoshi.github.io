@@ -926,8 +926,18 @@ const PianoKeyboard = class {
     setup(manualProgramChangeListener) {
       // Program
       const programSelector = document.getElementById('program_select');
+      const instrumentNameElement = document.getElementById('instrument_name');
+      this.programView = {
+        set programNumber(pn) {
+          programSelector && (programSelector.value = pn);
+        },
+        set instrumentName(name) {
+          if( instrumentNameElement ) {
+            instrumentNameElement.innerHTML = name === INSTRUMENT_NAMES[programSelector?.value] ? "" : `(${name})`;
+          }
+        },
+      };
       if( programSelector ) {
-        this.programSelector = programSelector;
         INSTRUMENT_NAMES.forEach((name, index) => {
           const option = document.createElement("option");
           option.value = index;
@@ -936,8 +946,6 @@ const PianoKeyboard = class {
         });
         programSelector.addEventListener("change", manualProgramChangeListener);
       }
-      // Instrument Name
-      this.instrumentName = document.getElementById('instrument_name');
       // Wave
       const waveIconPathOf = (key) => `image/${key}.svg`;
       const waveIconImg = document.getElementById('waveIcon');
@@ -1062,23 +1070,17 @@ const PianoKeyboard = class {
       };
     },
     set programNumber(pn) {
-      const { programSelector } = this;
-      programSelector && (programSelector.value = pn);
+      this.programView.programNumber = pn;
     },
     get model() { return this._model; },
     set model(m) {
       this._model = m;
       const {
-        programSelector,
-        instrumentName,
+        programView,
         waveformView,
         envelopeView,
       } = this;
-      const { name } = m;
-      if( instrumentName ) {
-        const programName = INSTRUMENT_NAMES[programSelector.value];
-        instrumentName.innerHTML = programName === name ? "" : `(${name})`;
-      }
+      programView.instrumentName = m.name;
       waveformView.type = m.wave;
       waveformView.terms = m.terms ??= [[0, 0], [0, 0]];
       envelopeView.model = m.envelope;
