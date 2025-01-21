@@ -2751,17 +2751,6 @@ const CircleOfFifthsClock = class {
         console.error(`${canvasId}: No such element ID`);
         return;
       }
-      const titleElement = document.getElementById('title');
-      if( titleElement ) {
-        const pcTitle = titleElement.innerText;
-        const mobileTitle = pcTitle.split(" ")[1];
-        const titleMediaQuery = window.matchMedia('(max-width: 450px)');
-        const updateTitle = () => {
-          titleElement.innerText = titleMediaQuery.matches ? mobileTitle : pcTitle;
-        }
-        updateTitle();
-        titleMediaQuery.addEventListener('change', updateTitle);
-      }
       const { hands, dial } = this;
       const { width, height } = hands.canvas = canvas;
       hands.center = dial.center = {
