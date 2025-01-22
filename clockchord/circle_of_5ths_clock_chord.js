@@ -972,8 +972,18 @@ const PianoKeyboard = class {
         waveSelector.appendChild(option);
       });
       const firstTermElement = termsElement.querySelector('.periodicWaveTerm');
-      const appendTermButton = firstTermElement.lastElementChild;
-      appendTermButton.addEventListener('click', (event) => { appendTerms(1); });
+      const [appendTermButton, removeTermButton] = firstTermElement.querySelectorAll('button');
+      appendTermButton.addEventListener('click', (event) => {
+        appendTerms(1);
+      });
+      removeTermButton.addEventListener('click', (event) => {
+        const removedLength = removeTerms(1);
+        if( removedLength ) {
+          this.model.terms.forEach((array) => {
+            array.splice(-removedLength);
+          });
+        }
+      });
       const termsView = [];
       termsView.pushChildrenOf = (termElement) => {
         const children = termElement.querySelectorAll('input,span.periodicWaveFormula');
@@ -1009,6 +1019,7 @@ const PianoKeyboard = class {
           if( !termElement ) {
             if( firstTermElement.contains(appendTermButton) ) {
               firstTermElement.removeChild(appendTermButton);
+              firstTermElement.removeChild(removeTermButton);
             }
             termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
           }
@@ -1016,14 +1027,22 @@ const PianoKeyboard = class {
           showTermValueAt(newTermIndex);
           termsElement.appendChild(termElement);
         }
-        termElement?.appendChild(appendTermButton);
+        [appendTermButton, removeTermButton].forEach((button) => {
+          termElement.appendChild(button);
+        });
       };
       const removeTerms = (length) => {
         const limitedLength = Math.min(length, termsElement.childElementCount - 2);
-        for( let i = limitedLength; i > 0; i-- ) {
-          termsElement.removeChild(termsElement.lastElementChild);
+        if( limitedLength ) {
+          for( let i = limitedLength; i > 0; i-- ) {
+            const termElement = termsElement.lastElementChild;
+            termsElement.removeChild(termElement);
+          }
+          [appendTermButton, removeTermButton].forEach((button) => {
+            termsElement.lastElementChild.appendChild(button);
+          });
         }
-        termsElement.lastElementChild.appendChild(appendTermButton);
+        return limitedLength;
       };
       const waveformView = this.waveformView = {
         set type(value) {
