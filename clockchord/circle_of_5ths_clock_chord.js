@@ -991,16 +991,20 @@ const PianoKeyboard = class {
         children.forEach((child, imag) => {
           if( child.tagName.toLowerCase() === "input" ) {
             child.addEventListener('input', (event) => {
-              this.model.terms[imag][termIndex] = parseFloat(event.target.value);
-              showTermValueAt(termIndex);
+              const terms = this.model.terms;
+              terms[imag][termIndex] = parseFloat(event.target.value);
+              showFormula(...terms.map((a) => a[termIndex]), termIndex);
             });
           }
         });
       };
-      const showTermValueAt = (termIndex) => {
-        const { model } = this;
-        if( !model ) return;
-        const [realValue, imagValue] = model.terms.map((a) => a[termIndex] ??= 0);
+      const setTermValuePairToSliders = (realValue, imagValue, termIndex) => {
+        const pair = [realValue, imagValue];
+        termsView[termIndex - 1].forEach((slider, imag) => {
+          slider.value = pair[imag];
+        });
+      };
+      const showFormula = (realValue, imagValue, termIndex) => {
         const realText = !realValue && imagValue ? "" : `${realValue}`;
         const imagText = !imagValue ? "" : imagValue === 1 ? "i" : imagValue === -1 ? "-i" : `${imagValue}i`;
         const k = `${realText}${realText && imagValue > 0 ? "+" : ""}${imagText}`;
@@ -1010,7 +1014,8 @@ const PianoKeyboard = class {
         formulaElement.firstElementChild.textContent = `${termIndex === 1 ? "" : termIndex}i`; // <sup> element
       };
       termsView.pushChildrenOf(firstTermElement);
-      showTermValueAt(1);
+      setTermValuePairToSliders(0, 0, 1);
+      showFormula(0, 0, 1);
       const appendTerms = (length) => {
         let termElement;
         for( let i = length; i > 0; i-- ) {
@@ -1023,8 +1028,9 @@ const PianoKeyboard = class {
             }
             termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
           }
-          termElement.querySelectorAll('input').forEach((slider) => { slider.value = 0; });
-          showTermValueAt(newTermIndex);
+          const pair = this.model.terms.map((a) => a[newTermIndex] ??= 0);
+          setTermValuePairToSliders(...pair, newTermIndex);
+          showFormula(...pair, newTermIndex);
           termsElement.appendChild(termElement);
         }
         [appendTermButton, removeTermButton].forEach((button) => {
@@ -1054,10 +1060,9 @@ const PianoKeyboard = class {
           diff > 0 ? appendTerms(diff) : diff < 0 ? removeTerms(-diff) : undefined;
           realTerms?.forEach((realTerm, index) => {
             if( !index ) return;
-            const sliderPair = termsView[index - 1];
-            sliderPair[0].value = realTerm;
-            sliderPair[1].value = imagTerms[index];
-            showTermValueAt(index);
+            const pair = [realTerm, imagTerms[index]];
+            setTermValuePairToSliders(...pair, index);
+            showFormula(...pair, index);
           });
         },
       };
