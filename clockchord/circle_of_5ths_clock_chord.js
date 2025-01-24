@@ -972,11 +972,11 @@ const PianoKeyboard = class {
         waveSelector.appendChild(option);
       });
       const firstTermElement = termsElement.querySelector('.periodicWaveTerm');
-      const [appendTermButton, removeTermButton] = firstTermElement.querySelectorAll('button');
-      appendTermButton.addEventListener('click', (event) => {
+      const lastTermButtons = firstTermElement.querySelectorAll('button');
+      lastTermButtons[0].addEventListener('click', (event) => {
         appendTerms(1);
       });
-      removeTermButton.addEventListener('click', (event) => {
+      lastTermButtons[1].addEventListener('click', (event) => {
         const removedLength = removeTerms(1);
         if( removedLength ) {
           this.model.terms.forEach((array) => {
@@ -998,11 +998,12 @@ const PianoKeyboard = class {
           }
         });
       };
-      const setTermValuePairToSliders = (realValue, imagValue, termIndex) => {
+      const setTermSliderValue = (realValue, imagValue, termIndex) => {
         const pair = [realValue, imagValue];
         termsView[termIndex - 1].forEach((slider, imag) => {
           slider.value = pair[imag];
         });
+        showFormula(realValue, imagValue, termIndex);
       };
       const showFormula = (realValue, imagValue, termIndex) => {
         const realText = !realValue && imagValue ? "" : `${realValue}`;
@@ -1014,26 +1015,24 @@ const PianoKeyboard = class {
         formulaElement.firstElementChild.textContent = `${termIndex === 1 ? "" : termIndex}i`; // <sup> element
       };
       termsView.pushChildrenOf(firstTermElement);
-      setTermValuePairToSliders(0, 0, 1);
-      showFormula(0, 0, 1);
+      setTermSliderValue(0, 0, 1);
       const appendTerms = (length) => {
         let termElement;
         for( let i = length; i > 0; i-- ) {
           const newTermIndex = termsElement.childElementCount; // === <datalist> + (visible term elements)
           termElement = termsView[newTermIndex - 1]?.[0].parentNode;
           if( !termElement ) {
-            if( firstTermElement.contains(appendTermButton) ) {
-              firstTermElement.removeChild(appendTermButton);
-              firstTermElement.removeChild(removeTermButton);
+            if( firstTermElement.contains(lastTermButtons[0]) ) {
+              lastTermButtons.forEach((button) => {
+                firstTermElement.removeChild(button);
+              });
             }
             termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
           }
-          const pair = this.model.terms.map((a) => a[newTermIndex] ??= 0);
-          setTermValuePairToSliders(...pair, newTermIndex);
-          showFormula(...pair, newTermIndex);
+          setTermSliderValue(...this.model.terms.map((a) => a[newTermIndex] ??= 0), newTermIndex);
           termsElement.appendChild(termElement);
         }
-        [appendTermButton, removeTermButton].forEach((button) => {
+        lastTermButtons.forEach((button) => {
           termElement.appendChild(button);
         });
       };
@@ -1041,10 +1040,9 @@ const PianoKeyboard = class {
         const limitedLength = Math.min(length, termsElement.childElementCount - 2);
         if( limitedLength ) {
           for( let i = limitedLength; i > 0; i-- ) {
-            const termElement = termsElement.lastElementChild;
-            termsElement.removeChild(termElement);
+            termsElement.lastElementChild.remove();
           }
-          [appendTermButton, removeTermButton].forEach((button) => {
+          lastTermButtons.forEach((button) => {
             termsElement.lastElementChild.appendChild(button);
           });
         }
@@ -1059,10 +1057,7 @@ const PianoKeyboard = class {
           const diff = realTerms.length - termsElement.childElementCount;
           diff > 0 ? appendTerms(diff) : diff < 0 ? removeTerms(-diff) : undefined;
           realTerms?.forEach((realTerm, index) => {
-            if( !index ) return;
-            const pair = [realTerm, imagTerms[index]];
-            setTermValuePairToSliders(...pair, index);
-            showFormula(...pair, index);
+            index && setTermSliderValue(realTerm, imagTerms[index], index);
           });
         },
       };
