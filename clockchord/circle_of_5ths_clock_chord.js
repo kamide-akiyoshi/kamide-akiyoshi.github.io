@@ -975,6 +975,8 @@ const PianoKeyboard = class {
       const lastTermButtons = firstTermElement.querySelectorAll('button');
       lastTermButtons[0].addEventListener('click', (event) => {
         appendTerms(1);
+        const lastTermIndex = termsElement.childElementCount - 1;
+        setTermSliderValue(...this.model.terms.map((a) => a[lastTermIndex] ??= 0), lastTermIndex);
       });
       lastTermButtons[1].addEventListener('click', (event) => {
         const removedLength = removeTerms(1);
@@ -1029,7 +1031,6 @@ const PianoKeyboard = class {
             }
             termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
           }
-          setTermSliderValue(...this.model.terms.map((a) => a[newTermIndex] ??= 0), newTermIndex);
           termsElement.appendChild(termElement);
         }
         lastTermButtons.forEach((button) => {
