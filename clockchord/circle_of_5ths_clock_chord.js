@@ -989,47 +989,50 @@ const PianoKeyboard = class {
       termsView.pushChildrenOf(firstTermElement);
       const lastTermButtons = firstTermElement.querySelectorAll('button');
       lastTermButtons[0].addEventListener('click', (event) => {
-        appendTerms(1);
+        termsView.adjustTermCount(1);
         const lastTermIndex = termsElement.childElementCount - 1;
         termsView.setTermValue(...this.model.terms.map((a) => a[lastTermIndex] ??= 0), lastTermIndex);
       });
       lastTermButtons[1].addEventListener('click', (event) => {
-        const removedLength = removeTerms(1);
-        removedLength && this.model.terms.forEach((a) => { a.splice(-removedLength); });
-      });
-      const appendTerms = (length) => {
-        let termElement;
-        for( let i = length; i > 0; i-- ) {
-          const newTermIndex = termsElement.childElementCount; // === <datalist> + (visible term elements)
-          termElement = termsView[newTermIndex - 1]?.[0].parentNode;
-          if( !termElement ) {
-            if( firstTermElement.contains(lastTermButtons[0]) ) {
-              lastTermButtons.forEach((button) => {
-                firstTermElement.removeChild(button);
-              });
-            }
-            termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
-          }
-          termsElement.appendChild(termElement);
+        const diff = termsView.adjustTermCount(-1);
+        if( diff < 0 ) {
+          this.model.terms.forEach((a) => { a.splice(diff); });
         }
-        lastTermButtons.forEach((button) => {
-          termElement.appendChild(button);
-        });
-      };
-      const removeTerms = (length) => {
-        const limitedLength = Math.min(length, termsElement.childElementCount - 2);
-        if( limitedLength ) {
-          for( let i = limitedLength; i > 0; i-- ) {
-            termsElement.lastElementChild.remove();
+      });
+      termsView.adjustTermCount = (diff) => {
+        if( diff > 0 ) {
+          let termElement;
+          for( let i = diff; i > 0; i-- ) {
+            const newTermIndex = termsElement.childElementCount; // === <datalist> + (visible term elements)
+            termElement = termsView[newTermIndex - 1]?.[0].parentNode;
+            if( !termElement ) {
+              if( firstTermElement.contains(lastTermButtons[0]) ) {
+                lastTermButtons.forEach((button) => {
+                  firstTermElement.removeChild(button);
+                });
+              }
+              termsView.pushChildrenOf(termElement = firstTermElement.cloneNode(true));
+            }
+            termsElement.appendChild(termElement);
           }
           lastTermButtons.forEach((button) => {
-            termsElement.lastElementChild.appendChild(button);
+            termElement.appendChild(button);
           });
+          return diff;
         }
-        return limitedLength;
-      };
-      termsView.adjustTerms = (diff) => {
-        diff > 0 ? appendTerms(diff) : diff < 0 ? removeTerms(-diff) : undefined;
+        if( diff < 0 ) {
+          const limitedLength = Math.min(-diff, termsElement.childElementCount - 2);
+          if( limitedLength ) {
+            for( let i = limitedLength; i > 0; i-- ) {
+              termsElement.lastElementChild.remove();
+            }
+            lastTermButtons.forEach((button) => {
+              termsElement.lastElementChild.appendChild(button);
+            });
+          }
+          return -limitedLength;
+        }
+        return 0;
       };
       termsView.showFormula = (realValue, imagValue, termIndex) => {
         const realText = !realValue && imagValue ? "" : `${realValue}`;
@@ -1053,7 +1056,7 @@ const PianoKeyboard = class {
         },
         set terms(value) {
           const [realTerms, imagTerms] = value;
-          termsView.adjustTerms(realTerms.length - termsElement.childElementCount);
+          termsView.adjustTermCount(realTerms.length - termsElement.childElementCount);
           realTerms?.forEach((realTerm, index) => {
             index && termsView.setTermValue(realTerm, imagTerms[index], index);
           });
