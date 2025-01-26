@@ -923,20 +923,9 @@ const PianoKeyboard = class {
     }
   };
   instrumentView = {
-    setup(manualProgramChangeListener) {
-      // Program
+    setupProgramView(manualProgramChangeListener) {
       const programSelector = document.getElementById('program_select');
       const instrumentNameElement = document.getElementById('instrument_name');
-      this.programView = {
-        set programNumber(pn) {
-          programSelector && (programSelector.value = pn);
-        },
-        set instrumentName(name) {
-          if( instrumentNameElement ) {
-            instrumentNameElement.innerHTML = name === INSTRUMENT_NAMES[programSelector?.value] ? "" : `(${name})`;
-          }
-        },
-      };
       if( programSelector ) {
         INSTRUMENT_NAMES.forEach((name, index) => {
           const option = document.createElement("option");
@@ -946,7 +935,18 @@ const PianoKeyboard = class {
         });
         programSelector.addEventListener("change", manualProgramChangeListener);
       }
-      // Wave
+      return {
+        set programNumber(pn) {
+          programSelector && (programSelector.value = pn);
+        },
+        set instrumentName(name) {
+          if( instrumentNameElement ) {
+            instrumentNameElement.innerHTML = name === INSTRUMENT_NAMES[programSelector?.value] ? "" : `(${name})`;
+          }
+        },
+      };
+    },
+    setupWaveformView() {
       const waveIconPathOf = (key) => `image/${key}.svg`;
       const waveIconImg = document.getElementById('waveIcon');
       const waveElement = document.getElementById('wave');
@@ -1038,7 +1038,7 @@ const PianoKeyboard = class {
         termsView[termIndex - 1].forEach((slider, imag) => { slider.value = valuePair[imag]; });
         termsView.showFormula(termIndex, ...valuePair);
       };
-      const waveformView = this.waveformView = {
+      return {
         set type(value) {
           showWaveType(waveSelector.value = value);
         },
@@ -1050,7 +1050,8 @@ const PianoKeyboard = class {
           });
         },
       };
-      // Envelope
+    },
+    setupEnvelopeView() {
       const envelopeViews = [];
       const asSecond = (num) => `${num}s`;
       const asPercent = (num) => `${Math.round(num * 100)}%`;
@@ -1069,29 +1070,26 @@ const PianoKeyboard = class {
           }
         });
       });
-      this.envelopeView = {
+      return {
         set model(m) {
-          envelopeViews.forEach((viewer, index) => {
-            viewer.value = m[index];
-          })
+          envelopeViews.forEach((viewer, index) => { viewer.value = m[index]; });
         },
       };
     },
-    set programNumber(pn) {
-      this.programView.programNumber = pn;
+    setup(manualProgramChangeListener) {
+      this.programView = this.setupProgramView(manualProgramChangeListener);
+      this.waveformView = this.setupWaveformView();
+      this.envelopeView = this.setupEnvelopeView();
     },
+    set programNumber(pn) { this.programView.programNumber = pn; },
     get model() { return this._model; },
     set model(m) {
       this._model = m;
-      const {
-        programView,
-        waveformView,
-        envelopeView,
-      } = this;
-      programView.instrumentName = m.name;
+      this.programView.instrumentName = m.name;
+      const { waveformView } = this;
       waveformView.type = m.wave;
       waveformView.terms = m.terms ??= [[0, 0], [0, 0]];
-      envelopeView.model = m.envelope;
+      this.envelopeView.model = m.envelope;
     },
   };
   createMidiChannelSelector = () => {
