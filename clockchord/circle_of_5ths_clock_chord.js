@@ -923,7 +923,7 @@ const PianoKeyboard = class {
     }
   };
   instrumentView = {
-    setupProgramView(manualProgramChangeListener) {
+    createProgramView(manualProgramChangeListener) {
       const programSelector = document.getElementById('program_select');
       const instrumentNameElement = document.getElementById('instrument_name');
       if( programSelector ) {
@@ -946,7 +946,7 @@ const PianoKeyboard = class {
         },
       };
     },
-    setupWaveformView() {
+    createWaveformView() {
       const waveIconPathOf = (key) => `image/${key}.svg`;
       const waveIconImg = document.getElementById('waveIcon');
       const waveElement = document.getElementById('wave');
@@ -1051,35 +1051,33 @@ const PianoKeyboard = class {
         },
       };
     },
-    setupEnvelopeView() {
-      const envelopeViews = [];
+    createEnvelopeView() {
+      const views = [];
       const asSecond = (num) => `${num}s`;
       const asPercent = (num) => `${Math.round(num * 100)}%`;
       document.querySelectorAll("#envelope .envelope_param").forEach((param, index) => {
-        const [textElement, slider] = param.querySelectorAll(".envelope_value,input");
+        const [label, slider] = param.querySelectorAll(".envelope_value,input");
         const asText = slider.id.includes("sustain") ? asPercent : asSecond;
         slider.addEventListener('input', event => {
-          textElement.textContent = asText(
-            this.model.envelope[index] = parseFloat(event.target.value)
-          );
+          label.textContent = asText(this.model.envelope[index] = parseFloat(event.target.value));
         });
-        envelopeViews.push({
+        views.push({
           set value(n) {
-            textElement.textContent = asText(n);
+            label.textContent = asText(n);
             slider.value = n;
           }
         });
       });
       return {
-        set model(m) {
-          envelopeViews.forEach((viewer, index) => { viewer.value = m[index]; });
+        set envelope(model) {
+          views.forEach((view, index) => { view.value = model[index]; });
         },
       };
     },
     setup(manualProgramChangeListener) {
-      this.programView = this.setupProgramView(manualProgramChangeListener);
-      this.waveformView = this.setupWaveformView();
-      this.envelopeView = this.setupEnvelopeView();
+      this.programView = this.createProgramView(manualProgramChangeListener);
+      this.waveformView = this.createWaveformView();
+      this.envelopeView = this.createEnvelopeView();
     },
     set programNumber(pn) { this.programView.programNumber = pn; },
     get model() { return this._model; },
@@ -1089,7 +1087,7 @@ const PianoKeyboard = class {
       const { waveformView } = this;
       waveformView.type = m.wave;
       waveformView.terms = m.terms ??= [[0, 0], [0, 0]];
-      this.envelopeView.model = m.envelope;
+      this.envelopeView.envelope = m.envelope;
     },
   };
   createMidiChannelSelector = () => {
