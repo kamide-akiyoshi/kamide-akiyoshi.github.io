@@ -1,4 +1,6 @@
 
+const APP_TITLE = "ClockChord";
+
 const Music = class {
   static FLAT    = '\u{266D}';
   static NATURAL = '\u{266E}';
@@ -1808,6 +1810,12 @@ const PianoKeyboard = class {
     const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
+    const initialDocumentTitle = document.title;
+    const setMidiSequenceTitle = (title) => {
+      const titleText = title ?? "";
+      titleElement.textContent = titleText;
+      document.title = titleText ? `${titleText} - ${APP_TITLE}` : initialDocumentTitle;
+    };
     const markerElement = document.getElementById("song_marker");
     const textElement = document.getElementById("song_text");
     let midiSequence;
@@ -1825,7 +1833,7 @@ const PianoKeyboard = class {
       textElement.textContent = "";
       currentLyrics.clear();
       markerElement.textContent = "";
-      titleElement.textContent = midiSequence.title ?? "";
+      setMidiSequenceTitle(midiSequence.title);
       lastTimeSignatureEvent = {
         tick: 0,
         timeSignature: {
