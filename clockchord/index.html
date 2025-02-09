@@ -254,6 +254,9 @@
 	#midi_sequence > .controller {
 		display: flex;
 	}
+	#song_title {
+	  font-size: 1.2em;
+	}
 	#time_position {
 		width: 100%;
 	}
@@ -338,6 +341,7 @@
   <div style="width: 100%;">
     <div id="midi_sequencer">
       <div id="midi_sequence">
+        <div id="song_title"></div>
         <div class="controller">
           <button id="play_pause">
             <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
@@ -356,7 +360,6 @@
           </span>
           <span id="song_marker"></span>
         </div>
-        <div id="song_title"></div>
         <div id="song_text"></div>
       </div>
       <div id="midi_file_selecter">
