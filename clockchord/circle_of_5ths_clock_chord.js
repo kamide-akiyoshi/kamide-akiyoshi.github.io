@@ -2941,7 +2941,7 @@ const CircleOfFifthsClock = class {
       start: ['pointerdown', 'keydown'],
       end: ['pointerup', 'keyup', 'mouseleave']
     };
-    const buttonContainer = document.getElementById('button_container');
+    const shiftButtonContainer = document.getElementById('shift_button_container');
     if( isTouchDevice ) {
       const status = this.shiftButtonStatus = {};
       [
@@ -2964,7 +2964,7 @@ const CircleOfFifthsClock = class {
       });
       canvas.title = "Touch the chord symbol to sound";
     } else {
-      buttonContainer?.remove();
+      shiftButtonContainer?.remove();
       canvas.title = "Click the chord symbol to sound";
     }
     eventTypes.disable.forEach(t => canvas.addEventListener(t, handleEvent));

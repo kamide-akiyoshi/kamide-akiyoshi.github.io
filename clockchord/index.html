@@ -174,8 +174,11 @@
 		position: absolute;
 		top: calc(100% - 30px);
 	}
-	#button_container {
+	:has(> .shift_button_line) {
 		width: 200px;
+	}
+	#shift_button_container > summary {
+	  margin-bottom: 4px;
 	}
 	.shift_button_line {
 		display: flex;
@@ -325,19 +328,22 @@
     <div id="lyrics_box">
       <span id="past_lyrics"></span><span id="lyrics"></span>
     </div>
-    <div id="button_container">
-      <div class="shift_button_line">
-        <div id="button_major7th" class="shift_button">M7</div>
-      </div>
-      <div class="shift_button_line">
-        <div id="button_add9" class="shift_button">add9</div>
-        <div id="button_7th" class="shift_button">7th</div>
-      </div>
-      <div class="shift_button_line">
-        <div id="button_flat5" class="shift_button">-5/aug</div>
+    <details id="shift_button_container" open>
+      <summary>7/M7/-5/aug/add9</summary>
+      <div>
+        <div class="shift_button_line">
+          <div id="button_major7th" class="shift_button">M7</div>
+        </div>
+        <div class="shift_button_line">
+          <div id="button_add9" class="shift_button">add9</div>
+          <div id="button_7th" class="shift_button">7th</div>
+        </div>
+        <div class="shift_button_line">
+          <div id="button_flat5" class="shift_button">-5/aug</div>
+        </div>
       </div>
     </div>
-  </div>
+  </detail>
   <div style="width: 100%;">
     <div id="midi_sequencer">
       <div id="midi_sequence">
