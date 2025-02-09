@@ -2835,18 +2835,18 @@ const CircleOfFifthsClock = class {
     keySignature.setup(chord, dial);
     //
     // PC keyboard bindings
-    const createLeftRightKeyCodes = (key) => [`${key}Left`, `${key}Right`];
-    const createCharKeyCodes = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
+    const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
+    const createKeyCodes = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
     const createDigitKeyCodes = () => {
-      const keys = Array.from({ length: 10 }, (_, index) => `Digit${index}`);
-      keys.push(keys.shift());
-      return keys;
+      const keyCodes = Array.from({ length: 10 }, (_, d) => `Digit${d}`);
+      keyCodes.push(keyCodes.shift());
+      return keyCodes;
     };
     const chordKeyBindings = Object.fromEntries(
       [
         [...createDigitKeyCodes(), 'Minus', 'Equal'],
-        [...createCharKeyCodes('QWERTYUIOP'), ...createLeftRightKeyCodes('Bracket')],
-        [...createCharKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
+        [...createKeyCodes('QWERTYUIOP'), ...createLeftRightKeyCodes('Bracket')],
+        [...createKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
       ].flatMap(
         (row, y) => row.map((code, x) => [code, [x-5, 1-y]])
       )
