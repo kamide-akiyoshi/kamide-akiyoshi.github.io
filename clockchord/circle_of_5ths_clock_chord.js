@@ -2929,7 +2929,7 @@ const CircleOfFifthsClock = class {
       chord.add9th = event.ctrlKey || shiftButtonStatus?.button_add9;
       chord.start();
     };
-    const isSmartphone = typeof window.ontouchstart !== 'undefined';
+    const isTouchDevice = typeof window.ontouchstart !== 'undefined';
     const eventTypes = {
       disable: [
         'click',
@@ -2937,12 +2937,12 @@ const CircleOfFifthsClock = class {
         'contextmenu',
         'selectstart',
       ],
-      move: isSmartphone ? "touchmove" : "mousemove",
+      move: isTouchDevice ? "touchmove" : "mousemove",
       start: ['pointerdown', 'keydown'],
       end: ['pointerup', 'keyup', 'mouseleave']
     };
     const buttonContainer = document.getElementById('button_container');
-    if( isSmartphone ) {
+    if( isTouchDevice ) {
       const status = this.shiftButtonStatus = {};
       [
         "button_7th",
