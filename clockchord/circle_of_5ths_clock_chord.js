@@ -2747,7 +2747,7 @@ const CircleOfFifthsClock = class {
       const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
       const startAngle = (keySignature.value - 3.5) * radianPerHour;
       const endAngle = startAngle + radianPerHour;
-      context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 20%, transparent)`;
+      context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 10%, transparent)`;
       context.beginPath();
       context.arc(...cxy, inner * width, startAngle, endAngle);
       context.arc(...cxy, outer * width, endAngle, startAngle, true);
