@@ -2741,13 +2741,12 @@ const CircleOfFifthsClock = class {
     beatCanvas.drawBeat = (beat, numerator) => {
       context.clearRect(0, 0, width, height);
       if( beat === undefined ) return;
-      const maxBeat = (numerator - 1) || 1;
-      const ratio = (maxBeat - beat) / maxBeat;
+      const ratio = numerator - beat < 2 ? 0 : 1 / (2 ** beat);
       const outer = dial.borderRadius[keySignature.minor ? 1 : 2];
       const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
       const startAngle = (keySignature.value - 3.5) * radianPerHour;
       const endAngle = startAngle + radianPerHour;
-      context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 10%, transparent)`;
+      context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 15%, transparent)`;
       context.beginPath();
       context.arc(...cxy, inner * width, startAngle, endAngle);
       context.arc(...cxy, outer * width, endAngle, startAngle, true);
