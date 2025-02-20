@@ -2518,7 +2518,7 @@ const CircleOfFifthsClock = class {
         },
         arc: {
           angle : diffToAngle(-3.5),
-          bassAngles: [diffToAngle(-3.3), diffToAngle(-2.7)],
+          bassAngles: [diffToAngle(-3.25), diffToAngle(-2.75)],
         },
       };
     });
