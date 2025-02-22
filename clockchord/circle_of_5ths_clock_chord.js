@@ -1960,6 +1960,26 @@ const PianoKeyboard = class {
       }
     };
     let intervalId, sentinel;
+    const requestSentinel = async () => { // To prevent screen lock while MIDI playing
+      try {
+        const { wakeLock } = navigator;
+        if( !wakeLock ) throw "WakeLock not supported on this device";
+        sentinel = await wakeLock.request("screen");
+      } catch(error) {
+        console.warn(error);
+      }
+    };
+    document.addEventListener("visibilitychange", async () => {
+      if( sentinel && document.visibilityState === "visible" ) {
+        await requestSentinel();
+      }
+    });
+    const releaseSentinel = async () => {
+      if( !sentinel ) return;
+      await sentinel.release();
+      // No try-catch required, because exception not thrown from release()
+      sentinel = undefined;
+    };
     const pause = async () => {
       if( !intervalId ) return;
       clearInterval(intervalId);
@@ -1968,11 +1988,7 @@ const PianoKeyboard = class {
         sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
         sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
       });
-      if( sentinel ) {
-        await sentinel.release();
-        // No try-catch required, because exception not thrown from release()
-        sentinel = undefined;
-      }
+      await releaseSentinel();
       if( playPauseIcon ) {
         playPauseIcon.src = "image/play-button-svgrepo-com.svg";
         playPauseIcon.alt = "Play";
@@ -1980,16 +1996,6 @@ const PianoKeyboard = class {
     };
     const play = async () => {
       if( !midiSequence || intervalId ) return;
-      if( !sentinel ) {
-        // Request sentinel to prevent screen lock while MIDI playing
-        try {
-          const { wakeLock } = navigator;
-          if( !wakeLock ) throw "WakeLock not supported on this device";
-          sentinel = await wakeLock.request("screen");
-        } catch(error) {
-          console.warn(error);
-        }
-      }
       if( tickPosition === 0 ) {
         this.synth.midiChannels.forEach((_, ch) => {
           const controlChangeStatus = 0xB0 + ch;
@@ -2025,6 +2031,7 @@ const PianoKeyboard = class {
         },
         INTERVAL_MILLI_SEC
       );
+      if( !sentinel ) await requestSentinel();
       if( playPauseIcon ) {
         playPauseIcon.src = "image/pause-button-svgrepo-com.svg";
         playPauseIcon.alt = "Pause";
