@@ -1959,9 +1959,12 @@ const PianoKeyboard = class {
         console.error(midiMessage, e);
       }
     };
-    let intervalId;
+    let intervalId, wakingLock;
     const pause = () => {
       if( !intervalId ) return;
+      if( wakingLock ) {
+        wakingLock.release().then(() => wakingLock = undefined);
+      }
       clearInterval(intervalId);
       intervalId = undefined;
       this.synth.midiChannels.forEach((_, ch) => {
@@ -1975,6 +1978,17 @@ const PianoKeyboard = class {
     };
     const play = () => {
       if( !midiSequence || intervalId ) return;
+      const { wakeLock } = navigator;
+      if( wakeLock ) {
+        // Prevent screen lock while playing
+        wakeLock.request("screen").then(
+          (result) => wakingLock = result
+        ).catch(
+          (error) => console.warn(error)
+        );
+      } else {
+        console.warn("WakeLock not supported on this device");
+      }
       if( tickPosition === 0 ) {
         this.synth.midiChannels.forEach((_, ch) => {
           const controlChangeStatus = 0xB0 + ch;
