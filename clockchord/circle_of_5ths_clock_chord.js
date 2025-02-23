@@ -1960,7 +1960,7 @@ const PianoKeyboard = class {
       }
     };
     let intervalId, sentinel;
-    const requestSentinel = async () => { // To prevent screen lock while MIDI playing
+    const requestWakeLock = async () => { // To prevent screen lock while MIDI playing
       try {
         const { wakeLock } = navigator;
         if( !wakeLock ) throw "WakeLock not supported on this device";
@@ -1970,16 +1970,12 @@ const PianoKeyboard = class {
       }
     };
     document.addEventListener("visibilitychange", async () => {
+      // After wake lock released automatically by hiding document,
+      // Reacquire the wake lock when get visible
       if( sentinel && document.visibilityState === "visible" ) {
-        await requestSentinel();
+        await requestWakeLock();
       }
     });
-    const releaseSentinel = async () => {
-      if( !sentinel ) return;
-      await sentinel.release();
-      // No try-catch required, because exception not thrown from release()
-      sentinel = undefined;
-    };
     const pause = async () => {
       if( !intervalId ) return;
       clearInterval(intervalId);
@@ -1988,7 +1984,8 @@ const PianoKeyboard = class {
         sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
         sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
       });
-      await releaseSentinel();
+      await sentinel?.release(); // No try-catch required, because exception not thrown
+      sentinel = undefined; // To prevent reacquiring wake lock when get visible
       if( playPauseIcon ) {
         playPauseIcon.src = "image/play-button-svgrepo-com.svg";
         playPauseIcon.alt = "Play";
@@ -2031,7 +2028,7 @@ const PianoKeyboard = class {
         },
         INTERVAL_MILLI_SEC
       );
-      if( !sentinel ) await requestSentinel();
+      await requestWakeLock();
       if( playPauseIcon ) {
         playPauseIcon.src = "image/pause-button-svgrepo-com.svg";
         playPauseIcon.alt = "Pause";
