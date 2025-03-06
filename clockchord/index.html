@@ -65,6 +65,11 @@
 		z-index: 1;
 		top: 50px;
 	}
+	#chord_text {
+	  z-index: 1;
+	  bottom: 0;
+	  width: 50px;
+	}
 	.chord-tap {
 		touch-action: none; /* no gesture */
 		user-select: none; /* standard syntax */
@@ -319,6 +324,7 @@
         <option value="donut">Donut</option>
         <option value="pie" selected>Pie</option>
       </select>
+      <input id="chord_text" name="chord_text" type="text" placeholder="Chord"></input>
       <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
       <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>

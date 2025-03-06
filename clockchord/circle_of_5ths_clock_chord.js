@@ -7,7 +7,7 @@ const Music = class {
   static SHARP   = '\u{266F}';
   static DOUBLE_SHARP = '\u{1D12A}';
   static DOUBLE_FLAT  = '\u{1D12B}';
-  static majorPitchNameAt = hour => [
+  static majorPitchNameAt = (hour) => [
     String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7),
     [
       Music.DOUBLE_FLAT,
@@ -20,11 +20,21 @@ const Music = class {
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
-  static normalizeHourAsKey = hour => {
-    while( Math.abs(hour) > 7 ) hour -= 12 * Math.sign(hour);
+  static normalizeHourAsKey = (hour) => {
+    while( Math.abs(hour) > 7 ) {
+      hour -= 12 * Math.sign(hour);
+    }
     return hour;
   };
-  static keySignatureTextAt = hour => {
+  static pitchCharToHourIndex = (pitchChar) => {
+    const charCodeIndex = pitchChar.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+    if( charCodeIndex < 0 || charCodeIndex > 6 ) {
+      // pitchChar not in "ABCDEFG"
+      return -1;
+    }
+    return ((charCodeIndex + 2) * 2) % 7; // Index in "FCGDAEB"
+  };
+  static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
     const n = Math.abs(hour);
     const fs = hour < 0 ? Music.FLAT : Music.SHARP;
@@ -1198,6 +1208,7 @@ const PianoKeyboard = class {
       const chord = this;
       chord.label = createDetachableElementEntry('chord');
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
+      chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
       chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.setChordAsKey());
       chord.classLists.clear = () => {
@@ -1232,6 +1243,65 @@ const PianoKeyboard = class {
       classLists.clear();
     },
     hasValue: () => "hour" in this.chord,
+    parseText: (rawText) => {
+      const { chord } = this;
+      chord.clear();
+      const text = rawText?.trim();
+      if( !text ) return;
+      const hourIndex = Music.pitchCharToHourIndex(text.substring(0, 1));
+      if( hourIndex < 0 ) return;
+      let suffix = text.substring(1);
+      const sfIndex = [
+        [Music.DOUBLE_FLAT, "bb"],
+        [Music.FLAT, "b"],
+        [],
+        [Music.SHARP, "#"],
+        [Music.DOUBLE_SHARP, "x"],
+      ].findIndex(
+        (patterns) => patterns.some(
+          (pattern) => {
+            if( suffix.startsWith(pattern) ) {
+              suffix = suffix.replace(pattern, "");
+              return true;
+            }
+            return false;
+          }
+        )
+      );
+      chord.hour = hourIndex + 7 * (sfIndex < 0 ? 0 : sfIndex - 2) - 1;
+      if( suffix.startsWith("dim7") ) {
+        chord.offset3rd = -1;
+        chord.hour -= 3;
+        chord.offset5th = -1;
+        chord.offset7th = 1;
+        suffix = suffix.replace("dim7", "");
+      } else if( suffix.startsWith("dim") ) {
+        chord.offset3rd = -1;
+        chord.hour -= 3;
+        chord.offset5th = -1;
+        suffix = suffix.replace("dim", "");
+      } else if( suffix.startsWith("m") ) {
+        chord.offset3rd = -1;
+        chord.hour -= 3;
+        suffix = suffix.replace("m", "");
+      }
+      if( suffix.startsWith("M7") ) {
+        chord.offset7th = 3; suffix = suffix.replace("M7", "");
+      } else if( suffix.startsWith("7") ) {
+        chord.offset7th = 2; suffix = suffix.replace("7", "");
+      } else if( suffix.startsWith("6") ) {
+        chord.offset7th = 1; suffix = suffix.replace("6", "");
+      }
+      if( suffix.startsWith("sus4") ) {
+        chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
+      }
+      if( suffix.startsWith("-5") ) {
+        chord.offset5th = -1; suffix = suffix.replace("-5", "");
+      } else if( suffix.startsWith("aug") ) {
+        chord.offset5th = 1; suffix = suffix.replace("aug", "");
+      }
+      return;
+    },
     stop: () => {
       this.manualAllNotesOff();
       this.chord.buttonCanvas.disableStrum();
@@ -1245,6 +1315,7 @@ const PianoKeyboard = class {
         hour,
         label,
         dialCenterLabel,
+        chordTextInput,
         button,
         keySignature,
         keySignatureSetButton,
@@ -1269,8 +1340,8 @@ const PianoKeyboard = class {
       };
       classLists.clear();
       noteOn(rootPitchNumber);
-      noteOn(rootPitchNumber + 4 + offset3rd);
-      noteOn(rootPitchNumber + 7 + offset5th);
+      noteOn(rootPitchNumber + 4 + (offset3rd ?? 0));
+      noteOn(rootPitchNumber + 7 + (offset5th ?? 0));
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
       chord.notes = Array.from(this.pianoKeys.pressed.keys());
@@ -1278,24 +1349,27 @@ const PianoKeyboard = class {
       buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
-      if( label || dialCenterLabel ) {
+      if( label || dialCenterLabel || chordTextInput ) {
         let sub = '', sup = '';
         if( offset3rd < 0 && offset5th < 0 && offset7th == 1 ) {
           sup += 'dim' + (add9th ? '9':'7');
         } else {
           offset3rd < 0 && (sub += 'm');
           offset5th > 0 && (sup += 'aug');
-          sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th];
+          sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th] ?? "";
           offset5th < 0 && (sup += '-5');
           offset3rd > 0 && (sup += 'sus4');
         }
-        let text = rootPitchName[0];
+        const rootText = rootPitchName[0];
         const fs = rootPitchName[1];
-        fs && (text += `<sup>${fs}</sup>`);
-        sub && (text += `<sub>${sub}</sub>`);
-        sup && (text += `<sup style="font-size: 70%;">${sup}</sup>`);
-        label?.attach(text);
-        dialCenterLabel?.attach(text);
+        let htmlChordText = rootText;
+        fs && (htmlChordText += `<sup>${fs}</sup>`);
+        sub && (htmlChordText += `<sub>${sub}</sub>`);
+        sup && (htmlChordText += `<sup style="font-size: 70%;">${sup}</sup>`);
+        const plainChordText = `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}`;
+        chordTextInput.value = plainChordText;
+        label?.attach(htmlChordText);
+        dialCenterLabel?.attach(htmlChordText);
       }
       keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
       keyOrChordChanged();
@@ -3008,7 +3082,7 @@ const CircleOfFifthsClock = class {
     };
     canvas.selectChord = () => {
       canvas.clearChord();
-      const { dial, hour, offset3rd } = chord;
+      const { dial, hour, offset3rd = 0 } = chord;
       const centerXY = [
         dial.center.x,
         dial.center.y,
@@ -3039,6 +3113,20 @@ const CircleOfFifthsClock = class {
     };
     canvas.enableStrum = () => canvas.addEventListener(eventTypes.move, handleMouseMove);
     canvas.disableStrum = () => canvas.removeEventListener(eventTypes.move, handleMouseMove);
+    if( chord.chordTextInput ) {
+      const { chordTextInput } = chord;
+      chordTextInput.addEventListener('keydown', (event) => {
+        if( ! event.repeat && event.code === "Enter" ) {
+          chord.parseText(chordTextInput.value);
+          chord.start();
+        }
+      });
+      chordTextInput.addEventListener('keyup', (event) => {
+        if( event.code === "Enter" ) {
+          chord.stop();
+        }
+      });
+    }
     chord.clear();
   };
 };
