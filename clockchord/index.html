@@ -7,6 +7,7 @@
 <link rel="shortcut icon" href="../midichordhelper.ico">
 <TITLE>ClockChord - Musical chord instrument on the circle-of-fifths clock</TITLE>
 <script src="https://unpkg.com/encoding-japanese@2.1.0/encoding.min.js"></script>
+<script src="https://widget.songle.jp/v1/api.js"></script>
 <script src="./circle_of_5ths_clock_chord.js"></script>
 <script>new CircleOfFifthsClock();</script>
 <style type="text/css">
@@ -282,12 +283,12 @@
 		color: red;
 		background-color: pink;
 	}
-	#WebMidiLinkUrlForm {
+	#WebMidiLinkUrlForm, #SongleUrlForm {
 		width: 100%;
 		display: flex;
 		align-items: center;
 	}
-	#WebMidiLinkUrl {
+	#WebMidiLinkUrl, #SongleUrl {
 		width: 100%;
 	}
 	#WebMidiLinkSynth {
@@ -352,6 +353,18 @@
     </div>
   </detail>
   <div style="width: 100%;">
+    <div id="songleLink">
+      <div>
+        Play chord by <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a>
+      </div>
+      <div id="SongleUrlForm">
+        <label for="SongleUrl">URL</label>
+        <input id="SongleUrl" type="url"/>
+        <button id="LoadSongleUrl">Load</button>
+      </div>
+      <div id="EmbeddedSongle"></div>
+      <span id="songleChord"></span>
+    </div>
     <div id="midi_sequencer">
       <div id="midi_sequence">
         <div id="song_title"></div>
@@ -479,19 +492,19 @@
         </span>
       </div>
     </div>
+    <hr/>
+    <div id="WebMidiLink">
+      <div>
+        <a href="https://www.g200kg.com/en/docs/webmidilink/" target="_blank">WebMidiLink</a> OUT
+      </div>
+      <div id="WebMidiLinkUrlForm">
+        <label for="WebMidiLinkUrl">URL</label>
+        <input id="WebMidiLinkUrl" type="url"/>
+        <button id="LoadWebMidiLinkUrl">Load</button>
+      </div>
+      <iframe id="WebMidiLinkSynth"></iframe>
+    </div>
   </div>
-</div>
-<hr/>
-<div id="WebMidiLink">
-  <div>
-    <a href="https://www.g200kg.com/en/docs/webmidilink/" target="_blank">WebMidiLink</a> OUT
-  </div>
-  <div id="WebMidiLinkUrlForm">
-    <label for="WebMidiLinkUrl">URL</label>
-    <input id="WebMidiLinkUrl" type="url"/>
-    <button id="LoadWebMidiLinkUrl">Load</button>
-  </div>
-  <iframe id="WebMidiLinkSynth"></iframe>
 </div>
 <hr/>
 <a name="how_to_use"></a>

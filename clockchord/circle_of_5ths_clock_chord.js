@@ -1484,6 +1484,10 @@ const PianoKeyboard = class {
   };
   setupWebMidiLink = () => {
     window.addEventListener('message', event => {
+      if( ! event.data.split ) {
+        // Ignore the message from the other message source (Such as Songle)
+        return;
+      }
       const msg = event.data.split(",");
       const msgType = msg.shift();
       switch(msgType) {
@@ -2224,6 +2228,42 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
+  setupSongle = (chord) => {
+    const url = document.getElementById("SongleUrl");
+    const loadButton = document.getElementById("LoadSongleUrl");
+    const target = document.getElementById("EmbeddedSongle");
+    const chordElement = document.getElementById("songleChord");
+    let widget;
+    const loadSongle = (urlText) => {
+      widget = SongleWidgetAPI.createSongleWidgetElement({
+        api: "songle-link",
+        url: urlText,
+      });
+      target?.appendChild(widget);
+      window.onSongleWidgetReady = (apiKey, songleWidget) => {
+        songleWidget.on("chordPlay", (event) => {
+          const chordSymbol = event.chord.name;
+          chordElement.textContent = chordSymbol;
+          chord.parseText(chordSymbol);
+          chord.start();
+        });
+        songleWidget.on("beatPlay", () => {
+          chord.start();
+        });
+      };
+    };
+    const unloadSongle = () => {
+      window.onSongleWidgetReady = undefined;
+      widget.remove();
+      widget = undefined;
+      chordElement.textContent = "";
+    };
+    loadButton?.addEventListener("click", () => {
+      widget && unloadSongle();
+      const urlText = url.value;
+      urlText && loadSongle(urlText);
+    });
+  };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
@@ -2234,6 +2274,7 @@ const PianoKeyboard = class {
       setupWebMidiLink,
       setupMidiSequencer,
       setupPianoKeyboard,
+      setupSongle,
     } = this;
     this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
     chord.setup();
@@ -2242,6 +2283,7 @@ const PianoKeyboard = class {
     setupWebMidiLink();
     setupMidiSequencer(beatCanvas, darkModeSelect);
     setupPianoKeyboard();
+    setupSongle(chord);
   }
 }
 
