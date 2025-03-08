@@ -1295,8 +1295,8 @@ const PianoKeyboard = class {
       if( suffix.startsWith("sus4") ) {
         chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
       }
-      if( suffix.startsWith("-5") ) {
-        chord.offset5th = -1; suffix = suffix.replace("-5", "");
+      if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
+        chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
       } else if( suffix.startsWith("aug") ) {
         chord.offset5th = 1; suffix = suffix.replace("aug", "");
       }
