@@ -3139,6 +3139,10 @@ const CircleOfFifthsClock = class {
       context.fill();
     };
     const handleMouseMove = (event) => {
+      if( event.buttons === 0 ) {
+        // No mouse button pressed, no strum
+        return;
+      }
       const {
         target: canvas,
         clientX,
