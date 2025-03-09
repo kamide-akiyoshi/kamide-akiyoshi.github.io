@@ -2239,6 +2239,7 @@ const PianoKeyboard = class {
       widget = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
+        songAutoPlay: true,
       });
       target?.appendChild(widget);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
