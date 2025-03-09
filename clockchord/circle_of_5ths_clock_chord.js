@@ -2233,6 +2233,7 @@ const PianoKeyboard = class {
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
     const chordElement = document.getElementById("songleChord");
+    const errorElement = document.getElementById("SongleError");
     let widget;
     const loadSongle = (urlText) => {
       widget = SongleWidgetAPI.createSongleWidgetElement({
@@ -2251,12 +2252,28 @@ const PianoKeyboard = class {
           chord.start();
         });
       };
+      window.onSongleWidgetError = (apiKey, songleWidget) => {
+        const { status } = songleWidget;
+        let message;
+        switch(status) {
+          case 100: message = "Could not embed: Song deleted"; break;
+          case 101: message = "Could not embed: Not permitted"; break;
+          case 200: message = "Music map loading aborted"; break;
+          case 201: message = "Music map loading failed"; break;
+          case 300: message = "Sound file (mp3) download failed"; break;
+        };
+        const formattedMessage = `Songle error ${status}${message ? " : " : ""}${message ?? ""}`;
+        if( !errorElement ) {
+          alert(formattedMessage);
+        }
+        errorElement.textContent = formattedMessage;
+      };
     };
     const unloadSongle = () => {
       window.onSongleWidgetReady = undefined;
       widget.remove();
       widget = undefined;
-      chordElement.textContent = "";
+      chordElement.textContent = errorElement.textContent = "";
     };
     loadButton?.addEventListener("click", () => {
       widget && unloadSongle();

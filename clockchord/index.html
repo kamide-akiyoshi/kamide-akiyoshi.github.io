@@ -295,6 +295,9 @@
 		width: 100%;
 		height: 400px;
 	}
+	#SongleError {
+	  color: red;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -362,7 +365,9 @@
         <input id="SongleUrl" type="url"/>
         <button id="LoadSongleUrl">Load</button>
       </div>
-      <div id="EmbeddedSongle"></div>
+      <div id="EmbeddedSongle">
+        <div id="SongleError"></div>
+      </div>
       <span id="songleChord"></span>
     </div>
     <div id="midi_sequencer">
