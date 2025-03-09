@@ -2228,7 +2228,7 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
-  setupSongle = (chord) => {
+  setupSongle = (chord, darkModeSelect) => {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
@@ -2252,6 +2252,10 @@ const PianoKeyboard = class {
         songleWidget.on("beatPlay", () => {
           chord.start();
         });
+        if( darkModeSelect.value == "light" ) {
+          darkModeSelect.value = "dark";
+          darkModeSelect.dispatchEvent(new Event("change"));
+        }
       };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = songleWidget;
@@ -2301,7 +2305,7 @@ const PianoKeyboard = class {
     setupWebMidiLink();
     setupMidiSequencer(beatCanvas, darkModeSelect);
     setupPianoKeyboard();
-    setupSongle(chord);
+    setupSongle(chord, darkModeSelect);
   }
 }
 
