@@ -3090,7 +3090,7 @@ const CircleOfFifthsClock = class {
       ],
       move: isTouchDevice ? "touchmove" : "mousemove",
       start: ['pointerdown', 'keydown'],
-      end: ['pointerup', 'keyup', 'mouseleave']
+      end: ['pointerup', 'keyup']
     };
     const shiftButtonContainer = document.getElementById('shift_button_container');
     if( isTouchDevice ) {
@@ -3121,6 +3121,10 @@ const CircleOfFifthsClock = class {
     eventTypes.disable.forEach(t => canvas.addEventListener(t, handleEvent));
     eventTypes.start.forEach(t => canvas.addEventListener(t, e => handleEvent(e, chord)));
     eventTypes.end.forEach(t => canvas.addEventListener(t, chord.stop));
+    const handleMouseLeave = (event) => {
+      event.buttons && chord.stop();
+    };
+    canvas.addEventListener("mouseleave", handleMouseLeave);
     if( chord.dialCenterLabel ) {
       const { element } = chord.dialCenterLabel;
       element.addEventListener('pointerdown', e => {
@@ -3130,9 +3134,7 @@ const CircleOfFifthsClock = class {
         canvas.focus();
         chord.stop();
       });
-      element.addEventListener('mouseleave', e => {
-        chord.stop();
-      });
+      element.addEventListener('mouseleave', handleMouseLeave);
     }
     canvas.clearChord = () => {
       const context = canvas.getContext("2d");
