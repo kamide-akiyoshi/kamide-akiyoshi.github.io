@@ -2240,6 +2240,8 @@ const PianoKeyboard = class {
         api: "songle-link",
         url: urlText,
         songAutoPlay: true,
+        videoPlayerSizeW: "auto",
+        songleWidgetSizeW: "auto",
       });
       target?.appendChild(widget);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
