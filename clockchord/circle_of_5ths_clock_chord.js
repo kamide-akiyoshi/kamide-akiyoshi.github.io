@@ -2262,6 +2262,15 @@ const PianoKeyboard = class {
         widget.on("pause", () => {
           chord.stop();
         });
+        widget.on("remove", () => {
+          delete window.onSongleWidgetReady;
+          delete window.onSongleWidgetError;
+          chord.stop();
+          widgetElement.remove();
+          widgetElement = undefined;
+          chordElement.textContent = errorElement.textContent = "";
+          ClockChord.setSongTitleToDocument(undefined);
+        });
         if( darkModeSelect.value == "light" ) {
           darkModeSelect.value = "dark";
           darkModeSelect.dispatchEvent(new Event("change"));
@@ -2284,21 +2293,11 @@ const PianoKeyboard = class {
         errorElement.textContent = formattedMessage;
       };
     };
-    const unloadSongle = () => {
-      delete window.onSongleWidgetReady;
-      delete window.onSongleWidgetError;
-      widget.off("chordPlay");
-      widget.off("beatPlay");
-      widget.remove();
-      widget = undefined;
-      chord.stop();
-      widgetElement.remove();
-      widgetElement = undefined;
-      chordElement.textContent = errorElement.textContent = "";
-      ClockChord.setSongTitleToDocument(undefined);
-    };
     loadButton?.addEventListener("click", () => {
-      widget && unloadSongle();
+      if( widget ) {
+        widget.remove();
+        widget = undefined;
+      }
       const urlText = url.value;
       urlText && loadSongle(urlText);
     });
