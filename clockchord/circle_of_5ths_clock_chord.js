@@ -1,5 +1,10 @@
 
-const APP_TITLE = "ClockChord";
+const ClockChord = {
+  initialDocumentTitle: document.title,
+  setSongTitleToDocument: (title) => {
+    document.title = title ? `${title} - ClockChord` : ClockChord.initialDocumentTitle;
+  },
+}
 
 const Music = class {
   static FLAT    = '\u{266D}';
@@ -1888,11 +1893,9 @@ const PianoKeyboard = class {
     const tempoElement = document.getElementById("tempo");
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
-    const initialDocumentTitle = document.title;
     const setMidiSequenceTitle = (title) => {
-      const titleText = title ?? "";
-      titleElement.textContent = titleText;
-      document.title = titleText ? `${titleText} - ${APP_TITLE}` : initialDocumentTitle;
+      titleElement.textContent = title ?? "";
+      ClockChord.setSongTitleToDocument(title);
     };
     const markerElement = document.getElementById("song_marker");
     const textElement = document.getElementById("song_text");
@@ -2234,25 +2237,30 @@ const PianoKeyboard = class {
     const target = document.getElementById("EmbeddedSongle");
     const chordElement = document.getElementById("songleChord");
     const errorElement = document.getElementById("SongleError");
-    let widget;
+    let widgetElement, widget;
     const loadSongle = (urlText) => {
-      widget = SongleWidgetAPI.createSongleWidgetElement({
+      widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
         songAutoPlay: true,
         videoPlayerSizeW: "auto",
         songleWidgetSizeW: "auto",
       });
-      target?.appendChild(widget);
+      target?.appendChild(widgetElement);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
-        songleWidget.on("chordPlay", (event) => {
+        const { song } = widget = songleWidget;
+        ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
+        widget.on("chordPlay", (event) => {
           const chordSymbol = event.chord.name;
           chordElement.textContent = chordSymbol;
           chord.parseText(chordSymbol);
           chord.start();
         });
-        songleWidget.on("beatPlay", () => {
+        widget.on("beatPlay", () => {
           chord.start();
+        });
+        widget.on("pause", () => {
+          chord.stop();
         });
         if( darkModeSelect.value == "light" ) {
           darkModeSelect.value = "dark";
@@ -2260,7 +2268,7 @@ const PianoKeyboard = class {
         }
       };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
-        const { status } = songleWidget;
+        const { status } = widget = songleWidget;
         let message;
         switch(status) {
           case 100: message = "Could not embed: Song deleted"; break;
@@ -2277,10 +2285,17 @@ const PianoKeyboard = class {
       };
     };
     const unloadSongle = () => {
-      window.onSongleWidgetReady = undefined;
+      delete window.onSongleWidgetReady;
+      delete window.onSongleWidgetError;
+      widget.off("chordPlay");
+      widget.off("beatPlay");
       widget.remove();
       widget = undefined;
+      chord.stop();
+      widgetElement.remove();
+      widgetElement = undefined;
       chordElement.textContent = errorElement.textContent = "";
+      ClockChord.setSongTitleToDocument(undefined);
     };
     loadButton?.addEventListener("click", () => {
       widget && unloadSongle();
