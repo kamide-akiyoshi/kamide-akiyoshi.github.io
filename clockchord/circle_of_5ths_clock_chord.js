@@ -2185,16 +2185,16 @@ const PianoKeyboard = class {
         keyboard.focus();
         e.preventDefault();
       });
-      element.addEventListener(pointerenter, e => {
-        if( e.buttons & 1 ) {
-          manualNoteOn(noteNumber);
-        }
+      element.addEventListener(pointerenter, (event) => {
+        (event.buttons & 1) && manualNoteOn(noteNumber);
       });
-      const handleOff = e => {
+      const handleOff = () => {
         manualNoteOff(noteNumber);
       };
       element.addEventListener(pointerup, handleOff);
-      element.addEventListener(pointerleave, handleOff);
+      element.addEventListener(pointerleave, (event) => {
+        event.buttons && handleOff();
+      });
       element.addEventListener('contextmenu', e => e.preventDefault());
     });
     keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
