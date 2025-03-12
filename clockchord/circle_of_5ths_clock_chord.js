@@ -2231,7 +2231,7 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
-  setupSongle = (chord, darkModeSelect) => {
+  setupSongle = (chord, beatCanvas, darkModeSelect) => {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
@@ -2256,7 +2256,10 @@ const PianoKeyboard = class {
           chord.parseText(chordSymbol);
           chord.start();
         });
-        widget.on("beatPlay", () => {
+        widget.on("beatPlay", (event) => {
+          const numerator = event.bar.beats.length || 4;
+          const position = event.beat.position;
+          beatCanvas?.drawBeat(position - 1, numerator);
           chord.start();
         });
         widget.on("pause", () => {
@@ -2321,7 +2324,7 @@ const PianoKeyboard = class {
     setupWebMidiLink();
     setupMidiSequencer(beatCanvas, darkModeSelect);
     setupPianoKeyboard();
-    setupSongle(chord, darkModeSelect);
+    setupSongle(chord, beatCanvas, darkModeSelect);
   }
 }
 
