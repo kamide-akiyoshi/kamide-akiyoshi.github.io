@@ -1273,7 +1273,7 @@ const PianoKeyboard = class {
           }
         )
       );
-      chord.hour = hourIndex + 7 * (sfIndex < 0 ? 0 : sfIndex - 2) - 1;
+      chord.hour = hourIndex + (sfIndex < 0 ? 0 : 7 * (sfIndex - 2)) - 1;
       if( suffix.startsWith("dim7") ) {
         chord.offset3rd = -1;
         chord.hour -= 3;
