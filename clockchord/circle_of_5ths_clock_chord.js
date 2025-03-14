@@ -12,16 +12,21 @@ const Music = class {
   static SHARP   = '\u{266F}';
   static DOUBLE_SHARP = '\u{1D12A}';
   static DOUBLE_FLAT  = '\u{1D12B}';
-  static majorPitchNameAt = (hour) => [
-    String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7),
-    [
-      Music.DOUBLE_FLAT,
-      Music.FLAT,
-      '',
-      Music.SHARP,
-      Music.DOUBLE_SHARP
-    ][Math.trunc((hour + 15) / 7)]
+  static FLAT_SHARP_ARRAY = [
+    ["\u{1D12B}", "bb"], // Double flat
+    ["\u{266D}", "b"],   // Flat
+    [],
+    ["\u{266F}", "#"],   // Sharp
+    ["\u{1D12A}", "x"],  // Double sharp
   ];
+  static majorPitchNameAt = (hour) => {
+    const array = [
+      String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7)
+    ];
+    const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)];
+    if( fs.length ) array.push(fs[0]);
+    return array;
+  };
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
@@ -1256,13 +1261,7 @@ const PianoKeyboard = class {
       const hourIndex = Music.pitchCharToHourIndex(text.substring(0, 1));
       if( hourIndex < 0 ) return;
       let suffix = text.substring(1);
-      const sfIndex = [
-        [Music.DOUBLE_FLAT, "bb"],
-        [Music.FLAT, "b"],
-        [],
-        [Music.SHARP, "#"],
-        [Music.DOUBLE_SHARP, "x"],
-      ].findIndex(
+      const sfIndex = Music.FLAT_SHARP_ARRAY.findIndex(
         (patterns) => patterns.some(
           (pattern) => {
             if( suffix.startsWith(pattern) ) {
