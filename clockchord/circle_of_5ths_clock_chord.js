@@ -2303,6 +2303,11 @@ const PianoKeyboard = class {
       const urlText = url.value;
       urlText && loadSongle(urlText);
     });
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialUrlText = searchParams.get("songle");
+    if( initialUrlText ) {
+      loadSongle(initialUrlText);
+    }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
