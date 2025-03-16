@@ -2301,12 +2301,14 @@ const PianoKeyboard = class {
         widget = undefined;
       }
       const urlText = url.value;
-      urlText && loadSongle(urlText);
+      if( urlText ) {
+        loadSongle(urlText);
+      }
     });
     const searchParams = new URLSearchParams(window.location.search);
     const initialUrlText = searchParams.get("songle");
     if( initialUrlText ) {
-      loadSongle(initialUrlText);
+      loadSongle(url.value = initialUrlText);
     }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect) {
