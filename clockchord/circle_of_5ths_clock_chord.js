@@ -2230,7 +2230,7 @@ const PianoKeyboard = class {
       delete activeNoteNumbers[e.code];
     });
   };
-  setupSongle = (chord, beatCanvas, darkModeSelect) => {
+  setupSongle = (chord, beatCanvas, darkModeSelect, searchParams) => {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
@@ -2305,13 +2305,12 @@ const PianoKeyboard = class {
         loadSongle(urlText);
       }
     });
-    const searchParams = new URLSearchParams(window.location.search);
     const initialUrlText = searchParams.get("songle");
     if( initialUrlText ) {
       loadSongle(url.value = initialUrlText);
     }
   };
-  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect) {
+  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -2330,7 +2329,7 @@ const PianoKeyboard = class {
     setupWebMidiLink();
     setupMidiSequencer(beatCanvas, darkModeSelect);
     setupPianoKeyboard();
-    setupSongle(chord, beatCanvas, darkModeSelect);
+    setupSongle(chord, beatCanvas, darkModeSelect, searchParams);
   }
 }
 
@@ -2664,6 +2663,14 @@ const CircleOfFifthsClock = class {
       if( !this.minorElement ) return;
       this.minorElement.checked = isMinor;
       this.dial.draw();
+    },
+    set text(textValue) {
+      if( !textValue ) return;
+      const array = textValue.split("m");
+      const value = parseInt(array[0]);
+      if( isNaN(value) ) return;
+      this.value = value;
+      this.minor = array.length > 1;
     },
     setChordAsKey() {
       const { chord } = this;
@@ -3002,10 +3009,12 @@ const CircleOfFifthsClock = class {
       return;
     }
     const { keySignature, dial } = this;
+    const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       this.setupToneIndicatorCanvas(),
       this.setupBeatCanvas(),
-      dial.darkModeSelect
+      dial.darkModeSelect,
+      searchParams
     );
     canvas.focus();
     chord.keySignature = keySignature;
@@ -3014,6 +3023,7 @@ const CircleOfFifthsClock = class {
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
+    keySignature.text = searchParams.get("keysig");
     //
     // PC keyboard bindings
     const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
