@@ -2235,8 +2235,10 @@ const PianoKeyboard = class {
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
     const chordElement = document.getElementById("songleChord");
+    const positionElement = document.getElementById("songlePosition");
     const errorElement = document.getElementById("SongleError");
     let widgetElement, widget;
+    const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     const loadSongle = (urlText) => {
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
@@ -2260,6 +2262,7 @@ const PianoKeyboard = class {
           const position = event.beat.position;
           beatCanvas?.drawBeat(position - 1, numerator);
           chord.start();
+          positionElement.textContent = `♪=${Math.round(event.beat.bpm)} ${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`;
         });
         widget.on("pause", () => {
           chord.stop();
@@ -2270,7 +2273,7 @@ const PianoKeyboard = class {
           chord.stop();
           widgetElement.remove();
           widgetElement = undefined;
-          chordElement.textContent = errorElement.textContent = "";
+          chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
           ClockChord.setSongTitleToDocument(undefined);
         });
         if( darkModeSelect.value == "light" ) {
