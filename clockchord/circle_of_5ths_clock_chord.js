@@ -2239,6 +2239,12 @@ const PianoKeyboard = class {
     const errorElement = document.getElementById("SongleError");
     let widgetElement, widget;
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
+    const initialUrlText = searchParams.get("songle");
+    const keySigSequence = searchParams.get("keysig")?.split(",")?.reduce((result, current, index) => {
+      index & 1 ? result.push({ position: parseInt(current) }) : (result[result.length - 1].keysig = current);
+      return result;
+    }, [{ position: 0 }]);
+    let nextKeySigIndex = 1;
     const loadSongle = (urlText) => {
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
@@ -2263,6 +2269,18 @@ const PianoKeyboard = class {
           beatCanvas?.drawBeat(position - 1, numerator);
           chord.start();
           positionElement.textContent = `♪=${Math.round(event.beat.bpm)} ${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`;
+          const nextKeySigChange = keySigSequence?.[nextKeySigIndex];
+          if( nextKeySigChange?.position <= widget.position.milliseconds ) {
+            chord.keySignature.text = nextKeySigChange.keysig;
+            ++nextKeySigIndex;
+          }
+        });
+        widget.on("seek", () => {
+          if( keySigSequence ) {
+            const newPosition = widget.position.milliseconds;
+            nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
+            chord.keySignature.text = keySigSequence[nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0].keysig;
+          }
         });
         widget.on("pause", () => {
           chord.stop();
@@ -2304,14 +2322,9 @@ const PianoKeyboard = class {
         widget = undefined;
       }
       const urlText = url.value;
-      if( urlText ) {
-        loadSongle(urlText);
-      }
+      if( urlText ) loadSongle(urlText);
     });
-    const initialUrlText = searchParams.get("songle");
-    if( initialUrlText ) {
-      loadSongle(url.value = initialUrlText);
-    }
+    if( initialUrlText ) loadSongle(url.value = initialUrlText);
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
@@ -3026,7 +3039,8 @@ const CircleOfFifthsClock = class {
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
-    keySignature.text = searchParams.get("keysig");
+    const initialKeySig = searchParams.get("keysig")?.split(",")[0];
+    if( initialKeySig ) keySignature.text = initialKeySig;
     //
     // PC keyboard bindings
     const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
