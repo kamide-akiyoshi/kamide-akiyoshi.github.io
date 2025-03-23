@@ -2279,7 +2279,9 @@ const PianoKeyboard = class {
           if( keySigSequence ) {
             const newPosition = widget.position.milliseconds;
             nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
-            chord.keySignature.text = keySigSequence[nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0].keysig;
+            if( nextKeySigIndex < 0 ) nextKeySigIndex = keySigSequence.length;
+            const currentKeySigIndex = nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0;
+            chord.keySignature.text = keySigSequence[currentKeySigIndex].keysig;
           }
         });
         widget.on("pause", () => {
