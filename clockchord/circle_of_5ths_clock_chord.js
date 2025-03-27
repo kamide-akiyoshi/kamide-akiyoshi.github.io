@@ -2241,7 +2241,11 @@ const PianoKeyboard = class {
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     const initialUrlText = searchParams.get("songle");
     const keySigSequence = searchParams.get("keysig")?.split(",")?.reduce((result, current, index) => {
-      index & 1 ? result.push({ position: parseInt(current) }) : (result[result.length - 1].keysig = current);
+      if( index & 1 ) {
+        result.push({ position: parseInt(current) });
+      } else {
+        result[result.length - 1].keysig = current;
+      }
       return result;
     }, [{ position: 0 }]);
     let nextKeySigIndex = 1;
