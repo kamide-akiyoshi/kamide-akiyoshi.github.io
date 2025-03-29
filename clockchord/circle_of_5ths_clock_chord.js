@@ -2237,6 +2237,10 @@ const PianoKeyboard = class {
     const chordElement = document.getElementById("songleChord");
     const positionElement = document.getElementById("songlePosition");
     const errorElement = document.getElementById("SongleError");
+    const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
+    autoChordPlayCheckbox.addEventListener("change", (event) => {
+      !event.target.checked && chord.stop();
+    });
     let widgetElement, widget;
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     const initialUrlText = searchParams.get("songle");
@@ -2280,15 +2284,19 @@ const PianoKeyboard = class {
         widget.on("chordPlay", (event) => {
           const chordSymbol = event.chord.name;
           chordElement.textContent = chordSymbol;
-          chord.parseText(chordSymbol);
-          chord.start();
+          if( autoChordPlayCheckbox.checked ) {
+            chord.parseText(chordSymbol);
+            chord.start();
+          }
         });
         widget.on("beatPlay", (event) => {
           const numerator = event.bar.beats.length || 4;
           const position = event.beat.position;
           beatCanvas?.drawBeat(position - 1, numerator);
-          chord.start();
-          positionElement.textContent = `♪=${Math.round(event.beat.bpm)} ${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`;
+          if( autoChordPlayCheckbox.checked ) {
+            chord.start();
+          }
+          positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms] ♪=${Math.round(event.beat.bpm)}`;
           keySigSequence?.handleBeatPlay(widget.position.milliseconds);
         });
         widget.on("seek", () => {

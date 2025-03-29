@@ -301,6 +301,9 @@
 	#SongleError {
 	  color: red;
 	}
+	#songleChord {
+	  font-size: 150%;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -361,7 +364,7 @@
   <div style="width: 100%;">
     <div id="songleLink">
       <div>
-        Play chord by <a href="https://songle.jp/" target="_blank">Songle</a>
+        Play by <a href="https://songle.jp/" target="_blank">Songle</a>
         -
         <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Select from playlist</a>
       </div>
@@ -371,11 +374,12 @@
         <button id="LoadSongleUrl">Load</button>
       </div>
       <div>
-        <span id="songleChord"></span>
         <span id="songlePosition"></span>
+        <span id="songleChord"></span>
       </div>
       <div id="EmbeddedSongle">
         <div id="SongleError"></div>
+        <input id="autoChordPlay" type="checkbox" checked>Play chord automatically</input>
       </div>
     </div>
     <div id="midi_sequencer">
