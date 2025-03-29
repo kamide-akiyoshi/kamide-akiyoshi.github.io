@@ -2248,13 +2248,21 @@ const PianoKeyboard = class {
       }
       return result;
     }, [{ position: 0 }]);
-    let nextKeySigIndex = 1;
     if( keySigSequence ) {
-      keySigSequence.setKeySignatureAt = (newPosition) => {
+      let nextKeySigIndex = 1;
+      let nextKeySigChangePosition = keySigSequence[nextKeySigIndex]?.position;
+      keySigSequence.handleBeatPlay = (newPosition) => {
+        if( nextKeySigChangePosition > newPosition ) return;
+        const changeTo = keySigSequence[nextKeySigIndex];
+        if( changeTo ) chord.keySignature.text = changeTo.keysig;
+        nextKeySigChangePosition = keySigSequence[++nextKeySigIndex]?.position;
+      };
+      keySigSequence.handleSeek = (newPosition) => {
         nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
         if( nextKeySigIndex < 0 ) nextKeySigIndex = keySigSequence.length;
-        const currentKeySigIndex = nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0;
-        chord.keySignature.text = keySigSequence[currentKeySigIndex].keysig;
+        const changeTo = keySigSequence[nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0];
+        chord.keySignature.text = changeTo.keysig;
+        nextKeySigChangePosition = keySigSequence[nextKeySigIndex]?.position;
       };
     }
     const loadSongle = (urlText) => {
@@ -2281,17 +2289,13 @@ const PianoKeyboard = class {
           beatCanvas?.drawBeat(position - 1, numerator);
           chord.start();
           positionElement.textContent = `♪=${Math.round(event.beat.bpm)} ${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`;
-          const nextKeySigChange = keySigSequence?.[nextKeySigIndex];
-          if( nextKeySigChange?.position <= widget.position.milliseconds ) {
-            chord.keySignature.text = nextKeySigChange.keysig;
-            ++nextKeySigIndex;
-          }
+          keySigSequence?.handleBeatPlay(widget.position.milliseconds);
         });
         widget.on("seek", () => {
-          setTimeout(() => keySigSequence?.setKeySignatureAt(widget.position.milliseconds), 0);
+          keySigSequence && setTimeout(() => keySigSequence.handleSeek(widget.position.milliseconds), 0);
         });
         widget.on("play", () => {
-          setTimeout(() => keySigSequence?.setKeySignatureAt(widget.position.milliseconds), 0);
+          keySigSequence && setTimeout(() => keySigSequence.handleSeek(widget.position.milliseconds), 0);
         });
         widget.on("pause", () => {
           chord.stop();
