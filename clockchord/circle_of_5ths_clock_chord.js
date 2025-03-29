@@ -2249,6 +2249,14 @@ const PianoKeyboard = class {
       return result;
     }, [{ position: 0 }]);
     let nextKeySigIndex = 1;
+    if( keySigSequence ) {
+      keySigSequence.setKeySignatureAt = (newPosition) => {
+        nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
+        if( nextKeySigIndex < 0 ) nextKeySigIndex = keySigSequence.length;
+        const currentKeySigIndex = nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0;
+        chord.keySignature.text = keySigSequence[currentKeySigIndex].keysig;
+      };
+    }
     const loadSongle = (urlText) => {
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
@@ -2280,13 +2288,10 @@ const PianoKeyboard = class {
           }
         });
         widget.on("seek", () => {
-          if( keySigSequence ) {
-            const newPosition = widget.position.milliseconds;
-            nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
-            if( nextKeySigIndex < 0 ) nextKeySigIndex = keySigSequence.length;
-            const currentKeySigIndex = nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0;
-            chord.keySignature.text = keySigSequence[currentKeySigIndex].keysig;
-          }
+          setTimeout(() => keySigSequence?.setKeySignatureAt(widget.position.milliseconds), 0);
+        });
+        widget.on("play", () => {
+          setTimeout(() => keySigSequence?.setKeySignatureAt(widget.position.milliseconds), 0);
         });
         widget.on("pause", () => {
           chord.stop();
