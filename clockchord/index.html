@@ -289,6 +289,7 @@
 		width: 100%;
 		display: flex;
 		align-items: center;
+		margin-top: 4px;
 	}
 	#WebMidiLinkUrl, #SongleUrl {
 		width: 100%;
@@ -361,6 +362,8 @@
     <div id="songleLink">
       <div>
         Play chord by <a href="https://songle.jp/" target="_blank">Songle</a>
+        -
+        <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Select from playlist</a>
       </div>
       <div id="SongleUrlForm">
         <label for="SongleUrl">URL</label>
@@ -368,14 +371,11 @@
         <button id="LoadSongleUrl">Load</button>
       </div>
       <div>
-        <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Select from playlist</a>
+        <span id="songleChord"></span>
+        <span id="songlePosition"></span>
       </div>
       <div id="EmbeddedSongle">
         <div id="SongleError"></div>
-      </div>
-      <div>
-        <span id="songleChord"></span>
-        <span id="songlePosition"></span>
       </div>
     </div>
     <div id="midi_sequencer">
