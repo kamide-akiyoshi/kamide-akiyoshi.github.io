@@ -309,6 +309,9 @@
 	#songleChord {
 	  font-size: 150%;
 	}
+	#autoChordPlay {
+	  margin-top: 8px;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -380,13 +383,13 @@
         -
         <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Select from playlist</a>
       </div>
+      <div>
+        <input id="autoChordPlay" type="checkbox" checked>Play chord automatically</input>
+      </div>
       <div id="SongleUrlForm">
         <label for="SongleUrl">URL</label>
         <input id="SongleUrl" type="url"/>
         <button id="LoadSongleUrl">Load</button>
-      </div>
-      <div>
-        <input id="autoChordPlay" type="checkbox" checked>Play chord automatically</input>
       </div>
     </div>
     <div id="midi_sequencer">
