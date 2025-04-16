@@ -2255,8 +2255,11 @@ const PianoKeyboard = class {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
-    const chordElement = document.getElementById("songleChord");
     const positionElement = document.getElementById("songlePosition");
+    const tempoElement = document.getElementById("songleTempo");
+    tempoElement.style.display = "none";
+    const bpmElement = document.getElementById("songleBpm");
+    const chordElement = document.getElementById("songleChord");
     const errorElement = document.getElementById("SongleError");
     const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
     autoChordPlayCheckbox.addEventListener("change", (event) => {
@@ -2317,7 +2320,9 @@ const PianoKeyboard = class {
           if( autoChordPlayCheckbox.checked ) {
             chord.start();
           }
-          positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms] ♪=${Math.round(event.beat.bpm)}`;
+          positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`
+          tempoElement.style.display = null;
+          bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
           keySigSequence?.handleBeatPlay(widget.position.milliseconds);
         });
         widget.on("seek", () => {
