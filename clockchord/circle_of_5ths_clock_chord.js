@@ -1529,7 +1529,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas, darkModeSelect) => {
+  setupMidiSequencer = (beatCanvas, darkModeSelect, searchParams) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -1937,11 +1937,30 @@ const PianoKeyboard = class {
       }
       setTickPosition(0);
       midiSequencerElement.prepend(midiSequenceElement);
-    }
-    const loadMidiFile = (file) => {
-      file?.arrayBuffer().then((ab) => {
+    };
+    const loadMidiUrl = (url) => {
+      fetch(url).then((response) => {
+        if( response.status && !response.ok ) {
+          throw `HTTP error: status = ${response.status}`;
+        }
+        return response.arrayBuffer();
+      }).then((ab) => {
+        if( !ab.byteLength ) throw "Empty";
         const seq = parseMidiSequence(new Uint8Array(ab))
-        midiFileNameElement.textContent = (seq.file = file).name;
+        midiFileNameElement.textContent = url.split("/").pop();
+        setMidiSequence(seq);
+        play();
+      }).catch((error) => {
+        console.error(`Could not load URL: ${url}:`, error);
+        alert(error);
+      });
+    };
+    const loadMidiFile = (file) => {
+      if( !file ) return;
+      file.arrayBuffer().then((ab) => {
+        if( !ab.byteLength ) throw "Empty";
+        const seq = parseMidiSequence(new Uint8Array(ab))
+        midiFileNameElement.textContent = file.name;
         setMidiSequence(seq);
         play();
       }).catch((error) => {
@@ -2114,6 +2133,8 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Pause";
       }
     };
+    const url = searchParams?.get("url");
+    url?.split(".").pop()?.toLowerCase() === "mid" && loadMidiUrl(url);
   };
   setupPianoKeyboard = () => {
     const {
@@ -2243,7 +2264,7 @@ const PianoKeyboard = class {
     });
     let widgetElement, widget;
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
-    const initialUrlText = searchParams.get("songle");
+    const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     const keySigSequence = searchParams.get("keysig")?.split(",")?.reduce((result, current, index) => {
       if( index & 1 ) {
         result.push({ position: parseInt(current) });
@@ -2347,7 +2368,10 @@ const PianoKeyboard = class {
       const urlText = url.value;
       if( urlText ) loadSongle(urlText);
     });
-    if( initialUrlText ) loadSongle(url.value = initialUrlText);
+    if(
+      initialUrlText &&
+      initialUrlText.split(".").pop()?.toLowerCase() !== "mid"
+    ) loadSongle(url.value = initialUrlText);
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
@@ -2366,7 +2390,7 @@ const PianoKeyboard = class {
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas, darkModeSelect);
+    setupMidiSequencer(beatCanvas, darkModeSelect, searchParams);
     setupPianoKeyboard();
     setupSongle(chord, beatCanvas, darkModeSelect, searchParams);
   }
