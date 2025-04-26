@@ -1278,7 +1278,7 @@ const PianoKeyboard = class {
       if( bassText ) {
         const bassHourIndex = Music.pitchCharToHourIndex(bassText.substring(0, 1));
         if( hourIndex >= 0 ) {
-          const sfText = chordText.substring(1);
+          const sfText = bassText.substring(1);
           const i = Music.FLAT_SHARP_ARRAY.findIndex(
             (patterns) => patterns.some((pattern) => sfText.startsWith(pattern))
           );
@@ -1389,17 +1389,20 @@ const PianoKeyboard = class {
         fs && (htmlChordText += `<sup>${fs}</sup>`);
         sub && (htmlChordText += `<sub>${sub}</sub>`);
         sup && (htmlChordText += `<sup style="font-size: 70%;">${sup}</sup>`);
-        let bassText;
+        let bass;
         if( "majorBassHour" in chord ) {
           const bassPitchName = Music.majorPitchNameAt(majorBassHour);
           if( bassPitchName ) {
             const [b, bfs] = bassPitchName;
-            bassText = `/${b}`;
-            bfs && (bassText += `<sup>${bfs}</sup>`);
+            htmlChordText += (bass = `/${b}`);
+            if( bfs ) {
+              bass += bfs;
+              htmlChordText += `<sup>${bfs}</sup>`;
+            }
           }
         }
         const plainChordText =
-          `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}${bassText ?? ""}`;
+          `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}${bass ?? ""}`;
         chordTextInput.value = plainChordText;
         label?.attach(htmlChordText);
         dialCenterLabel?.attach(htmlChordText);
