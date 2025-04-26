@@ -1241,6 +1241,7 @@ const PianoKeyboard = class {
       } = chord;
       label?.detach();
       dialCenterLabel?.detach();
+      delete chord.majorBassHour;
       delete chord.hour;
       delete chord.rootPitchName;
       delete chord.rootPitchNumber;
@@ -1258,9 +1259,10 @@ const PianoKeyboard = class {
       chord.clear();
       const text = rawText?.trim();
       if( !text ) return;
-      const hourIndex = Music.pitchCharToHourIndex(text.substring(0, 1));
+      const [chordText, bassText] = text.split("/");
+      const hourIndex = Music.pitchCharToHourIndex(chordText.substring(0, 1));
       if( hourIndex < 0 ) return;
-      let suffix = text.substring(1);
+      let suffix = chordText.substring(1);
       const sfIndex = Music.FLAT_SHARP_ARRAY.findIndex(
         (patterns) => patterns.some(
           (pattern) => {
@@ -1273,6 +1275,16 @@ const PianoKeyboard = class {
         )
       );
       chord.hour = hourIndex + (sfIndex < 0 ? 0 : 7 * (sfIndex - 2)) - 1;
+      if( bassText ) {
+        const bassHourIndex = Music.pitchCharToHourIndex(bassText.substring(0, 1));
+        if( hourIndex >= 0 ) {
+          const sfText = chordText.substring(1);
+          const i = Music.FLAT_SHARP_ARRAY.findIndex(
+            (patterns) => patterns.some((pattern) => sfText.startsWith(pattern))
+          );
+          chord.majorBassHour = bassHourIndex + (i < 0 ? 0 : 7 * (i - 2)) - 1;
+        }
+      }
       if( suffix.startsWith("dim7") ) {
         chord.offset3rd = -1;
         chord.hour -= 3;
@@ -1316,6 +1328,7 @@ const PianoKeyboard = class {
         chord,
       } = this;
       const {
+        majorBassHour,
         hour,
         label,
         dialCenterLabel,
@@ -1337,9 +1350,15 @@ const PianoKeyboard = class {
       if( ! hasValue() ) return;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
+      const bassPitchNumber = majorBassHour
+        ? Music.togglePitchNumberAndMajorHour(majorBassHour)
+        : rootPitchNumber;
       let i = 0;
-      const noteOn = n => {
+      const noteOn = (n, bass) => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
+        if( bass ) {
+          this.manualNoteOn(Math.max(noteNumber - 24 , 0), ++i);
+        }
         this.manualNoteOn(noteNumber, ++i);
       };
       classLists.clear();
@@ -1348,6 +1367,7 @@ const PianoKeyboard = class {
       noteOn(rootPitchNumber + 7 + (offset5th ?? 0));
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
+      noteOn(bassPitchNumber, true);
       chord.notes = Array.from(this.pianoKeys.pressed.keys());
       buttonCanvas.selectChord();
       buttonCanvas.enableStrum();
@@ -1364,13 +1384,22 @@ const PianoKeyboard = class {
           offset5th < 0 && (sup += '-5');
           offset3rd > 0 && (sup += 'sus4');
         }
-        const rootText = rootPitchName[0];
-        const fs = rootPitchName[1];
+        const [rootText, fs] = rootPitchName;
         let htmlChordText = rootText;
         fs && (htmlChordText += `<sup>${fs}</sup>`);
         sub && (htmlChordText += `<sub>${sub}</sub>`);
         sup && (htmlChordText += `<sup style="font-size: 70%;">${sup}</sup>`);
-        const plainChordText = `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}`;
+        let bassText;
+        if( "majorBassHour" in chord ) {
+          const bassPitchName = Music.majorPitchNameAt(majorBassHour);
+          if( bassPitchName ) {
+            const [b, bfs] = bassPitchName;
+            bassText = `/${b}`;
+            bfs && (bassText += `<sup>${bfs}</sup>`);
+          }
+        }
+        const plainChordText =
+          `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}${bassText ?? ""}`;
         chordTextInput.value = plainChordText;
         label?.attach(htmlChordText);
         dialCenterLabel?.attach(htmlChordText);
@@ -3159,6 +3188,7 @@ const CircleOfFifthsClock = class {
             canvas.focus();
             chord.offset3rd = dial.toOffset3rd(r);
             chord.hour = Math.round( (canvas.lastHourAngle = Math.atan2(x, -y)) * 6 / Math.PI );
+            delete chord.majorBassHour;
           }
           break;
       }
