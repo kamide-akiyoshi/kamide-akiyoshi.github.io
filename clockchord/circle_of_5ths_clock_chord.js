@@ -1374,9 +1374,10 @@ const PianoKeyboard = class {
       } = chord;
       stop();
       if( ! hasValue() ) return;
+      const hasBass = "majorBassHour" in chord;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
-      const bassPitchNumber = majorBassHour
+      const bassPitchNumber = hasBass
         ? Music.togglePitchNumberAndMajorHour(majorBassHour)
         : rootPitchNumber;
       let i = 0;
@@ -1413,7 +1414,7 @@ const PianoKeyboard = class {
         sub && (htmlChordText += `<sub>${sub}</sub>`);
         sup && (htmlChordText += `<sup style="font-size: 70%;">${sup}</sup>`);
         let bass;
-        if( "majorBassHour" in chord ) {
+        if( hasBass ) {
           const bassPitchName = Music.majorPitchNameAt(majorBassHour);
           if( bassPitchName ) {
             const [b, bfs] = bassPitchName;
