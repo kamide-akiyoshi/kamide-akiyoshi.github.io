@@ -1382,10 +1382,7 @@ const PianoKeyboard = class {
       let i = 0;
       const noteOn = (n, bass) => {
         const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
-        if( bass ) {
-          this.manualNoteOn(Math.max(noteNumber - 24 , 0), ++i);
-        }
-        this.manualNoteOn(noteNumber, ++i);
+        this.manualNoteOn(bass ? Math.max(noteNumber - 24 , 0) : noteNumber, ++i);
       };
       classLists.clear();
       noteOn(rootPitchNumber);
