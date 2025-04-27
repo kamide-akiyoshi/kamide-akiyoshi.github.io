@@ -1285,7 +1285,15 @@ const PianoKeyboard = class {
           chord.majorBassHour = bassHourIndex + (i < 0 ? 0 : 7 * (i - 2)) - 1;
         }
       }
-      if( suffix.startsWith("dim7") ) {
+      suffix = suffix.replace(/\(|\)|\,/g, "");
+      if( suffix.startsWith("dim9") ) {
+        chord.offset3rd = -1;
+        chord.hour -= 3;
+        chord.offset5th = -1;
+        chord.offset7th = 1;
+        chord.add9th = true;
+        suffix = suffix.replace("dim9", "");
+      } else if( suffix.startsWith("dim7") ) {
         chord.offset3rd = -1;
         chord.hour -= 3;
         chord.offset5th = -1;
@@ -1301,20 +1309,38 @@ const PianoKeyboard = class {
         chord.hour -= 3;
         suffix = suffix.replace("m", "");
       }
-      if( suffix.startsWith("M7") ) {
-        chord.offset7th = 3; suffix = suffix.replace("M7", "");
+      if( suffix.startsWith("add9") ) {
+        chord.add9th = true;
+        suffix = suffix.replace("add9", "");
+      } else if( suffix.startsWith("M9") ) {
+        chord.offset7th = 3;
+        chord.add9th = true;
+        suffix = suffix.replace("M9", "");
+      } else if( suffix.startsWith("M7") ) {
+        chord.offset7th = 3;
+        suffix = suffix.replace("M7", "");
+      } else if( suffix.startsWith("9") ) {
+        chord.offset7th = 2;
+        chord.add9th = true;
+        suffix = suffix.replace("9", "");
       } else if( suffix.startsWith("7") ) {
-        chord.offset7th = 2; suffix = suffix.replace("7", "");
+        chord.offset7th = 2;
+        suffix = suffix.replace("7", "");
+      } else if( suffix.startsWith("69") ) {
+        chord.offset7th = 1;
+        chord.add9th = true;
+        suffix = suffix.replace("69", "");
       } else if( suffix.startsWith("6") ) {
-        chord.offset7th = 1; suffix = suffix.replace("6", "");
+        chord.offset7th = 1;
+        suffix = suffix.replace("6", "");
       }
       if( suffix.startsWith("sus4") ) {
         chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
       }
-      if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
-        chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
-      } else if( suffix.startsWith("aug") ) {
+      if( suffix.startsWith("aug") ) {
         chord.offset5th = 1; suffix = suffix.replace("aug", "");
+      } if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
+        chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
       }
       return;
     },
@@ -1380,7 +1406,7 @@ const PianoKeyboard = class {
         } else {
           offset3rd < 0 && (sub += 'm');
           offset5th > 0 && (sup += 'aug');
-          sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th] ?? "";
+          sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th ?? 0] ?? "";
           offset5th < 0 && (sup += '-5');
           offset3rd > 0 && (sup += 'sus4');
         }
