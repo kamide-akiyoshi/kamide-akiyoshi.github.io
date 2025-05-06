@@ -1238,6 +1238,7 @@ const PianoKeyboard = class {
         classLists,
         keyOrChordChanged,
         buttonCanvas,
+        chordTextInput,
       } = chord;
       label?.detach();
       dialCenterLabel?.detach();
@@ -1251,6 +1252,7 @@ const PianoKeyboard = class {
       delete chord.add9th;
       keyOrChordChanged();
       buttonCanvas.clearChord();
+      chordTextInput.value = "";
       classLists.clear();
     },
     hasValue: () => "hour" in this.chord,
