@@ -3261,6 +3261,7 @@ const CircleOfFifthsClock = class {
       end: ['pointerup', 'keyup']
     };
     const shiftButtonContainer = document.getElementById('shift_button_container');
+    const shiftKeyDescription = document.getElementById('shift_key_description');
     if( isTouchDevice ) {
       const status = this.shiftButtonStatus = {};
       [
@@ -3281,6 +3282,7 @@ const CircleOfFifthsClock = class {
         });
         [...eventTypes.disable, eventTypes.move].forEach(t => button.addEventListener(t, e => e.preventDefault()));
       });
+      shiftKeyDescription?.remove();
       canvas.title = "Touch the chord symbol to sound";
     } else {
       shiftButtonContainer?.remove();
