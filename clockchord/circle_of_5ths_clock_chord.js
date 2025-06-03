@@ -36,13 +36,25 @@ const Music = class {
     }
     return hour;
   };
-  static pitchCharToHourIndex = (pitchChar) => {
-    const charCodeIndex = pitchChar.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
-    if( charCodeIndex < 0 || charCodeIndex > 6 ) {
-      // pitchChar not in "ABCDEFG"
-      return -1;
-    }
-    return ((charCodeIndex + 2) * 2) % 7; // Index in "FCGDAEB"
+  static parsePitchName = (pitchName) => {
+    const abcIndex = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+    if( abcIndex < 0 || abcIndex > 6 ) return undefined;
+    let rest = pitchName.substring(1);
+    const flatSharpIndex = Music.FLAT_SHARP_ARRAY.findIndex(
+      (patterns) => patterns.some(
+        (pattern) => {
+          if( rest.startsWith(pattern) ) {
+            rest = rest.replace(pattern, "");
+            return true;
+          }
+          return false;
+        }
+      )
+    );
+    const majorHour =
+      ((abcIndex + 2) * 2) % 7 - 1 // FCGDAEB -> -1 ... 5
+      + (flatSharpIndex < 0 ? 0 : 7 * (flatSharpIndex - 2)); // bb:-14, b:-7, #:7, ##:14
+    return [majorHour, rest];
   };
   static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
@@ -1259,33 +1271,16 @@ const PianoKeyboard = class {
     parseText: (rawText) => {
       const { chord } = this;
       chord.clear();
-      const text = rawText?.trim();
-      if( !text ) return;
-      const [chordText, bassText] = text.split("/");
-      const hourIndex = Music.pitchCharToHourIndex(chordText.substring(0, 1));
-      if( hourIndex < 0 ) return;
-      let suffix = chordText.substring(1);
-      const sfIndex = Music.FLAT_SHARP_ARRAY.findIndex(
-        (patterns) => patterns.some(
-          (pattern) => {
-            if( suffix.startsWith(pattern) ) {
-              suffix = suffix.replace(pattern, "");
-              return true;
-            }
-            return false;
-          }
-        )
-      );
-      chord.hour = hourIndex + (sfIndex < 0 ? 0 : 7 * (sfIndex - 2)) - 1;
+      const trimmedText = rawText?.trim();
+      if( !trimmedText ) return;
+      const [chordText, bassText] = trimmedText.split("/");
+      const parsedRoot = Music.parsePitchName(chordText);
+      if( !parsedRoot ) return;
+      let suffix;
+      [chord.hour, suffix] = parsedRoot;
       if( bassText ) {
-        const bassHourIndex = Music.pitchCharToHourIndex(bassText.substring(0, 1));
-        if( hourIndex >= 0 ) {
-          const sfText = bassText.substring(1);
-          const i = Music.FLAT_SHARP_ARRAY.findIndex(
-            (patterns) => patterns.some((pattern) => sfText.startsWith(pattern))
-          );
-          chord.majorBassHour = bassHourIndex + (i < 0 ? 0 : 7 * (i - 2)) - 1;
-        }
+        const parsedBass = Music.parsePitchName(bassText);
+        parsedBass && (chord.majorBassHour = parsedBass[0]);
       }
       suffix = suffix.replace(/\(|\)|\,/g, "");
       if( suffix.startsWith("dim9") ) {
