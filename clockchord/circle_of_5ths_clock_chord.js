@@ -1280,7 +1280,7 @@ const PianoKeyboard = class {
       [chord.hour, suffix] = parsedRoot;
       if( bassText ) {
         const parsedBass = Music.parsePitchName(bassText);
-        parsedBass && (chord.majorBassHour = parsedBass[0]);
+        parsedBass && ([chord.majorBassHour] = parsedBass);
       }
       suffix = suffix.replace(/\(|\)|\,/g, "");
       if( suffix.startsWith("dim9") ) {
