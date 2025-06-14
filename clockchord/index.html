@@ -189,8 +189,12 @@
 	  margin: 0.5em;
 	  width: fit-content;
 	}
+	details {
+	  width: 410px;
+	}
 	details > div {
-	  margin: 0 1em 0.5em 1em;
+	  margin-left: 1em;
+	  margin-right: 0.5em;
 	}
 	.shift_button_line {
 		display: flex;
@@ -211,9 +215,21 @@
 		background: yellow;
 	}
 	#shift_key_description {
+	  display: flex;
+	  flex-wrap: wrap;
+	  row-gap: 1em;
+	  column-gap: 1em;
+	  align-items: center;
 	  border: 1px solid;
 	  border-radius: 4px;
-	  padding: 0 0.5em;
+	  padding: 0.5em;
+	}
+	.right_click_icon {
+	  height: 1.5em;
+	}
+	.pckey {
+	  background-color: #DDDDDD;
+	  border-style: outset;
 	}
 	label,.envelope_value {
 		font-size: small;
@@ -377,9 +393,26 @@
           </div>
         </div>
         <div id="shift_key_description">
-          <div><b>7</b>:RightClick <b>M7</b>:[Shift]RightClick <b>6</b>:[Shift]</div>
-          <div><b>-5</b>:[Alt] <b>aug</b>:[Alt]sus4 <b>add9</b>:[Ctrl] <b>dim7</b>:m6-5</div>
-          <div>and any combination available!</div>
+          <div>
+            <b>7</b>:<img
+              src="image/right_click.svg"
+              class="right_click_icon"
+              alt="Right click" title="Right click"
+            />
+          </div>
+          <div>
+            <b>M7</b>:<span class="pckey">Shift</span> + <img
+              src="image/right_click.svg"
+              class="right_click_icon"
+              alt="Right click" title="Right click"
+            />
+          </div>
+          <div><b>6</b>:<span class="pckey">Shift</span></div>
+          <div><b>-5</b>:<span class="pckey">Alt</span></div>
+          <div><b>aug</b>:<span class="pckey">Alt</span> + sus4</div>
+          <div><b>add9</b>:<span class="pckey">Ctrl</span></div>
+          <div><b>dim7</b>:m6-5</div>
+          <div>...and any combination available!</div>
         </div>
       </div>
     </div>
