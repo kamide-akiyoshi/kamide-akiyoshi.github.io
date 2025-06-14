@@ -1946,8 +1946,9 @@ const PianoKeyboard = class {
     const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const setMidiSequenceTitle = (title) => {
-      titleElement.textContent = title ?? "";
-      ClockChord.setSongTitleToDocument(title);
+      const trimmedTitle = title?.trim() ?? "";
+      titleElement.textContent = trimmedTitle;
+      ClockChord.setSongTitleToDocument(trimmedTitle);
     };
     const markerElement = document.getElementById("song_marker");
     const textElement = document.getElementById("song_text");
