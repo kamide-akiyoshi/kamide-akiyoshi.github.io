@@ -20,11 +20,17 @@ const Music = class {
     ["\u{1D12A}", "x"],  // Double sharp
   ];
   static majorPitchNameAt = (hour) => {
-    const array = [
-      String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7)
-    ];
-    const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)];
-    if( fs.length ) array.push(fs[0]);
+    const array = [];
+    const hourFromFbb = hour + 15;
+    if( hourFromFbb >= 0 ) {
+      const flatSharpIndex = Math.trunc(hourFromFbb / 7);
+      if( flatSharpIndex < Music.FLAT_SHARP_ARRAY.length ) {
+        const abcIndex = 4 * (hourFromFbb + 3) % 7;
+        array.push(String.fromCharCode('A'.charCodeAt(0) + abcIndex));
+        const fs = Music.FLAT_SHARP_ARRAY[flatSharpIndex];
+        if( fs.length ) array.push(fs[0]);
+      }
+    }
     return array;
   };
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
