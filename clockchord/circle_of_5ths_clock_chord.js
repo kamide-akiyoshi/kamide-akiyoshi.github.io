@@ -2390,9 +2390,11 @@ const PianoKeyboard = class {
         };
         widget.on("seek", handleSeek);
         widget.on("play", handleSeek);
-        const handleStop = () => { chord.stop(); };
-        widget.on("pause", handleStop);
-        widget.on("finish", handleStop);
+        widget.on("pause", () => { chord.stop(); });
+        widget.on("finish", () => {
+          chord.stop();
+          chordElement.textContext = "";
+        });
         widget.on("remove", () => {
           delete window.onSongleWidgetReady;
           delete window.onSongleWidgetError;
