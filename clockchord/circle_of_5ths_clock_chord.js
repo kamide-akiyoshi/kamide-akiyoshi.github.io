@@ -2385,15 +2385,14 @@ const PianoKeyboard = class {
           bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
           keySigSequence?.handleBeatPlay(widget.position.milliseconds);
         });
-        widget.on("seek", () => {
+        const handleSeek = () => {
           keySigSequence && setTimeout(() => keySigSequence.handleSeek(widget.position.milliseconds), 0);
-        });
-        widget.on("play", () => {
-          keySigSequence && setTimeout(() => keySigSequence.handleSeek(widget.position.milliseconds), 0);
-        });
-        widget.on("pause", () => {
-          chord.stop();
-        });
+        };
+        widget.on("seek", handleSeek);
+        widget.on("play", handleSeek);
+        const handleStop = () => { chord.stop(); };
+        widget.on("pause", handleStop);
+        widget.on("finish", handleStop);
         widget.on("remove", () => {
           delete window.onSongleWidgetReady;
           delete window.onSongleWidgetError;
