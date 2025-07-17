@@ -3354,14 +3354,16 @@ const CircleOfFifthsClock = class {
     if( chord.chordTextInput ) {
       const { chordTextInput } = chord;
       chordTextInput.addEventListener('keydown', (event) => {
-        if( ! event.repeat && event.key === "Enter" ) {
+        if( ! event.repeat && ["Enter", " "].includes(event.key) ) {
           chord.parseText(chordTextInput.value);
           chord.start();
+          event.preventDefault();
         }
       });
       chordTextInput.addEventListener('keyup', (event) => {
-        if( event.key === "Enter" ) {
+        if( ["Enter", " "].includes(event.key) ) {
           chord.stop();
+          event.preventDefault();
         }
       });
     }
