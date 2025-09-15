@@ -3095,9 +3095,24 @@ const CircleOfFifthsClock = class {
         osdc.height = height;
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const darkModeSelect = document.getElementById('dark_mode_select');
+      const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
         dial.darkModeSelect = darkModeSelect;
+        const dark = document.getElementById('theme_dark');
+        const light = document.getElementById('theme_light');
+        Object.defineProperty(darkModeSelect, 'value', {
+          set: (value) => {
+            switch(value) {
+              case 'dark': if(!dark.checked) { dark.checked = true; dark.focus(); } break;
+              case 'light': if(!light.checked) { light.checked = true; light.focus(); } break;
+            }
+          },
+          get: () => dark.checked ? 'dark' : light.checked ? 'light' : undefined,
+        });
+        const handleChange = (event) => {
+          darkModeSelect.value = event.target.value;
+        }
+        [dark, light].forEach((rb) => rb.addEventListener('change', handleChange));
       }
       const changeDarkClass = (classList, classPrefix, theme) => {
         if( !classList ) return;
