@@ -14,8 +14,8 @@
 <script>new CircleOfFifthsClock();</script>
 <style type="text/css">
 	#theme_select {
-		right: 0;
-		top: 0;
+		right: 4px;
+		top: 4px;
 	}
 	#theme_select input[type="radio"] {
 		opacity: 0;
@@ -25,11 +25,11 @@
 		font-size: medium;
 	}
 	#theme_select label:has(input:focus) {
-		outline: -webkit-focus-ring-color auto 1px;
+		outline-style: auto;
 	}
 	#background_mode_select {
-		right: 0;
-		top: 24px;
+		right: 4px;
+		top: 28px;
 	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	dt { font-weight: bold; }
@@ -254,8 +254,8 @@
 	  flex-direction: column;
 	}
 	#wave {
-    margin-top: 8px;
-  }
+		margin-top: 8px;
+	}
 	#periodicWaveTerms {
 		display: flex;
 		flex-direction: column;
@@ -369,8 +369,8 @@
       <button id="enharmonic" title="Enharmonic key"></button>
       <button id="setkey" title="Set the chord as key signature"></button>
       <div id="theme_select">
-        <label for="theme_light" aria-label="light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
-        <label for="theme_dark" aria-label="dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
+        <label for="theme_light" aria-label="light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
+        <label for="theme_dark" aria-label="dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
       </div>
       <select id="background_mode_select">
         <option value="donut">Donut</option>
@@ -658,7 +658,7 @@
 <h3>表示スタイル選択</h3>
 <dl>
 <dt>ダークモード</dt>
-<dd>Light/Darkの選択ボックスで明暗の切り替えができます。OSやブラウザの設定にも反応します。
+<dd>Light🌞 / Dark🌛のアイコンで明暗の切り替えができます。OSやブラウザの設定にも反応します。
 </dd>
 <br/>
 <dt>文字盤の背景モード</dt>
