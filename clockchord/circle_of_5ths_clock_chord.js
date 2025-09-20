@@ -3097,22 +3097,21 @@ const CircleOfFifthsClock = class {
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
-        dial.darkModeSelect = darkModeSelect;
-        const dark = document.getElementById('theme_dark');
-        const light = document.getElementById('theme_light');
+        const radioButtons = Array.from((dial.darkModeSelect = darkModeSelect).querySelectorAll('input'));
         Object.defineProperty(darkModeSelect, 'value', {
           set: (value) => {
-            switch(value) {
-              case 'dark': if(!dark.checked) { dark.checked = true; dark.focus(); } break;
-              case 'light': if(!light.checked) { light.checked = true; light.focus(); } break;
+            const rb = radioButtons.find((rb) => value === rb.value && !rb.checked);
+            if( rb ) {
+              rb.checked = true;
+              rb.focus();
             }
           },
-          get: () => dark.checked ? 'dark' : light.checked ? 'light' : undefined,
+          get: () => radioButtons.find((rb) => rb.checked)?.value,
         });
         const handleChange = (event) => {
           darkModeSelect.value = event.target.value;
         }
-        [dark, light].forEach((rb) => rb.addEventListener('change', handleChange));
+        radioButtons.forEach((rb) => rb.addEventListener('change', handleChange));
       }
       const changeDarkClass = (classList, classPrefix, theme) => {
         if( !classList ) return;
