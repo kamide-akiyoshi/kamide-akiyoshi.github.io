@@ -3097,21 +3097,13 @@ const CircleOfFifthsClock = class {
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
-        const radioButtons = Array.from((dial.darkModeSelect = darkModeSelect).querySelectorAll('input'));
+        dial.darkModeSelect = darkModeSelect;
         Object.defineProperty(darkModeSelect, 'value', {
           set: (value) => {
-            const rb = radioButtons.find((rb) => value === rb.value && !rb.checked);
-            if( rb ) {
-              rb.checked = true;
-              rb.focus();
-            }
+            darkModeSelect.querySelector(`input[value="${value}"]:not(:checked)`)?.click();
           },
-          get: () => radioButtons.find((rb) => rb.checked)?.value,
+          get: () => darkModeSelect.querySelector('input:checked')?.value,
         });
-        const handleChange = (event) => {
-          darkModeSelect.value = event.target.value;
-        }
-        radioButtons.forEach((rb) => rb.addEventListener('change', handleChange));
       }
       const changeDarkClass = (classList, classPrefix, theme) => {
         if( !classList ) return;
@@ -3131,6 +3123,7 @@ const CircleOfFifthsClock = class {
         hands.draw();
       };
       const setSystemTheme = () => setTheme(darkModeMediaQuery.matches ? 'dark' : 'light');
+      // Let the darkModeSelect (<div> element) detect the change event bubbled from child radio button
       darkModeSelect?.addEventListener('change', e => setTheme(e.target.value));
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
