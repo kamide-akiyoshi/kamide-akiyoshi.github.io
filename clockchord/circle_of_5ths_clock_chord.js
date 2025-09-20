@@ -3374,6 +3374,8 @@ const CircleOfFifthsClock = class {
         }
       });
     }
+    const chordClearButton = document.getElementById('clear_chord');
+    chordClearButton?.addEventListener('click', () => { chord.clear(); });
     chord.clear();
   };
 };
