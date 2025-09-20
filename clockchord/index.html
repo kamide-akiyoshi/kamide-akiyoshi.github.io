@@ -13,9 +13,13 @@
 <script src="./circle_of_5ths_clock_chord.js"></script>
 <script>new CircleOfFifthsClock();</script>
 <style type="text/css">
-	#theme_select {
+	#background_mode_select {
 		right: 4px;
 		top: 4px;
+	}
+	#theme_select {
+		right: 4px;
+		top: 30px;
 	}
 	#theme_select input[type="radio"] {
 		opacity: 0;
@@ -32,10 +36,6 @@
 	}
 	#theme_select label[for="theme_dark"] {
 		background-color: #404040;
-	}
-	#background_mode_select {
-		right: 4px;
-		top: 30px;
 	}
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
 	dt { font-weight: bold; }
@@ -374,14 +374,14 @@
       </label>
       <button id="enharmonic" title="Enharmonic key"></button>
       <button id="setkey" title="Set the chord as key signature"></button>
-      <div id="theme_select">
-        <label for="theme_light" aria-label="light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
-        <label for="theme_dark" aria-label="dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
-      </div>
       <select id="background_mode_select">
         <option value="donut">Donut</option>
         <option value="pie" selected>Pie</option>
       </select>
+      <div id="theme_select">
+        <label for="theme_light" aria-label="light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
+        <label for="theme_dark" aria-label="dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
+      </div>
       <input id="chord_text" name="chord_text" type="text" placeholder="Chord" enterkeyhint="enter"></input>
       <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
       <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px"></canvas>
