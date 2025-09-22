@@ -1991,10 +1991,7 @@ const PianoKeyboard = class {
       timeSignatureElement.textContent = "4/4";
       keyElement.textContent = `Key:${Music.keyTextOf()}`;
       tickPositionSlider.max = midiSequence.tickLength;
-      if( darkModeSelect.value == "light" ) {
-        darkModeSelect.value = "dark";
-        darkModeSelect.dispatchEvent(new Event("change"));
-      }
+      darkModeSelect.value = "dark";
       setTickPosition(0);
       midiSequencerElement.prepend(midiSequenceElement);
     };
@@ -2404,10 +2401,7 @@ const PianoKeyboard = class {
           chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
           ClockChord.setSongTitleToDocument(undefined);
         });
-        if( darkModeSelect.value == "light" ) {
-          darkModeSelect.value = "dark";
-          darkModeSelect.dispatchEvent(new Event("change"));
-        }
+        darkModeSelect.value = "dark"
       };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
