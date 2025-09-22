@@ -3094,7 +3094,22 @@ const CircleOfFifthsClock = class {
         osdc.width = width;
         osdc.height = height;
       }
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const changeClassByTheme = (classList, classPrefix, theme) => {
+        if( !classList ) return;
+        const newClassName = `${classPrefix}${theme}`;
+        if( !classList.contains(newClassName) ) {
+          classList.remove(`${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`);
+          classList.add(newClassName);
+        }
+      };
+      const setTheme = (theme) => {
+        dial.themeColor = CircleOfFifthsClock.themeColors[theme];
+        darkModeSelect && (darkModeSelect.value = theme);
+        changeClassByTheme(dial.canvas.parentElement?.classList, 'clock_', theme);
+        changeClassByTheme(dial.chord?.dialCenterLabel.element?.classList, 'center_chord_', theme);
+        dial.draw();
+        hands.draw();
+      };
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
         dial.darkModeSelect = darkModeSelect;
@@ -3104,27 +3119,11 @@ const CircleOfFifthsClock = class {
           },
           get: () => darkModeSelect.querySelector('input:checked')?.value,
         });
+        // Let the darkModeSelect (<div> element) detect the change event bubbled from child radio button
+        darkModeSelect.addEventListener('change', e => setTheme(e.target.value));
       }
-      const changeDarkClass = (classList, classPrefix, theme) => {
-        if( !classList ) return;
-        const newClassName = `${classPrefix}${theme}`;
-        if( !classList.contains(newClassName) ) {
-          const oldClassName = `${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`;
-          classList.remove(oldClassName);
-          classList.add(newClassName);
-        }
-      };
-      const setTheme = (theme) => {
-        dial.themeColor = CircleOfFifthsClock.themeColors[theme];
-        darkModeSelect && (darkModeSelect.value = theme);
-        changeDarkClass(dial.canvas.parentElement?.classList, 'clock_', theme);
-        changeDarkClass(dial.chord?.dialCenterLabel.element?.classList, 'center_chord_', theme);
-        dial.draw();
-        hands.draw();
-      };
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const setSystemTheme = () => setTheme(darkModeMediaQuery.matches ? 'dark' : 'light');
-      // Let the darkModeSelect (<div> element) detect the change event bubbled from child radio button
-      darkModeSelect?.addEventListener('change', e => setTheme(e.target.value));
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
       backgroundModeSelect?.addEventListener('change', e => {
