@@ -1203,15 +1203,11 @@ const PianoKeyboard = class {
   };
   leftEnd = {
     set note(n) {
+      this._note = n;
       this._chordNote = n + 5;
       this._noteC = Math.ceil(n / 12) * 12;
     },
-    reset() {
-      const n = 4 * 12 + 5;
-      this._initialWhiteKeyIndex = Math.ceil(7 * n / 12);
-      this.note = n;
-    },
-    get initialWhiteKeyIndex() { return this._initialWhiteKeyIndex; },
+    get note() { return this._note; },
     get chordNote() { return this._chordNote; },
     get noteC() { return this._noteC; },
   };
@@ -2197,7 +2193,7 @@ const PianoKeyboard = class {
     const {
       leftEnd,
     } = this;
-    leftEnd.reset();
+    leftEnd.note = 4 * 12 + 5;
     const keyboard = document.getElementById('pianokeyboard');
     if( !keyboard ) {
       return;
@@ -2274,28 +2270,32 @@ const PianoKeyboard = class {
       });
       element.addEventListener('contextmenu', e => e.preventDefault());
     });
-    keyboard.scrollLeft = whiteKeyWidth * leftEnd.initialWhiteKeyIndex;
-    keyboard.addEventListener("scroll",
-      event => {
-        const { scrollLeft, scrollWidth } = event.target;
-        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
-      }
-    );
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
-      bindings: Object.fromEntries(
-        [
-          ...Array.from("Q2W3ER5T6Y7UI9O0P", c => `${c < 10 ? "Digit" : "Key"}${c}`),
-          "BracketLeft", "Equal", "BracketRight",
-        ].map((code, index) => [code, index])
-      ),
+      keys: "Q2W3ER5T6Y7UI9O0P@^[",
+      keyToCode: {
+        "@": "BracketLeft",
+        "^": "Equal",
+        "[": "BracketRight",
+      },
       activeNoteNumbers: {},
+    };
+    pcKey.codeBindings = Object.fromEntries(
+      Array.from(
+        pcKey.keys,
+        c => pcKey.keyToCode[c] ?? `${c < 10 ? "Digit" : "Key"}${c}`
+      ).map((code, index) => [code, index])
+    );
+    pcKey.showBindings = (origin, show) => {
+      pianoKeys.slice(origin, origin + pcKey.keys.length).forEach(
+        ({ element }, index) => element.textContent = show ? pcKey.keys[index] : ""
+      );
     };
     keyboard.addEventListener("keydown", e => {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
       if( e.code in activeNoteNumbers ) return;
-      const index = pcKey.bindings[e.code] ?? -1;
+      const index = pcKey.codeBindings[e.code] ?? -1;
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
@@ -2306,6 +2306,25 @@ const PianoKeyboard = class {
       const { activeNoteNumbers } = pcKey;
       manualNoteOff(activeNoteNumbers[e.code]);
       delete activeNoteNumbers[e.code];
+    });
+    keyboard.scrollLeft = whiteKeyWidth * Math.ceil(7 * leftEnd.note / 12);
+    document.activeElement === keyboard && pcKey.showBindings(leftEnd.noteC, true);
+    keyboard.addEventListener("scroll",
+      event => {
+        const { scrollLeft, scrollWidth } = event.target;
+        const oldNoteC = leftEnd.noteC;
+        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
+        if( document.activeElement === keyboard && oldNoteC !== leftEnd.noteC ) {
+          pcKey.showBindings(oldNoteC, false);
+          pcKey.showBindings(leftEnd.noteC, true);
+        }
+      }
+    );
+    keyboard.addEventListener('focus', () => {
+      pcKey.showBindings(leftEnd.noteC, true);
+    });
+    keyboard.addEventListener('blur', () => {
+      pcKey.showBindings(leftEnd.noteC, false);
     });
   };
   setupSongle = (chord, beatCanvas, darkModeSelect, searchParams) => {
