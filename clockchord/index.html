@@ -159,7 +159,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: flex-end;
-		color: #F08080;
+		--indicator-color: #F08080;
 	}
 	.whitekey {
 		width: 28px;
@@ -170,13 +170,14 @@
 		border-color: #C0C0C0;
 		border-radius: 0 0 4px 4px;
 		scroll-snap-align: start;
+		color: rgba(0, 0, 0, 50%);
 	}
 	.pressed.whitekey {
 		border-style: inset;
-		background: radial-gradient(ellipse 50% 15% at 50% 85%, currentColor 8% 20%, #F0F0F0);
+		background: radial-gradient(ellipse 50% 15% at 50% 85%, var(--indicator-color) 8% 20%, #F0F0F0);
 	}
 	:not(.pressed).chord.whitekey {
-		background: radial-gradient(ellipse 40% 12% at 50% 85%, currentColor 8% 20%, #F0F0F0);
+		background: radial-gradient(ellipse 40% 12% at 50% 85%, var(--indicator-color) 8% 20%, #F0F0F0);
 	}
 	.blackkey {
 		width: 15px;
@@ -188,15 +189,16 @@
 		border-width: 0 3px 12px 3px;
 		border-color: #282828;
 		border-radius: 0 0 3px 3px;
+		color: rgba(255, 255, 255, 50%);
 	}
 	.pressed.blackkey {
 		border-style: solid;
-		background: radial-gradient(ellipse 70% 25% at 50% 75%, currentColor 20% 20%, #282828);
+		background: radial-gradient(ellipse 70% 25% at 50% 75%, var(--indicator-color) 20% 20%, #282828);
 	}
 	:not(.pressed).chord.blackkey {
-		background: radial-gradient(ellipse 50% 20% at 50% 75%, currentColor 20% 20%, #282828);
+		background: radial-gradient(ellipse 50% 20% at 50% 75%, var(--indicator-color)0 20% 20%, #282828);
 	}
-	.chord.root { color: #FF2020; }
+	.chord.root { --indicator-color: #FF2020; }
 	.frequency {
 		position: absolute;
 		top: calc(100% - 30px);
