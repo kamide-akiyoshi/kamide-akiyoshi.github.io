@@ -1204,11 +1204,9 @@ const PianoKeyboard = class {
   leftEnd = {
     set note(n) {
       this._note = n;
-      this._chordNote = n + 5;
       this._noteC = Math.ceil(n / 12) * 12;
     },
     get note() { return this._note; },
-    get chordNote() { return this._chordNote; },
     get noteC() { return this._noteC; },
   };
   chord = {
@@ -1381,7 +1379,7 @@ const PianoKeyboard = class {
         : rootPitchNumber;
       let i = 0;
       const noteOn = (n, bass) => {
-        const noteNumber = n - Math.floor((n - leftEnd.chordNote) / 12) * 12;
+        const noteNumber = n - Math.floor((n - (leftEnd.note + 5)) / 12) * 12;
         this.manualNoteOn(bass ? Math.max(noteNumber - 24 , 0) : noteNumber, ++i);
       };
       classLists.clear();
@@ -2190,9 +2188,7 @@ const PianoKeyboard = class {
     url?.split(".").pop()?.toLowerCase() === "mid" && loadMidiUrl(url);
   };
   setupPianoKeyboard = () => {
-    const {
-      leftEnd,
-    } = this;
+    const { leftEnd, } = this;
     leftEnd.note = 4 * 12 + 5;
     const keyboard = document.getElementById('pianokeyboard');
     if( !keyboard ) {
@@ -2313,19 +2309,16 @@ const PianoKeyboard = class {
       event => {
         const { scrollLeft, scrollWidth } = event.target;
         const oldNoteC = leftEnd.noteC;
-        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth)
-        if( document.activeElement === keyboard && oldNoteC !== leftEnd.noteC ) {
+        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth);
+        const newNoteC = leftEnd.noteC;
+        if( document.activeElement === keyboard && oldNoteC !== newNoteC ) {
           pcKey.showBindings(oldNoteC, false);
-          pcKey.showBindings(leftEnd.noteC, true);
+          pcKey.showBindings(newNoteC, true);
         }
       }
     );
-    keyboard.addEventListener('focus', () => {
-      pcKey.showBindings(leftEnd.noteC, true);
-    });
-    keyboard.addEventListener('blur', () => {
-      pcKey.showBindings(leftEnd.noteC, false);
-    });
+    keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
+    keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
   setupSongle = (chord, beatCanvas, darkModeSelect, searchParams) => {
     const url = document.getElementById("SongleUrl");
