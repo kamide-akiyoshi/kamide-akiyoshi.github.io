@@ -3108,9 +3108,8 @@ const CircleOfFifthsClock = class {
           classList.add(newClassName);
         }
       };
-      const setTheme = (theme) => {
+      const redrawTheme = (theme) => {
         dial.themeColor = CircleOfFifthsClock.themeColors[theme];
-        darkModeSelect && (darkModeSelect.value = theme);
         changeClassByTheme(dial.canvas.parentElement?.classList, 'clock_', theme);
         changeClassByTheme(dial.chord?.dialCenterLabel.element?.classList, 'center_chord_', theme);
         dial.draw();
@@ -3126,10 +3125,14 @@ const CircleOfFifthsClock = class {
           get: () => darkModeSelect.querySelector('input:checked')?.value,
         });
         // Let the darkModeSelect (<div> element) detect the change event bubbled from child radio button
-        darkModeSelect.addEventListener('change', e => setTheme(e.target.value));
+        darkModeSelect.addEventListener('change', (event) => redrawTheme(event.target.value));
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const setSystemTheme = () => setTheme(darkModeMediaQuery.matches ? 'dark' : 'light');
+      const setSystemTheme = () => {
+        const systemTheme = darkModeMediaQuery.matches ? 'dark' : 'light';
+        darkModeSelect && (darkModeSelect.value = systemTheme);
+        redrawTheme(systemTheme);
+      };
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
       backgroundModeSelect?.addEventListener('change', e => {
