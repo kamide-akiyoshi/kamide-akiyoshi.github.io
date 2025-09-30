@@ -2257,12 +2257,12 @@ const PianoKeyboard = class {
       element.addEventListener(pointerenter, (event) => {
         (event.buttons & 1) && manualNoteOn(noteNumber);
       });
-      const handleOff = () => {
+      const handlePointerUp = () => {
         manualNoteOff(noteNumber);
       };
-      element.addEventListener(pointerup, handleOff);
+      element.addEventListener(pointerup, handlePointerUp);
       element.addEventListener(pointerleave, (event) => {
-        event.buttons && handleOff();
+        event.buttons && handlePointerUp();
       });
       element.addEventListener('contextmenu', e => e.preventDefault());
     });
