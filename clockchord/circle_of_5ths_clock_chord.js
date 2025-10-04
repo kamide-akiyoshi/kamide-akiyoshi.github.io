@@ -1555,6 +1555,10 @@ const PianoKeyboard = class {
     });
     const urlElement = document.getElementById('WebMidiLinkUrl');
     const loadButton = document.getElementById('LoadWebMidiLinkUrl');
+    loadButton.disabled = true;
+    urlElement.addEventListener("input", (event) => {
+      loadButton.disabled = !event.target.value;
+    });
     const iFrame = document.getElementById('WebMidiLinkSynth');
     if( urlElement && loadButton && iFrame ) {
       const parent = iFrame.parentNode;
@@ -2323,6 +2327,10 @@ const PianoKeyboard = class {
   setupSongle = (chord, beatCanvas, darkModeSelect, searchParams) => {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
+    loadButton.disabled = true;
+    url.addEventListener("input", (event) => {
+      loadButton.disabled = !event.target.value;
+    });
     const target = document.getElementById("EmbeddedSongle");
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
