@@ -3376,28 +3376,26 @@ const CircleOfFifthsClock = class {
     canvas.disableStrum = () => canvas.removeEventListener(eventTypes.move, handleMouseMove);
     if( chord.chordTextInput ) {
       const { chordTextInput } = chord;
+      const handleEnterPress = (event) => {
+        chord.parseText(chordTextInput.value);
+        chord.start();
+        event.preventDefault();
+      };
+      const handleEnterRelease = () => chord.stop();
       chordTextInput.addEventListener('keydown', (event) => {
-        if( ! event.repeat && ["Enter", " "].includes(event.key) ) {
-          chord.parseText(chordTextInput.value);
-          chord.start();
-          event.preventDefault();
-        }
+        if( ! event.repeat && ["Enter", " "].includes(event.key) ) handleEnterPress(event);
       });
       chordTextInput.addEventListener('keyup', (event) => {
         if( ["Enter", " "].includes(event.key) ) {
-          chord.stop();
+          handleEnterRelease();
         }
       });
       const chordEnterButton = document.getElementById('enter_chord');
       if( chordEnterButton ) {
-        chordEnterButton.addEventListener('pointerdown', (event) => {
-          chord.parseText(chordTextInput.value);
-          chord.start();
-          event.preventDefault();
-        });
-        chordEnterButton.addEventListener('pointerup', (event) => {
-          chord.stop();
-        });
+        chordEnterButton.addEventListener('pointerdown', handleEnterPress);
+        chordEnterButton.addEventListener('pointerup', handleEnterRelease);
+        chordEnterButton.addEventListener('touchstart', handleEnterPress);
+        chordEnterButton.addEventListener('touchend', handleEnterRelease);
       }
     }
     chord.clear();
