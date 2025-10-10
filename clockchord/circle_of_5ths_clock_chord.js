@@ -3386,12 +3386,20 @@ const CircleOfFifthsClock = class {
       chordTextInput.addEventListener('keyup', (event) => {
         if( ["Enter", " "].includes(event.key) ) {
           chord.stop();
-          event.preventDefault();
         }
       });
+      const chordEnterButton = document.getElementById('enter_chord');
+      if( chordEnterButton ) {
+        chordEnterButton.addEventListener('pointerdown', (event) => {
+          chord.parseText(chordTextInput.value);
+          chord.start();
+          event.preventDefault();
+        });
+        chordEnterButton.addEventListener('pointerup', (event) => {
+          chord.stop();
+        });
+      }
     }
-    const chordClearButton = document.getElementById('clear_chord');
-    chordClearButton?.addEventListener('click', () => { chord.clear(); });
     chord.clear();
   };
 };
