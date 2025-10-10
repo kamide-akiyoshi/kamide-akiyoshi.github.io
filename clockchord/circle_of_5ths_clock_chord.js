@@ -3386,9 +3386,7 @@ const CircleOfFifthsClock = class {
         if( ! event.repeat && ["Enter", " "].includes(event.key) ) handleEnterPress(event);
       });
       chordTextInput.addEventListener('keyup', (event) => {
-        if( ["Enter", " "].includes(event.key) ) {
-          handleEnterRelease();
-        }
+        if( ["Enter", " "].includes(event.key) ) handleEnterRelease();
       });
       const chordEnterButton = document.getElementById('enter_chord');
       if( chordEnterButton ) {
