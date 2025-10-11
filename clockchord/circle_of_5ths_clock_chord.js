@@ -1586,7 +1586,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas, darkModeSelect, searchParams) => {
+  setupMidiSequencer = (beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -1990,6 +1990,7 @@ const PianoKeyboard = class {
       keyElement.textContent = `Key:${Music.keyTextOf()}`;
       tickPositionSlider.max = midiSequence.tickLength;
       darkModeSelect.value = "dark";
+      backgroundModeSelect.value = "pie";
       setTickPosition(0);
       midiSequencerElement.prepend(midiSequenceElement);
     };
@@ -2324,7 +2325,7 @@ const PianoKeyboard = class {
     keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
-  setupSongle = (chord, beatCanvas, darkModeSelect, searchParams) => {
+  setupSongle = (chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
     const url = document.getElementById("SongleUrl");
     const loadButton = document.getElementById("LoadSongleUrl");
     loadButton.disabled = true;
@@ -2421,7 +2422,8 @@ const PianoKeyboard = class {
           chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
           ClockChord.setSongTitleToDocument(undefined);
         });
-        darkModeSelect.value = "dark"
+        darkModeSelect.value = "dark";
+        backgroundModeSelect.value = "pie";
       };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
@@ -2453,7 +2455,7 @@ const PianoKeyboard = class {
       initialUrlText.split(".").pop()?.toLowerCase() !== "mid"
     ) loadSongle(url.value = initialUrlText);
   };
-  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, searchParams) {
+  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -2470,9 +2472,9 @@ const PianoKeyboard = class {
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas, darkModeSelect, searchParams);
+    setupMidiSequencer(beatCanvas, darkModeSelect, backgroundModeSelect, searchParams);
     setupPianoKeyboard();
-    setupSongle(chord, beatCanvas, darkModeSelect, searchParams);
+    setupSongle(chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams);
   }
 }
 
@@ -3143,11 +3145,22 @@ const CircleOfFifthsClock = class {
       };
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
-      backgroundModeSelect?.addEventListener('change', e => {
-        dial.backgroundMode = e.target.value;
-        dial.draw();
-      });
-      dial.backgroundMode = backgroundModeSelect?.value ?? "donut";
+      if( backgroundModeSelect ) {
+        dial.backgroundModeSelect = backgroundModeSelect;
+        Object.defineProperty(backgroundModeSelect, 'value', {
+          set: (value) => {
+            backgroundModeSelect.querySelector(`input[value="${value}"]:not(:checked)`)?.click();
+          },
+          get: () => backgroundModeSelect.querySelector('input:checked')?.value,
+        });
+        backgroundModeSelect.addEventListener('change', e => {
+          dial.backgroundMode = e.target.value;
+          dial.draw();
+        });
+        dial.backgroundMode = backgroundModeSelect.value;
+      } else {
+        dial.backgroundMode = "donut";
+      }
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
       chordButtonCanvas && this.listen(chordButtonCanvas);
       setSystemTheme();
@@ -3166,6 +3179,7 @@ const CircleOfFifthsClock = class {
       this.setupToneIndicatorCanvas(),
       this.setupBeatCanvas(),
       dial.darkModeSelect,
+      dial.backgroundModeSelect,
       searchParams
     );
     canvas.focus();

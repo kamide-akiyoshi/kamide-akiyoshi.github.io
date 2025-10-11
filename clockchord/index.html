@@ -14,12 +14,22 @@
 <script>new CircleOfFifthsClock();</script>
 <style type="text/css">
 	#background_mode_select {
-		right: 4px;
-		top: 4px;
+		right: 20px;
+		top: 3px;
+	}
+	#background_mode_select input[type="radio"] {
+		opacity: 0;
+		position: fixed;
+	}
+	#background_mode_select label {
+		font-size: medium;
+	}
+	#background_mode_select label:has(input:focus) {
+		outline-style: auto;
 	}
 	#theme_select {
 		right: 4px;
-		top: 30px;
+		top: 32px;
 	}
 	#theme_select input[type="radio"] {
 		opacity: 0;
@@ -65,7 +75,7 @@
 	}
 	#keyselect {
 		z-index: 1;
-		top: 18px;
+		top: 20px;
 	}
 	#minor_label {
 	  z-index: 1;
@@ -82,7 +92,7 @@
 	}
 	#enharmonic {
 		z-index: 1;
-		top: 50px;
+		top: 52px;
 	}
 	#chord_text_box {
 		display: flex;
@@ -373,31 +383,31 @@
       <input id="volume" type="range" value="0.5" min="0" max="1.6" step="0.01"/>
     </label>
     <div class="clock clock_light">
-      <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
-      <select id="keyselect" style="height: 32px;"></select>
       <label id="minor_label" for="minor">
         <input id="minor" type="checkbox">m</input>
       </label>
-      <button id="enharmonic" title="Enharmonic key"></button>
       <button id="setkey" title="Set the chord as key signature"></button>
-      <select id="background_mode_select">
-        <option value="donut">Donut</option>
-        <option value="pie" selected>Pie</option>
-      </select>
-      <div id="theme_select">
-        <label for="theme_light" aria-label="light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
-        <label for="theme_dark" aria-label="dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
-      </div>
-      <div id="chord_text_box">
-        <input id="chord_text" name="chord_text" type="text" placeholder="Chord" aria-label="Chord"></input>
-        <button id="enter_chord" aria-label="Enter">⏎</button>
-      </div>
+      <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
+      <select id="keyselect" style="height: 32px;"></select>
+      <button id="enharmonic" title="Enharmonic key"></button>
       <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
       <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
       <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
+      <div id="background_mode_select">
+        <label for="bg_pie" aria-label="Pie" title="Pie"><input type="radio" id="bg_pie" name="background_mode" value="pie" checked>🪭</input></label>
+        <label for="bg_donut" aria-label="Donut" title="Donut"><input type="radio" id="bg_donut" name="background_mode" value="donut">⭕</input></label>
+      </div>
+      <div id="theme_select">
+        <label for="theme_light" aria-label="Light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
+        <label for="theme_dark" aria-label="Dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
+      </div>
+      <div id="chord_text_box">
+        <input id="chord_text" name="chord_text" type="text" placeholder="Chord" aria-label="Chord"></input>
+        <button id="enter_chord" aria-label="Enter">⏎</button>
+      </div>
     </div>
     <div id="lyrics_box">
       <span id="past_lyrics"></span><span id="lyrics"></span>
