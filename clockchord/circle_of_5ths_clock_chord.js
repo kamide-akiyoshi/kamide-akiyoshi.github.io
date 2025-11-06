@@ -1586,7 +1586,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
+  setupMidiSequencer = (beatCanvas, darkModeSelect, backgroundModeSelect) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -2189,8 +2189,6 @@ const PianoKeyboard = class {
         playPauseIcon.alt = "Pause";
       }
     };
-    const url = searchParams?.get("url");
-    url?.split(".").pop()?.toLowerCase() === "mid" && loadMidiUrl(url);
   };
   setupPianoKeyboard = () => {
     const { leftEnd, } = this;
@@ -2450,10 +2448,7 @@ const PianoKeyboard = class {
       const urlText = url.value;
       if( urlText ) loadSongle(urlText);
     });
-    if(
-      initialUrlText &&
-      initialUrlText.split(".").pop()?.toLowerCase() !== "mid"
-    ) loadSongle(url.value = initialUrlText);
+    if( initialUrlText ) loadSongle(url.value = initialUrlText);
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
@@ -2472,7 +2467,7 @@ const PianoKeyboard = class {
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas, darkModeSelect, backgroundModeSelect, searchParams);
+    setupMidiSequencer(beatCanvas, darkModeSelect, backgroundModeSelect);
     setupPianoKeyboard();
     setupSongle(chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams);
   }
