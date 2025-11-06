@@ -3184,7 +3184,7 @@ const CircleOfFifthsClock = class {
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
-    const initialKeySig = searchParams.get("keysig")?.split(",")[0];
+    const initialKeySig = searchParams.get("keysig")?.split(",", 1)[0];
     if( initialKeySig ) keySignature.text = initialKeySig;
     //
     // PC keyboard bindings
