@@ -1130,6 +1130,16 @@ const PianoKeyboard = class {
       this.envelopeView.envelope = m.envelope;
     },
   };
+  createVelocitySlider = () => {
+    const velocitySlider = document.getElementById('velocity') ?? { value: 64 };
+    const velocityValue = document.getElementById('velocityValue');
+    if( velocityValue ) {
+      const handleInput = () => velocityValue.textContent = velocitySlider.value;
+      handleInput();
+      velocitySlider.addEventListener?.("input", handleInput);
+    }
+    return velocitySlider;
+  }
   createMidiChannelSelector = () => {
     const selector = document.getElementById('midi_channel');
     Array.from(
@@ -2457,6 +2467,7 @@ const PianoKeyboard = class {
     this.synth = new SimpleSynthesizer();
     const {
       chord,
+      createVelocitySlider,
       createMidiChannelSelector,
       setupMidiPorts,
       setupWebMidiLink,
@@ -2464,14 +2475,8 @@ const PianoKeyboard = class {
       setupPianoKeyboard,
       setupSongle,
     } = this;
-    const velocitySlider = this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
-    const velocityValue = document.getElementById('velocityValue');
-    if( velocityValue ) {
-      const handleInput = () => velocityValue.textContent = velocitySlider.value;
-      handleInput();
-      velocitySlider.addEventListener?.("input", handleInput);
-    }
     chord.setup();
+    this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
