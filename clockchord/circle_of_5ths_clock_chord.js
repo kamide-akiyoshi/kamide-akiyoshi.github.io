@@ -2354,7 +2354,9 @@ const PianoKeyboard = class {
       !event.target.checked && chord.stop();
     });
     const toKeySigSequence = (text) => {
-      const sequence = text?.split(",")?.reduce((result, current, index) => {
+      const splitArray = text?.split(",");
+      if( !splitArray ) return;
+      const sequence = splitArray.reduce((result, current, index) => {
         if( index & 1 ) {
           result.push({ position: parseInt(current) });
         } else {
@@ -2362,7 +2364,6 @@ const PianoKeyboard = class {
         }
         return result;
       }, [{ position: 0 }]);
-      if( !sequence ) return;
       let nextIndex = 1;
       let nextPosition = sequence[nextIndex]?.position;
       const changeKeySig = (to) => {
