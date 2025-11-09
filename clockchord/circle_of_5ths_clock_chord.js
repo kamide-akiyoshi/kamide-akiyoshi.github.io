@@ -2236,8 +2236,10 @@ const PianoKeyboard = class {
           pianoKey.element.style.left = `${whiteKeyLeft}px`;
         }
         if( hour == 9 ) {
-          const newFrequencyElement = frequencyElement.cloneNode();
-          newFrequencyElement.innerHTML = MIDI.FREQUENCIES[noteNumber];
+          const f = MIDI.FREQUENCIES[noteNumber];
+          const newFrequencyElement = frequencyElement.cloneNode(f === 440);
+          const textElement = newFrequencyElement.querySelector("a") ?? newFrequencyElement;
+          textElement.innerHTML = f;
           newFrequencyElement.style.left = pianoKey.element.style.left;
           keyboard.appendChild(newFrequencyElement);
         }
