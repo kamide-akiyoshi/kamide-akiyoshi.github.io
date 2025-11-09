@@ -266,6 +266,12 @@
 	label,.envelope_value {
 		font-size: small;
 	}
+	#velocityValue {
+		display: inline-block;
+		font-size: small;
+		width: 1.5em;
+		text-align: right;
+	}
 	#envelope {
 	  margin-top: 4px;
 	  display: flex;
@@ -517,10 +523,14 @@
         <div class="frequency"><a href="http://www.yk.rim.or.jp/~kamide/music/notes.html" target="_blank">Hz</a></div>
       </div>
     </div>
-    <div>
-      <label for="velocity" title="Velocity">Velocity<input
+    <div style="display: flex; align-items: center; column-gap: 4px;">
+      <span>
+        <label for="velocity" title="Velocity">Velocity</label>
+        <span id="velocityValue"></span>
+      </span>
+      <input
         id="velocity" type="range" value="64" min="0" max="127" step="1"
-      /></label>
+      />
       <label for="midi_channel">
         Channel
         <select id="midi_channel">

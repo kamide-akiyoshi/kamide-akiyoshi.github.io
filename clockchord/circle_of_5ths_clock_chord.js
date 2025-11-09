@@ -2464,7 +2464,13 @@ const PianoKeyboard = class {
       setupPianoKeyboard,
       setupSongle,
     } = this;
-    this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
+    const velocitySlider = this.velocitySlider = document.getElementById('velocity') ?? { value: 64 };
+    const velocityValue = document.getElementById('velocityValue');
+    if( velocityValue ) {
+      const handleInput = () => velocityValue.textContent = velocitySlider.value;
+      handleInput();
+      velocitySlider.addEventListener?.("input", handleInput);
+    }
     chord.setup();
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
