@@ -2353,35 +2353,41 @@ const PianoKeyboard = class {
     autoChordPlayCheckbox.addEventListener("change", (event) => {
       !event.target.checked && chord.stop();
     });
-    let widgetElement, widget;
-    const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
+    const toKeySigSequence = (text) => {
+      const sequence = text?.split(",")?.reduce((result, current, index) => {
+        if( index & 1 ) {
+          result.push({ position: parseInt(current) });
+        } else {
+          result[result.length - 1].keysig = current;
+        }
+        return result;
+      }, [{ position: 0 }]);
+      if( !sequence ) return;
+      let nextIndex = 1;
+      let nextPosition = sequence[nextIndex]?.position;
+      const changeKeySig = (to) => {
+        chord.keySignature.text = to.keysig;
+      };
+      sequence.handleBeatPlay = (newPosition) => {
+        if( nextPosition > newPosition ) return;
+        const changeTo = sequence[nextIndex];
+        if( changeTo ) changeKeySig(changeTo);
+        nextPosition = sequence[++nextIndex]?.position;
+      };
+      sequence.handleSeek = (newPosition) => {
+        nextIndex = sequence.findIndex((change) => change.position > newPosition);
+        if( nextIndex < 0 ) nextIndex = sequence.length;
+        changeKeySig(sequence[nextIndex > 0 ? nextIndex - 1 : 0]);
+        nextPosition = sequence[nextIndex]?.position;
+      };
+      return sequence;
+    };
     const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
-    const keySigSequence = searchParams.get("keysig")?.split(",")?.reduce((result, current, index) => {
-      if( index & 1 ) {
-        result.push({ position: parseInt(current) });
-      } else {
-        result[result.length - 1].keysig = current;
-      }
-      return result;
-    }, [{ position: 0 }]);
-    if( keySigSequence ) {
-      let nextKeySigIndex = 1;
-      let nextKeySigChangePosition = keySigSequence[nextKeySigIndex]?.position;
-      keySigSequence.handleBeatPlay = (newPosition) => {
-        if( nextKeySigChangePosition > newPosition ) return;
-        const changeTo = keySigSequence[nextKeySigIndex];
-        if( changeTo ) chord.keySignature.text = changeTo.keysig;
-        nextKeySigChangePosition = keySigSequence[++nextKeySigIndex]?.position;
-      };
-      keySigSequence.handleSeek = (newPosition) => {
-        nextKeySigIndex = keySigSequence.findIndex((change) => change.position > newPosition);
-        if( nextKeySigIndex < 0 ) nextKeySigIndex = keySigSequence.length;
-        const changeTo = keySigSequence[nextKeySigIndex > 0 ? nextKeySigIndex - 1 : 0];
-        chord.keySignature.text = changeTo.keysig;
-        nextKeySigChangePosition = keySigSequence[nextKeySigIndex]?.position;
-      };
-    }
-    const loadSongle = (urlText) => {
+    const initialKeySigSequenceText = searchParams.get("keysig");
+    const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
+    let widgetElement, widget;
+    const loadSongle = (urlText, keySigSequenceText) => {
+      const keySigSequence = toKeySigSequence(keySigSequenceText); console.debug(keySigSequence);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
@@ -2458,9 +2464,16 @@ const PianoKeyboard = class {
         widget = undefined;
       }
       const urlText = url.value;
-      if( urlText ) loadSongle(urlText);
+      if( urlText ) {
+        loadSongle(urlText, initialKeySigSequenceText);
+      }
     });
-    if( initialUrlText ) loadSongle(url.value = initialUrlText);
+    if( initialUrlText ) {
+      loadSongle(
+        url.value = initialUrlText,
+        initialKeySigSequenceText
+      );
+    }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
