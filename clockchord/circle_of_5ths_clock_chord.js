@@ -2387,7 +2387,7 @@ const PianoKeyboard = class {
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     let widgetElement, widget;
     const loadSongle = (urlText, keySigSequenceText) => {
-      const keySigSequence = toKeySigSequence(keySigSequenceText); console.debug(keySigSequence);
+      const keySigSequence = toKeySigSequence(keySigSequenceText);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
