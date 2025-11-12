@@ -2337,6 +2337,7 @@ const PianoKeyboard = class {
   };
   setupSongle = (chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
     const url = document.getElementById("SongleUrl");
+    const keysig = document.getElementById("SongleKeySig");
     const loadButton = document.getElementById("LoadSongleUrl");
     loadButton.disabled = true;
     url.addEventListener("input", (event) => {
@@ -2466,14 +2467,15 @@ const PianoKeyboard = class {
       }
       const urlText = url.value;
       if( urlText ) {
-        loadSongle(urlText, initialKeySigSequenceText);
+        loadSongle(urlText, keysig.value);
       }
     });
     if( initialUrlText ) {
       loadSongle(
         url.value = initialUrlText,
-        initialKeySigSequenceText
+        keysig.value = initialKeySigSequenceText
       );
+      loadButton.disabled = !url.value;
     }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {

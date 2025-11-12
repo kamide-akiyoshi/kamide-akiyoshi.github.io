@@ -347,13 +347,13 @@
 		color: red;
 		background-color: pink;
 	}
-	#WebMidiLinkUrlForm, #SongleUrlForm {
+	#WebMidiLinkUrlForm,.SongleUrlFormLine {
 		width: 100%;
 		display: flex;
-		align-items: center;
 		margin-top: 4px;
+		column-gap: 4px;
 	}
-	#WebMidiLinkUrl, #SongleUrl {
+	#WebMidiLinkUrl, #SongleUrl, #SongleKeySig {
 		width: 100%;
 	}
 	#WebMidiLinkSynth {
@@ -479,9 +479,15 @@
         <input id="autoChordPlay" type="checkbox" checked>Play chord automatically</input>
       </div>
       <div id="SongleUrlForm">
-        <label for="SongleUrl">URL</label>
-        <input id="SongleUrl" type="url"/>
-        <button id="LoadSongleUrl">Load</button>
+        <div class="SongleUrlFormLine">
+          <label for="SongleUrl">URL</label>
+          <input id="SongleUrl" type="url"/>
+        </div>
+        <div class="SongleUrlFormLine">
+          <label for="SongleKeySig">KeySig</label>
+          <input id="SongleKeySig" type="text"/>
+          <button id="LoadSongleUrl">Load</button>
+        </div>
       </div>
     </div>
     <div id="midi_sequencer">
