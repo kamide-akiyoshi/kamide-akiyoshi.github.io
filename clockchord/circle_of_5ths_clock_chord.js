@@ -2339,10 +2339,6 @@ const PianoKeyboard = class {
     const url = document.getElementById("SongleUrl");
     const keysig = document.getElementById("SongleKeySig");
     const loadButton = document.getElementById("LoadSongleUrl");
-    loadButton.disabled = true;
-    url.addEventListener("input", (event) => {
-      loadButton.disabled = !event.target.value;
-    });
     const target = document.getElementById("EmbeddedSongle");
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
@@ -2475,7 +2471,6 @@ const PianoKeyboard = class {
         url.value = initialUrlText,
         keysig.value = initialKeySigSequenceText
       );
-      loadButton.disabled = !url.value;
     }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
