@@ -2384,7 +2384,34 @@ const PianoKeyboard = class {
     const initialKeySigSequenceText = searchParams.get("keysig");
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     let widgetElement, widget;
+    const removeSongle = () => {
+      delete window.onSongleWidgetReady;
+      delete window.onSongleWidgetError;
+      chord.stop();
+      widgetElement?.remove();
+      widgetElement = undefined;
+      chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
+      ClockChord.setSongTitleToDocument(undefined);
+    };
     const loadSongle = (urlText, keySigSequenceText) => {
+      if( !target ) {
+        alert("Parent element not found to embed the Songle Widget");
+        return;
+      }
+      if( widget ) {
+        const { remove } = widget;
+        if( remove ) {
+          remove();
+        } else {
+          console.warn("Function widget.remove() undefined, so skipped");
+          removeSongle();
+        }
+        widget = undefined;
+        widgetElement && target.removeChild(widgetElement);
+      }
+      if( !urlText ) {
+        return;
+      }
       const keySigSequence = toKeySigSequence(keySigSequenceText);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
@@ -2393,7 +2420,7 @@ const PianoKeyboard = class {
         videoPlayerSizeW: "auto",
         songleWidgetSizeW: "auto",
       });
-      target?.appendChild(widgetElement);
+      target.appendChild(widgetElement);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
         const { song } = widget = songleWidget;
         ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
@@ -2427,44 +2454,31 @@ const PianoKeyboard = class {
           chord.stop();
           chordElement.textContext = "";
         });
-        widget.on("remove", () => {
-          delete window.onSongleWidgetReady;
-          delete window.onSongleWidgetError;
-          chord.stop();
-          widgetElement.remove();
-          widgetElement = undefined;
-          chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
-          ClockChord.setSongTitleToDocument(undefined);
-        });
+        widget.on("remove", removeSongle);
         darkModeSelect.value = "dark";
         backgroundModeSelect.value = "pie";
       };
+      const errorMessageOf = (status) => {
+        switch(status) {
+          case 100: return "Could not embed: Song deleted";
+          case 101: return "Could not embed: Not permitted";
+          case 200: return "Music map loading aborted";
+          case 201: return "Music map loading failed";
+          case 300: return "Sound file (mp3) download failed";
+        };
+      };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
-        let message;
-        switch(status) {
-          case 100: message = "Could not embed: Song deleted"; break;
-          case 101: message = "Could not embed: Not permitted"; break;
-          case 200: message = "Music map loading aborted"; break;
-          case 201: message = "Music map loading failed"; break;
-          case 300: message = "Sound file (mp3) download failed"; break;
-        };
-        const formattedMessage = `Songle error ${status}${message ? " : " : ""}${message ?? ""}`;
-        if( !errorElement ) {
+        const formattedMessage = `Songle error ${status} : ${errorMessageOf(status) ?? "Unknown error"}`;
+        if( errorElement ) {
+          errorElement.textContent = formattedMessage;
+        } else {
           alert(formattedMessage);
         }
-        errorElement.textContent = formattedMessage;
       };
     };
     loadButton?.addEventListener("click", () => {
-      if( widget ) {
-        widget.remove();
-        widget = undefined;
-      }
-      const urlText = url.value;
-      if( urlText ) {
-        loadSongle(urlText, keysig.value);
-      }
+      loadSongle(url.value, keysig.value);
     });
     if( initialUrlText ) {
       loadSongle(
