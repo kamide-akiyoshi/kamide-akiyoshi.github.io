@@ -2388,8 +2388,10 @@ const PianoKeyboard = class {
       delete window.onSongleWidgetReady;
       delete window.onSongleWidgetError;
       chord.stop();
-      widgetElement?.remove();
-      widgetElement = undefined;
+      if( widgetElement ) {
+        widgetElement.remove();
+        widgetElement = undefined;
+      }
       [bpmElement, positionElement, chordElement, errorElement].forEach((element) => element.textContent = "");
       tempoElement.style.display = "none";
       ClockChord.setSongTitleToDocument(undefined);
@@ -2405,10 +2407,9 @@ const PianoKeyboard = class {
           remove();
         } else {
           console.warn("Function widget.remove() undefined, so skipped");
-          removeSongle();
         }
         widget = undefined;
-        widgetElement && target.removeChild(widgetElement);
+        removeSongle();
       }
       if( !urlText ) {
         return;
@@ -2455,7 +2456,6 @@ const PianoKeyboard = class {
           chord.stop();
           chordElement.textContext = "";
         });
-        widget.on("remove", removeSongle);
         darkModeSelect.value = "dark";
         backgroundModeSelect.value = "pie";
       };
