@@ -2390,7 +2390,8 @@ const PianoKeyboard = class {
       chord.stop();
       widgetElement?.remove();
       widgetElement = undefined;
-      chordElement.textContent = errorElement.textContent = positionElement.textContent = "";
+      [bpmElement, positionElement, chordElement, errorElement].forEach((element) => element.textContent = "");
+      tempoElement.style.display = "none";
       ClockChord.setSongTitleToDocument(undefined);
     };
     const loadSongle = (urlText, keySigSequenceText) => {
