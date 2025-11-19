@@ -2348,7 +2348,7 @@ const PianoKeyboard = class {
     const errorElement = document.getElementById("SongleError");
     const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
     autoChordPlayCheckbox.addEventListener("change", (event) => {
-      !event.target.checked && chord.stop();
+      event.target.checked ? chord.clear() : chord.stop();
     });
     const toKeySigSequence = (text) => {
       const splitArray = text?.split(",");
