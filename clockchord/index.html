@@ -94,6 +94,10 @@
 		z-index: 1;
 		top: 52px;
 	}
+	#autoChordPlayContainer {
+		left: 0;
+		bottom: 26px;
+	}
 	#chord_text_box {
 		display: flex;
 		z-index: 1;
@@ -374,9 +378,6 @@
 	#songleChord {
 		font-size: 150%;
 	}
-	#autoChordPlay {
-		margin-top: 8px;
-	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -412,6 +413,9 @@
       <div id="theme_select">
         <label for="theme_light" aria-label="Light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
         <label for="theme_dark" aria-label="Dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
+      </div>
+      <div id="autoChordPlayContainer">
+        <input id="autoChordPlay" type="checkbox" checked>Auto</input>
       </div>
       <div id="chord_text_box">
         <input id="chord_text" name="chord_text" type="text" placeholder="Chord" aria-label="Chord"></input>
@@ -477,9 +481,6 @@
       <div>
         Play by <a href="https://songle.jp/" target="_blank">Songle</a>
         [<a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a>]
-      </div>
-      <div>
-        <input id="autoChordPlay" type="checkbox" checked>Play chord automatically</input>
       </div>
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
@@ -757,7 +758,7 @@ Songle Widget の埋め込みプレーヤーが表示されます（その中に
 </p>
 <p>URLを空にして[Load]ボタンをクリックすると、埋め込みプレーヤーの表示が消えます。
 </p>
-<p>Songleで視覚的にコード進行を覚えたので、今度は自分でコード演奏してみたい！ …と思ったら Play chord automatically のチェックを外してみましょう。Songleによるコード演奏が止まり、自分で曲に合わせてコード演奏できるようになります。
+<p>Songleで視覚的にコード進行を覚えたので、今度は自分でコード演奏してみたい！ …と思ったら、文字盤左下にある Auto のチェックを外してみましょう。Songleによるコード演奏が止まり、自分で曲に合わせてコード演奏できるようになります。
 </p>
 <h3>URL検索パラメータ</h3>
 <p>ClockChordを開くときに下記のURL検索パラメータを指定できます。
