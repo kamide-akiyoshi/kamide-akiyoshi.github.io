@@ -2420,6 +2420,7 @@ const PianoKeyboard = class {
         url: urlText,
         songAutoPlay: true,
         videoPlayerSizeW: "auto",
+        videoPlayerSizeH: "auto",
         songleWidgetSizeW: "auto",
       });
       target.appendChild(widgetElement);
