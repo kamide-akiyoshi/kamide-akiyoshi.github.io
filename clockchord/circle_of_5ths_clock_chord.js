@@ -2345,7 +2345,7 @@ const PianoKeyboard = class {
     tempoElement.style.display = "none";
     const bpmElement = document.getElementById("songleBpm");
     const chordElement = document.getElementById("songleChord");
-    const errorElement = document.getElementById("SongleError");
+    const errorMessageElement = document.getElementById("SongleErrorMessage");
     const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
     autoChordPlayCheckbox.addEventListener("change", (event) => {
       event.target.checked ? chord.clear() : chord.stop();
@@ -2392,7 +2392,12 @@ const PianoKeyboard = class {
         widgetElement.remove();
         widgetElement = undefined;
       }
-      [bpmElement, positionElement, chordElement, errorElement].forEach((element) => element.textContent = "");
+      [
+        bpmElement,
+        positionElement,
+        chordElement,
+        errorMessageElement
+      ].forEach((element) => element.textContent = "");
       tempoElement.style.display = "none";
       ClockChord.setSongTitleToDocument(undefined);
     };
@@ -2472,8 +2477,8 @@ const PianoKeyboard = class {
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
         const formattedMessage = `Songle error ${status} : ${errorMessageOf(status) ?? "Unknown error"}`;
-        if( errorElement ) {
-          errorElement.textContent = formattedMessage;
+        if( errorMessageElement ) {
+          errorMessageElement.textContent = formattedMessage;
         } else {
           alert(formattedMessage);
         }
