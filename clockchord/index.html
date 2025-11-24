@@ -414,11 +414,16 @@
         <label for="theme_light" aria-label="Light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
         <label for="theme_dark" aria-label="Dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
       </div>
-      <div id="autoChordPlayContainer">
-        <input id="autoChordPlay" type="checkbox" checked>Auto</input>
+      <div id="autoChordPlayContainer" title="Auto chord play by Songle">
+        <input id="autoChordPlay" type="checkbox" checked
+          aria-label="Auto chord play by Songle"
+        >Auto</input>
       </div>
       <div id="chord_text_box">
-        <input id="chord_text" name="chord_text" type="text" placeholder="Chord" aria-label="Chord"></input>
+        <input id="chord_text" name="chord_text" type="text" placeholder="Chord"
+          aria-label="Chord"
+          title="Chord"
+        ></input>
         <button id="enter_chord" aria-label="Enter">⏎</button>
       </div>
     </div>
@@ -485,11 +490,17 @@
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
           <label for="SongleUrl">URL</label>
-          <input id="SongleUrl" type="url"/>
+          <input id="SongleUrl" type="url"
+            placeholder="www.some-video-site/videoID"
+            title="Song URL (niconico, YouTube etc.) registered on Songle"
+          />
         </div>
         <div class="SongleUrlFormLine">
           <label for="SongleKeySig">KeySig</label>
-          <input id="SongleKeySig" type="text"/>
+          <input id="SongleKeySig" type="text"
+            placeholder="2,123456,-1,789012,-4,…"
+            title="Key-signature timeline (#,millisecond,#,ms,#,ms,#,…) #=number of sharps (negative for flats)"
+          />
           <button id="LoadSongleUrl">Load</button>
         </div>
       </div>
