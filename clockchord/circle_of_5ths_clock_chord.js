@@ -21,15 +21,11 @@ const Music = class {
   ];
   static majorPitchNameAt = (hour) => {
     const array = [];
-    const hourFromFbb = hour + 15;
-    if( hourFromFbb >= 0 ) {
-      const flatSharpIndex = Math.trunc(hourFromFbb / 7);
-      if( flatSharpIndex < Music.FLAT_SHARP_ARRAY.length ) {
-        const abcIndex = 4 * (hourFromFbb + 3) % 7;
-        array.push(String.fromCharCode('A'.charCodeAt(0) + abcIndex));
-        const fs = Music.FLAT_SHARP_ARRAY[flatSharpIndex];
-        if( fs.length ) array.push(fs[0]);
-      }
+    if( hour >= -15 && hour < 20 ) {
+      const abc = String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7);
+      array.push(abc);
+      const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
+      fs && array.push(fs);
     }
     return array;
   };
