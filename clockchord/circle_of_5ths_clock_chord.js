@@ -32,12 +32,7 @@ const Music = class {
   static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
-  static normalizeHourAsKey = (hour) => {
-    while( Math.abs(hour) > 7 ) {
-      hour -= 12 * Math.sign(hour);
-    }
-    return hour;
-  };
+  static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
   static parsePitchName = (pitchName) => {
     const abcIndex = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
     if( abcIndex < 0 || abcIndex > 6 ) return undefined;
