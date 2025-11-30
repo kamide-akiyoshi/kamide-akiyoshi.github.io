@@ -19,10 +19,11 @@ const Music = class {
     ["\u{266F}", "#"],   // Sharp
     ["\u{1D12A}", "x"],  // Double sharp
   ];
+  static CHAR_CODE_A = 'A'.charCodeAt(0);
   static majorPitchNameAt = (hour) => {
     const array = [];
     if( hour >= -15 && hour < 20 ) {
-      const abc = String.fromCharCode('A'.charCodeAt(0) + 4 * (hour + 18) % 7);
+      const abc = String.fromCharCode(Music.CHAR_CODE_A + (hour + 18) * 4 % 7);
       array.push(abc);
       const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
       fs && array.push(fs);
@@ -34,23 +35,18 @@ const Music = class {
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
   static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
   static parsePitchName = (pitchName) => {
-    const abcIndex = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
-    if( abcIndex < 0 || abcIndex > 6 ) return undefined;
+    const abci = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - Music.CHAR_CODE_A;
+    if( abci < 0 || abci > 6 ) return undefined;
     let rest = pitchName.substring(1);
-    const flatSharpIndex = Music.FLAT_SHARP_ARRAY.findIndex(
+    const fsi = Music.FLAT_SHARP_ARRAY.findIndex(
       (patterns) => patterns.some(
         (pattern) => {
-          if( rest.startsWith(pattern) ) {
-            rest = rest.replace(pattern, "");
-            return true;
-          }
-          return false;
+          if( !rest.startsWith(pattern) ) return false;
+          rest = rest.replace(pattern, ""); return true;
         }
       )
     );
-    const majorHour =
-      ((abcIndex + 2) * 2) % 7 - 1 // FCGDAEB -> -1 ... 5
-      + (flatSharpIndex < 0 ? 0 : 7 * (flatSharpIndex - 2)); // bb:-14, b:-7, #:7, ##:14
+    const majorHour = (abci + 2) * 2 % 7 - 1 + (fsi < 0 ? 0 : (fsi - 2) * 7);
     return [majorHour, rest];
   };
   static keySignatureTextAt = (hour) => {
