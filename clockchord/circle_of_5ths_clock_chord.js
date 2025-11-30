@@ -21,19 +21,11 @@ const Music = class {
   ];
   static CHAR_CODE_A = 'A'.charCodeAt(0);
   static majorPitchNameAt = (hour) => {
-    const array = [];
-    if( hour >= -15 && hour < 20 ) {
-      const abc = String.fromCharCode(Music.CHAR_CODE_A + (hour + 18) * 4 % 7);
-      array.push(abc);
-      const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
-      fs && array.push(fs);
-    }
-    return array;
+    if( hour < -15 || hour >= 20 ) return [];
+    const abc = String.fromCharCode(Music.CHAR_CODE_A + (hour + 18) * 4 % 7);
+    const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
+    return fs ? [abc, fs] : [abc];
   };
-  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
-  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
-  static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
-  static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
   static parsePitchName = (pitchName) => {
     const abci = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - Music.CHAR_CODE_A;
     if( abci < 0 || abci > 6 ) return undefined;
@@ -49,12 +41,15 @@ const Music = class {
     const majorHour = (abci + 2) * 2 % 7 - 1 + (fsi < 0 ? 0 : (fsi - 2) * 7);
     return [majorHour, rest];
   };
+  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
+  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
+  static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
+  static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
   static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
     const n = Math.abs(hour);
     const fs = hour < 0 ? Music.FLAT : Music.SHARP;
-    if( n == 1 ) return fs;
-    return `${n > 2 ? n : fs}${fs}`;
+    return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
   };
   static keyTextOf = (hour = 0, minor) => {
     const textAt = (hour) => Music.majorPitchNameAt(hour).join('');
