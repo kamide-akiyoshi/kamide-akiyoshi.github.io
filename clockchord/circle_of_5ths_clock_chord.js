@@ -7,11 +7,7 @@ const ClockChord = {
 }
 
 const Music = class {
-  static FLAT    = '\u{266D}';
   static NATURAL = '\u{266E}';
-  static SHARP   = '\u{266F}';
-  static DOUBLE_SHARP = '\u{1D12A}';
-  static DOUBLE_FLAT  = '\u{1D12B}';
   static FLAT_SHARP_ARRAY = [
     ["\u{1D12B}", "bb"], // Double flat
     ["\u{266D}", "b"],   // Flat
@@ -48,7 +44,7 @@ const Music = class {
   static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
     const n = Math.abs(hour);
-    const fs = hour < 0 ? Music.FLAT : Music.SHARP;
+    const fs = Music.FLAT_SHARP_ARRAY[Math.sign(hour) + 2][0];
     return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
   };
   static keyTextOf = (hour = 0, minor) => {
