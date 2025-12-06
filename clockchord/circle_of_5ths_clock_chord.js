@@ -1329,6 +1329,7 @@ const PianoKeyboard = class {
       }
       return;
     },
+    pitchNameToHtml: ([abc, fs]) => fs ? `${abc}<sup>${fs}</sup>` : abc,
     stop: () => {
       this.manualAllNotesOff();
       this.chord.buttonCanvas.disableStrum();
@@ -1356,6 +1357,7 @@ const PianoKeyboard = class {
         classLists,
         keyOrChordChanged,
         hasValue,
+        pitchNameToHtml,
       } = chord;
       stop();
       if( ! hasValue() ) return;
@@ -1393,25 +1395,18 @@ const PianoKeyboard = class {
           offset5th < 0 && (sup += '-5');
           offset3rd > 0 && (sup += 'sus4');
         }
-        const [rootText, fs] = rootPitchName;
-        let htmlChordText = rootText;
-        fs && (htmlChordText += `<sup>${fs}</sup>`);
+        let htmlChordText = pitchNameToHtml(rootPitchName);
         sub && (htmlChordText += `<sub>${sub}</sub>`);
         sup && (htmlChordText += `<sup style="font-size: 70%;">${sup}</sup>`);
         let bass;
         if( hasBass ) {
           const bassPitchName = Music.majorPitchNameAt(majorBassHour);
           if( bassPitchName ) {
-            const [b, bfs] = bassPitchName;
-            htmlChordText += (bass = `/${b}`);
-            if( bfs ) {
-              bass += bfs;
-              htmlChordText += `<sup>${bfs}</sup>`;
-            }
+            bass = `/${bassPitchName.join("")}`;
+            htmlChordText += `/${pitchNameToHtml(bassPitchName)}`;
           }
         }
-        const plainChordText =
-          `${rootText}${fs ?? ""}${sub ?? ""}${sup ?? ""}${bass ?? ""}`;
+        const plainChordText = `${rootPitchName.join("")}${sub ?? ""}${sup ?? ""}${bass ?? ""}`;
         chordTextInput.value = plainChordText;
         label?.attach(htmlChordText);
         dialCenterLabel?.attach(htmlChordText);
