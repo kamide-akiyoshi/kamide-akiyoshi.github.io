@@ -2262,7 +2262,7 @@ const PianoKeyboard = class {
         "^": "Equal",
         "[": "BracketRight",
       },
-      activeNoteNumbers: {},
+      activeNoteNumbers: new Map(),
     };
     pcKey.codeToIndexMap = new Map(Array.from(
       pcKey.keys,
@@ -2279,18 +2279,18 @@ const PianoKeyboard = class {
     keyboard.addEventListener("keydown", e => {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
-      if( e.code in activeNoteNumbers ) return;
+      if( activeNoteNumbers.has(e.code) ) return;
       const index = pcKey.codeToIndexMap.get(e.code) ?? -1;
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
-      activeNoteNumbers[e.code] = noteNumber;
+      activeNoteNumbers.set(e.code, noteNumber);
       chord.clear();
     });
     keyboard.addEventListener("keyup", e => {
       const { activeNoteNumbers } = pcKey;
-      manualNoteOff(activeNoteNumbers[e.code]);
-      delete activeNoteNumbers[e.code];
+      manualNoteOff(activeNoteNumbers.get(e.code));
+      activeNoteNumbers.delete(e.code);
     });
     keyboard.scrollLeft = whiteKeyWidth * Math.ceil(7 * leftEnd.note / 12);
     document.activeElement === keyboard && pcKey.showBindings(leftEnd.noteC, true);
