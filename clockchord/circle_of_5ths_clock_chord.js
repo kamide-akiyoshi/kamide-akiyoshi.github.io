@@ -2257,19 +2257,20 @@ const PianoKeyboard = class {
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
       keys: "Q2W3ER5T6Y7UI9O0P@^[",
-      keyToCode: {
+      toCode: {
         "@": "BracketLeft",
         "^": "Equal",
         "[": "BracketRight",
       },
       activeNoteNumbers: {},
     };
-    pcKey.codeBindings = Object.fromEntries(
-      Array.from(
-        pcKey.keys,
-        c => pcKey.keyToCode[c] ?? `${c < 10 ? "Digit" : "Key"}${c}`
-      ).map((code, index) => [code, index])
-    );
+    pcKey.codeToIndexMap = new Map(Array.from(
+      pcKey.keys,
+      (key, index) => [
+        pcKey.toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
+        index
+      ]
+    ));
     pcKey.showBindings = (origin, show) => {
       pianoKeys.slice(origin, origin + pcKey.keys.length).forEach(
         ({ element }, index) => element.textContent = show ? pcKey.keys[index] : ""
@@ -2279,7 +2280,7 @@ const PianoKeyboard = class {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
       if( e.code in activeNoteNumbers ) return;
-      const index = pcKey.codeBindings[e.code] ?? -1;
+      const index = pcKey.codeToIndexMap.get(e.code) ?? -1;
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
