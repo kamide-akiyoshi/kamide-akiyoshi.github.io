@@ -2256,7 +2256,7 @@ const PianoKeyboard = class {
     });
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
-      keysString: "Q2W3ER5T6Y7UI9O0P@^[",
+      keysArray: Array.from("Q2W3ER5T6Y7UI9O0P@^["),
       toCode: {
         "@": "BracketLeft",
         "^": "Equal",
@@ -2264,9 +2264,8 @@ const PianoKeyboard = class {
       },
       activeNoteNumbers: new Map(),
     };
-    pcKey.keysArray = Array.from(pcKey.keysString);
     pcKey.codeToIndexMap = new Map(Array.from(
-      pcKey.keysString,
+      pcKey.keysArray,
       (key, index) => [
         pcKey.toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
         index
