@@ -2256,7 +2256,7 @@ const PianoKeyboard = class {
     });
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
-      keys: "Q2W3ER5T6Y7UI9O0P@^[",
+      keysString: "Q2W3ER5T6Y7UI9O0P@^[",
       toCode: {
         "@": "BracketLeft",
         "^": "Equal",
@@ -2264,23 +2264,23 @@ const PianoKeyboard = class {
       },
       activeNoteNumbers: new Map(),
     };
+    pcKey.keysArray = Array.from(pcKey.keysString);
     pcKey.codeToIndexMap = new Map(Array.from(
-      pcKey.keys,
+      pcKey.keysString,
       (key, index) => [
         pcKey.toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
         index
       ]
     ));
+    pcKey.indexOf = (code) => pcKey.codeToIndexMap.get(code) ?? -1;
     pcKey.showBindings = (origin, show) => {
-      pianoKeys.slice(origin, origin + pcKey.keys.length).forEach(
-        ({ element }, index) => element.textContent = show ? pcKey.keys[index] : ""
-      );
+      pcKey.keysArray.forEach((key, index) => pianoKeys[origin + index].element.textContent = show ? key : "");
     };
     keyboard.addEventListener("keydown", e => {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
       if( activeNoteNumbers.has(e.code) ) return;
-      const index = pcKey.codeToIndexMap.get(e.code) ?? -1;
+      const index = pcKey.indexOf(e.code);
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
