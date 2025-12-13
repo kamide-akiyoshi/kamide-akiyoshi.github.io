@@ -2217,12 +2217,11 @@ const PianoKeyboard = class {
       let element;
       if( hour >= 5 ) {
         if( whiteKeyLeft ) {
-          element = whiteKeyElement.cloneNode();
+          keyboard.appendChild(element = whiteKeyElement.cloneNode());
           element.style.left = `${whiteKeyLeft}px`;
         } else {
           element = whiteKeyElement;
         }
-        keyboard.appendChild(element);
         if( hour == 9 ) {
           const f = MIDI.FREQUENCIES[noteNumber];
           const newFrequencyElement = frequencyElement.cloneNode(f === 440);
@@ -2234,9 +2233,12 @@ const PianoKeyboard = class {
         whiteKeyLeft += whiteKeyWidth;
         hour -= 5;
       } else {
-        element = noteNumber === 1 ? blackKeyElement : blackKeyElement.cloneNode();
+        if( noteNumber > 1 ) {
+          keyboard.appendChild(element = blackKeyElement.cloneNode());
+        } else {
+          element = blackKeyElement;
+        }
         element.style.left = `${whiteKeyLeft - blackKeyOffsets[hour]}px`;
-        keyboard.appendChild(element);
         hour += 7;
       }
       element.addEventListener(pointerdown, e => {
