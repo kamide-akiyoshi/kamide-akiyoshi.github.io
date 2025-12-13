@@ -2193,8 +2193,6 @@ const PianoKeyboard = class {
       manualNoteOff,
       chord,
     } = this;
-    const pianoKeys = this.pianoKeys = MIDI.FREQUENCIES.map((_) => ({}));
-    pianoKeys.pressed = new Map();
     const [
       whiteKeyElement,
       blackKeyElement,
@@ -2202,40 +2200,45 @@ const PianoKeyboard = class {
     ] = keyboard.getElementsByTagName('*');
     const [
       whiteKeyWidth,
-      xOffsets
+      blackKeyOffsets
     ] = [
       whiteKeyElement,
       blackKeyElement
-    ].map((element, noteNumber) => {
-      pianoKeys[noteNumber].element = element;
+    ].map((element, isBlackKey) => {
       const w = element.clientWidth + 2 * element.clientLeft;
-      return noteNumber ? Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour) : w;
+      if( isBlackKey ) return Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour);
+      return w;
     });
     let [whiteKeyLeft, hour] = [0, 6];
-    pianoKeys.forEach((pianoKey, noteNumber) => {
-      if( hour >= 5 ) { // F(5) C(6) G(7) D(8) A(9) E(10) B(11)
+    // The "hour" proceeds like this:
+    //  1 3    0 2 4   <- Black keys
+    // 6 8 10 5 7 9 11 <- White keys
+    const pianoKeys = this.pianoKeys = MIDI.FREQUENCIES.map((frequency, noteNumber) => {
+      let element;
+      if( hour >= 5 ) {
         if( whiteKeyLeft ) {
-          keyboard.appendChild(pianoKey.element = whiteKeyElement.cloneNode());
-          pianoKey.element.style.left = `${whiteKeyLeft}px`;
+          element = whiteKeyElement.cloneNode();
+          element.style.left = `${whiteKeyLeft}px`;
+        } else {
+          element = whiteKeyElement;
         }
+        keyboard.appendChild(element);
         if( hour == 9 ) {
           const f = MIDI.FREQUENCIES[noteNumber];
           const newFrequencyElement = frequencyElement.cloneNode(f === 440);
           const textElement = newFrequencyElement.querySelector("a") ?? newFrequencyElement;
           textElement.innerHTML = f;
-          newFrequencyElement.style.left = pianoKey.element.style.left;
+          newFrequencyElement.style.left = element.style.left;
           keyboard.appendChild(newFrequencyElement);
         }
         whiteKeyLeft += whiteKeyWidth;
         hour -= 5;
-      } else { // Gb(0) Db(1) Ab(2) Eb(3) Bb(4)
-        if( ! pianoKey.element ) {
-          keyboard.appendChild(pianoKey.element = blackKeyElement.cloneNode());
-        }
-        pianoKey.element.style.left = `${whiteKeyLeft - xOffsets[hour]}px`;
+      } else {
+        element = noteNumber === 1 ? blackKeyElement : blackKeyElement.cloneNode();
+        element.style.left = `${whiteKeyLeft - blackKeyOffsets[hour]}px`;
+        keyboard.appendChild(element);
         hour += 7;
       }
-      const { element } = pianoKey;
       element.addEventListener(pointerdown, e => {
         chord.clear();
         manualNoteOn(noteNumber);
@@ -2253,7 +2256,9 @@ const PianoKeyboard = class {
         event.buttons && handlePointerUp();
       });
       element.addEventListener('contextmenu', e => e.preventDefault());
+      return { element };
     });
+    pianoKeys.pressed = new Map();
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
       keysArray: Array.from("Q2W3ER5T6Y7UI9O0P@^["),
@@ -2271,15 +2276,16 @@ const PianoKeyboard = class {
         index
       ]
     ));
-    pcKey.indexOf = (code) => pcKey.codeToIndexMap.get(code) ?? -1;
     pcKey.showBindings = (origin, show) => {
-      pcKey.keysArray.forEach((key, index) => pianoKeys[origin + index].element.textContent = show ? key : "");
+      pcKey.keysArray.forEach(
+        (key, index) => pianoKeys[origin + index].element.textContent = show ? key : ""
+      );
     };
     keyboard.addEventListener("keydown", e => {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
       if( activeNoteNumbers.has(e.code) ) return;
-      const index = pcKey.indexOf(e.code);
+      const index = pcKey.codeToIndexMap.get(e.code) ?? -1;
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
