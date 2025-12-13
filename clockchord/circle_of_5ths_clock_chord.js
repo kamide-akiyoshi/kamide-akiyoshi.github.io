@@ -3425,8 +3425,10 @@ const CircleOfFifthsClock = class {
       if( chordEnterButton ) {
         chordEnterButton.addEventListener('pointerdown', handleEnterPress);
         chordEnterButton.addEventListener('pointerup', handleEnterRelease);
-        chordEnterButton.addEventListener('touchstart', handleEnterPress);
-        chordEnterButton.addEventListener('touchend', handleEnterRelease);
+        if( isTouchDevice ) {
+          chordEnterButton.addEventListener('touchstart', handleEnterPress);
+          chordEnterButton.addEventListener('touchend', handleEnterRelease);
+        }
       }
     }
     chord.clear();
