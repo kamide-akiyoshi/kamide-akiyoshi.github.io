@@ -2362,6 +2362,13 @@ const PianoKeyboard = class {
     const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     const initialKeySigSequenceText = searchParams.get("keysig");
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
+    const errorMessages = {
+      100: "Could not embed: Song deleted",
+      101: "Could not embed: Not permitted",
+      200: "Music map loading aborted",
+      201: "Music map loading failed",
+      300: "Sound file (mp3) download failed",
+    };
     let widgetElement, widget;
     const removeSongle = () => {
       delete window.onSongleWidgetReady;
@@ -2444,18 +2451,9 @@ const PianoKeyboard = class {
         darkModeSelect.value = "dark";
         backgroundModeSelect.value = "pie";
       };
-      const errorMessageOf = (status) => {
-        switch(status) {
-          case 100: return "Could not embed: Song deleted";
-          case 101: return "Could not embed: Not permitted";
-          case 200: return "Music map loading aborted";
-          case 201: return "Music map loading failed";
-          case 300: return "Sound file (mp3) download failed";
-        };
-      };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
-        const formattedMessage = `Songle error ${status} : ${errorMessageOf(status) ?? "Unknown error"}`;
+        const formattedMessage = `Songle error ${status} : ${errorMessages[status] ?? "Unknown error"}`;
         if( errorMessageElement ) {
           errorMessageElement.textContent = formattedMessage;
         } else {
