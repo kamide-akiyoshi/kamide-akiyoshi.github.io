@@ -1151,43 +1151,39 @@ const PianoKeyboard = class {
       get selectedChannel() { return parseInt(selector.value); }
     };
   };
+  pianoKeyPressedChannnel = new Map();
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannelSelector.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
     this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, velocity]);
     this.selectedMidiOutputPorts?.noteOn(ch, noteNumber, velocity);
     this.noteOn(ch, noteNumber, velocity);
-    const keys = this.pianoKeys;
-    const { pressed } = keys;
-    if( pressed.has(noteNumber) ) {
+    const { pianoKeyPressedChannnel } = this;
+    if( pianoKeyPressedChannnel.has(noteNumber) ) {
       this.manualNoteOff(noteNumber);
     }
-    pressed.set(noteNumber, ch);
+    pianoKeyPressedChannnel.set(noteNumber, ch);
     !orderInChord && this.chord.classLists.clear();
-    const key = keys[noteNumber];
-    if( key ) {
-      const { element } = key;
-      if( element ) {
-        const cl = element.classList;
-        cl.add('pressed');
-        orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
-      }
+    const element = this.pianoKeyElements[noteNumber];
+    if( element ) {
+      const cl = element.classList;
+      cl.add('pressed');
+      orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
     }
   };
-  manualNoteOff = noteNumber => {
-    const keys = this.pianoKeys;
-    const { pressed } = keys;
-    if( pressed.has(noteNumber) ) {
-      const ch = pressed.get(noteNumber);
+  manualNoteOff = (noteNumber) => {
+    const { pianoKeyPressedChannnel } = this;
+    if( pianoKeyPressedChannnel.has(noteNumber) ) {
+      const ch = pianoKeyPressedChannnel.get(noteNumber);
       this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, 0]);
       this.selectedMidiOutputPorts?.noteOff(ch, noteNumber);
       this.noteOff(ch, noteNumber);
-      pressed.delete(noteNumber);
+      pianoKeyPressedChannnel.delete(noteNumber);
     }
-    keys[noteNumber]?.element?.classList.remove('pressed');
+    this.pianoKeyElements[noteNumber]?.classList.remove('pressed');
   };
   manualAllNotesOff = () => {
-    this.pianoKeys.pressed.forEach((value, key) => this.manualNoteOff(key - 0));
+    this.pianoKeyPressedChannnel.forEach((value, key) => this.manualNoteOff(key - 0));
   };
   leftEnd = {
     set note(n) {
@@ -1379,7 +1375,7 @@ const PianoKeyboard = class {
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
       add9th && noteOn(rootPitchNumber + 14);
       noteOn(bassPitchNumber, true);
-      chord.notes = Array.from(this.pianoKeys.pressed.keys());
+      chord.notes = Array.from(this.pianoKeyPressedChannnel.keys());
       buttonCanvas.selectChord();
       buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
@@ -2213,7 +2209,7 @@ const PianoKeyboard = class {
     // The "hour" proceeds like this:
     //  1 3    0 2 4   <- Black keys
     // 6 8 10 5 7 9 11 <- White keys
-    const pianoKeys = this.pianoKeys = MIDI.FREQUENCIES.map((frequency, noteNumber) => {
+    const pianoKeyElements = this.pianoKeyElements = MIDI.FREQUENCIES.map((frequency, noteNumber) => {
       let element;
       if( hour >= 5 ) {
         if( whiteKeyLeft ) {
@@ -2258,9 +2254,8 @@ const PianoKeyboard = class {
         event.buttons && handlePointerUp();
       });
       element.addEventListener('contextmenu', e => e.preventDefault());
-      return { element };
+      return element;
     });
-    pianoKeys.pressed = new Map();
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
       keysArray: Array.from("Q2W3ER5T6Y7UI9O0P@^["),
@@ -2280,7 +2275,7 @@ const PianoKeyboard = class {
     ));
     pcKey.showBindings = (origin, show) => {
       pcKey.keysArray.forEach(
-        (key, index) => pianoKeys[origin + index].element.textContent = show ? key : ""
+        (key, index) => pianoKeyElements[origin + index].textContent = show ? key : ""
       );
     };
     keyboard.addEventListener("keydown", e => {
@@ -2305,7 +2300,7 @@ const PianoKeyboard = class {
       event => {
         const { scrollLeft, scrollWidth } = event.target;
         const oldNoteC = leftEnd.noteC;
-        leftEnd.note = Math.ceil(pianoKeys.length * scrollLeft / scrollWidth);
+        leftEnd.note = Math.ceil(pianoKeyElements.length * scrollLeft / scrollWidth);
         const newNoteC = leftEnd.noteC;
         if( document.activeElement === keyboard && oldNoteC !== newNoteC ) {
           pcKey.showBindings(oldNoteC, false);
