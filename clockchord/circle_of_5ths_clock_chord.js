@@ -2206,12 +2206,13 @@ const PianoKeyboard = class {
       if( isBlackKey ) return Array.from({length: 5}, (_, hour) => hour<2 ? w - w/(4-hour) : w/hour);
       return w;
     });
+    const originalFrequencyText = frequencyElement.querySelector("a").textContent;
+    frequencyElement.remove();
     let [whiteKeyLeft, hour] = [0, 6];
-    // The "hour" proceeds like this:
-    //  1 3    0 2 4   <- Black keys
-    // 6 8 10 5 7 9 11 <- White keys
     const pianoKeyElements = this.pianoKeyElements = MIDI.FREQUENCIES.map((frequency, noteNumber) => {
       let element;
+      //  1 3    0 2 4
+      // 6 8 10 5 7 9 11
       if( hour >= 5 ) {
         if( whiteKeyLeft ) {
           keyboard.appendChild(element = whiteKeyElement.cloneNode());
@@ -2220,12 +2221,16 @@ const PianoKeyboard = class {
           element = whiteKeyElement;
         }
         if( hour == 9 ) {
-          const f = MIDI.FREQUENCIES[noteNumber];
-          const newFrequencyElement = frequencyElement.cloneNode(f === 440);
-          const textElement = newFrequencyElement.querySelector("a") ?? newFrequencyElement;
-          textElement.innerHTML = f;
-          newFrequencyElement.style.left = element.style.left;
-          keyboard.appendChild(newFrequencyElement);
+          const text = `${MIDI.FREQUENCIES[noteNumber]}Hz`;
+          if( text === originalFrequencyText ) {
+            frequencyElement.style.left = element.style.left;
+            keyboard.appendChild(frequencyElement);
+          } else {
+            const newFrequencyElement = frequencyElement.cloneNode();
+            newFrequencyElement.innerHTML = text;
+            newFrequencyElement.style.left = element.style.left;
+            keyboard.appendChild(newFrequencyElement);
+          }
         }
         whiteKeyLeft += whiteKeyWidth;
         hour -= 5;
