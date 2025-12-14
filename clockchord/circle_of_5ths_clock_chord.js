@@ -1163,12 +1163,12 @@ const PianoKeyboard = class {
       this.manualNoteOff(noteNumber);
     }
     pianoKeyPressedChannnel.set(noteNumber, ch);
-    !orderInChord && this.chord.classLists.clear();
+    !orderInChord && this.chord.pianoKeyElementClassLists.clear();
     const element = this.pianoKeyElements[noteNumber];
     if( element ) {
       const cl = element.classList;
       cl.add('pressed');
-      orderInChord && this.chord.classLists.add(cl, orderInChord == 1);
+      orderInChord && this.chord.pianoKeyElementClassLists.add(cl, orderInChord == 1);
     }
   };
   manualNoteOff = (noteNumber) => {
@@ -1194,7 +1194,7 @@ const PianoKeyboard = class {
     get noteC() { return this._noteC; },
   };
   chord = {
-    classLists: [],
+    pianoKeyElementClassLists: [],
     setup() {
       const createDetachableElementEntry = id => {
         const element = document.getElementById(id);
@@ -1217,13 +1217,14 @@ const PianoKeyboard = class {
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
       chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.setChordAsKey());
-      chord.classLists.clear = () => {
-        while( chord.classLists.length ) chord.classLists.pop().remove('chord', 'root');
+      const cls = chord.pianoKeyElementClassLists;
+      cls.clear = () => {
+        while( cls.length ) cls.pop().remove('chord', 'root');
       };
-      chord.classLists.add = (classList, root) => {
-        classList.add('chord');
-        root && classList.add('root');
-        chord.classLists.push(classList);
+      cls.add = (cl, root) => {
+        cl.add('chord');
+        root && cl.add('root');
+        cls.push(cl);
       }
     },
     clear: () => {
@@ -1231,7 +1232,7 @@ const PianoKeyboard = class {
       const {
         label,
         dialCenterLabel,
-        classLists,
+        pianoKeyElementClassLists,
         keyOrChordChanged,
         buttonCanvas,
         chordTextInput,
@@ -1249,7 +1250,7 @@ const PianoKeyboard = class {
       keyOrChordChanged();
       buttonCanvas.clearChord();
       chordTextInput.value = "";
-      classLists.clear();
+      pianoKeyElementClassLists.clear();
     },
     hasValue: () => "hour" in this.chord,
     parseText: (rawText) => {
@@ -1350,7 +1351,7 @@ const PianoKeyboard = class {
         add9th,
         stop,
         buttonCanvas,
-        classLists,
+        pianoKeyElementClassLists,
         keyOrChordChanged,
         hasValue,
         pitchNameToHtml,
@@ -1368,7 +1369,7 @@ const PianoKeyboard = class {
         const noteNumber = n - Math.floor((n - (leftEnd.note + 5)) / 12) * 12;
         this.manualNoteOn(bass ? Math.max(noteNumber - 24 , 0) : noteNumber, ++i);
       };
-      classLists.clear();
+      pianoKeyElementClassLists.clear();
       noteOn(rootPitchNumber);
       noteOn(rootPitchNumber + 4 + (offset3rd ?? 0));
       noteOn(rootPitchNumber + 7 + (offset5th ?? 0));
