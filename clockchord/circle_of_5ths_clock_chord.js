@@ -37,7 +37,7 @@ const Music = class {
     const majorHour = (abci + 2) * 2 % 7 - 1 + (fsi < 0 ? 0 : (fsi - 2) * 7);
     return [majorHour, rest];
   };
-  static togglePitchNumberAndMajorHour = (n, offset=60) => ((n & 1) ? n + 6 : n) + offset;
+  static togglePitchNumberAndMajorHour = (n) => n + (n & 1) * 6;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
   static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
@@ -1360,9 +1360,9 @@ const PianoKeyboard = class {
       if( ! hasValue() ) return;
       const hasBass = "majorBassHour" in chord;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
-      const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour);
+      const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
-        ? Music.togglePitchNumberAndMajorHour(majorBassHour)
+        ? Music.togglePitchNumberAndMajorHour(majorBassHour) + 24
         : rootPitchNumber;
       let i = 0;
       const noteOn = (n, bass) => {
