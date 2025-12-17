@@ -10,11 +10,12 @@ const Music = class {
   static NATURAL = '\u{266E}';
   static FLAT_SHARP_ARRAY = [
     ["\u{1D12B}", "bb"], // Double flat
-    ["\u{266D}", "b"],   // Flat
+    ["\u{266D}", "b"], // Flat
     [],
-    ["\u{266F}", "#"],   // Sharp
-    ["\u{1D12A}", "x"],  // Double sharp
+    ["\u{266F}", "#"], // Sharp
+    ["\u{1D12A}", "x", "##"], // Double sharp
   ];
+  static FLAT_SHARP_INDEX_ENTRIES;
   static CHAR_CODE_A = 'A'.charCodeAt(0);
   static majorPitchNameAt = (hour) => {
     if( hour < -15 || hour >= 20 ) return [];
@@ -26,15 +27,20 @@ const Music = class {
     const abci = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - Music.CHAR_CODE_A;
     if( abci < 0 || abci > 6 ) return undefined;
     let rest = pitchName.substring(1);
-    const fsi = Music.FLAT_SHARP_ARRAY.findIndex(
-      (patterns) => patterns.some(
-        (pattern) => {
-          if( !rest.startsWith(pattern) ) return false;
-          rest = rest.replace(pattern, ""); return true;
-        }
-      )
-    );
-    const majorHour = (abci + 2) * 2 % 7 - 1 + (fsi < 0 ? 0 : (fsi - 2) * 7);
+    if( ! Music.FLAT_SHARP_INDEX_ENTRIES ) {
+      Music.FLAT_SHARP_INDEX_ENTRIES = Music.FLAT_SHARP_ARRAY.flatMap((patterns, index) => {
+        const fsi7 = (index - 2) * 7;
+        return patterns.map((pattern) => ([pattern, fsi7]));
+      }).sort(
+        // Descending order of pattern length (longer pattern first)
+        ([a], [b]) => b.length - a.length
+      );
+    }
+    const fsi7 = Music.FLAT_SHARP_INDEX_ENTRIES.find(([pattern]) => {
+      if( !rest.startsWith(pattern) ) return false;
+      rest = rest.replace(pattern, ""); return true;
+    })?.[1] ?? 0;
+    const majorHour = fsi7 + (abci + 2) * 2 % 7 - 1;
     return [majorHour, rest];
   };
   static togglePitchNumberAndMajorHour = (n) => n + (n & 1) * 6;
