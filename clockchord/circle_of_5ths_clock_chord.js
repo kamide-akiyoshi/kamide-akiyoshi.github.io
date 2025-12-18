@@ -15,28 +15,28 @@ const Music = class {
     ["\u{266F}", "#"], // Sharp
     ["\u{1D12A}", "x", "##"], // Double sharp
   ];
-  static FLAT_SHARP_INDEX_ENTRIES;
   static CHAR_CODE_A = 'A'.charCodeAt(0);
+  static {
+    const fsa = this.FLAT_SHARP_ARRAY;
+    fsa.INDEX_ENTRIES = fsa.flatMap((patterns, index) => {
+      const fsi7 = (index - 2) * 7;
+      return patterns.map((pattern) => ([pattern, fsi7]));
+    }).sort(
+      // Descending order of pattern length (longer pattern first)
+      ([a], [b]) => b.length - a.length
+    );
+  };
   static majorPitchNameAt = (hour) => {
     if( hour < -15 || hour >= 20 ) return [];
-    const abc = String.fromCharCode(Music.CHAR_CODE_A + (hour + 18) * 4 % 7);
-    const fs = Music.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
+    const abc = String.fromCharCode(this.CHAR_CODE_A + (hour + 18) * 4 % 7);
+    const fs = this.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
     return fs ? [abc, fs] : [abc];
   };
-  static parsePitchName = (pitchName) => {
-    const abci = pitchName.substring(0, 1).toUpperCase().charCodeAt(0) - Music.CHAR_CODE_A;
+  static parsePitchName = (text) => {
+    const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - this.CHAR_CODE_A;
     if( abci < 0 || abci > 6 ) return undefined;
-    let rest = pitchName.substring(1);
-    if( ! Music.FLAT_SHARP_INDEX_ENTRIES ) {
-      Music.FLAT_SHARP_INDEX_ENTRIES = Music.FLAT_SHARP_ARRAY.flatMap((patterns, index) => {
-        const fsi7 = (index - 2) * 7;
-        return patterns.map((pattern) => ([pattern, fsi7]));
-      }).sort(
-        // Descending order of pattern length (longer pattern first)
-        ([a], [b]) => b.length - a.length
-      );
-    }
-    const fsi7 = Music.FLAT_SHARP_INDEX_ENTRIES.find(([pattern]) => {
+    let rest = text.substring(1);
+    const fsi7 = this.FLAT_SHARP_ARRAY.INDEX_ENTRIES.find(([pattern]) => {
       if( !rest.startsWith(pattern) ) return false;
       rest = rest.replace(pattern, ""); return true;
     })?.[1] ?? 0;
@@ -50,11 +50,11 @@ const Music = class {
   static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
     const n = Math.abs(hour);
-    const fs = Music.FLAT_SHARP_ARRAY[Math.sign(hour) + 2][0];
+    const fs = this.FLAT_SHARP_ARRAY[Math.sign(hour) + 2][0];
     return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
   };
   static keyTextOf = (hour = 0, minor) => {
-    const textAt = (hour) => Music.majorPitchNameAt(hour).join('');
+    const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
 }
@@ -588,17 +588,15 @@ const INSTRUMENTS = [
 ];
 
 const SimpleSynthesizer = class {
-  static get audioContext() {
-    if( ! SimpleSynthesizer._audioContext ) {
-      try {
-        const AudioContext = window.AudioContext ?? window.webkitAudioContext;
-        SimpleSynthesizer._audioContext = new AudioContext();
-      }
-      catch(e) {
-        alert('Web Audio API is not supported in this browser');
-      }
+  static audioContext;
+  static {
+    try {
+      const AudioContext = window.AudioContext ?? window.webkitAudioContext;
+      this.audioContext = new AudioContext();
     }
-    return SimpleSynthesizer._audioContext;
+    catch(e) {
+      alert('Web Audio API is not supported in this browser');
+    }
   };
   constructor() {
     const getMixer = () => {
