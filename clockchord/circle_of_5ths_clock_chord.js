@@ -3224,7 +3224,7 @@ const CircleOfFifthsClock = class {
       keyCodes.push(keyCodes.shift());
       return keyCodes;
     };
-    const chordKeyBindings = Object.fromEntries(
+    const pcKeyBindMap = new Map(
       [
         [...createDigitKeyCodes(), 'Minus', 'Equal'],
         [...createKeyCodes('QWERTYUIOP'), ...createLeftRightKeyCodes('Bracket')],
@@ -3241,8 +3241,8 @@ const CircleOfFifthsClock = class {
             event.preventDefault();
             return;
           }
-          if( event.code in chordKeyBindings ) {
-            [chord.hour, chord.offset3rd] = chordKeyBindings[event.code];
+          if( pcKeyBindMap.has(event.code) ) {
+            [chord.hour, chord.offset3rd] = pcKeyBindMap.get(event.code);
             chord.hour += keySignature.value;
           } else {
             switch(event.code) {
