@@ -1220,7 +1220,7 @@ const PianoKeyboard = class {
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.setChordAsKey());
+      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.value = chord);
       const cls = chord.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
@@ -2810,8 +2810,18 @@ const CircleOfFifthsClock = class {
       this.value = 0;
     },
     get value() { return this.element?.value - 0; },
-    set value(hour) {
+    set value(hourOrChord) {
       const { element, dial, chord, enharmonicButton } = this;
+      let hour;
+      if( hourOrChord === chord ) {
+        if( ! chord.hasValue() ) return;
+        hour = chord.hour;
+        if( this.minorElement ) {
+          this.minorElement.checked = chord.offset3rd < 0;
+        }
+      } else {
+        hour = hourOrChord;
+      }
       element.value = hour = Music.normalizeHourAsKey(hour);
       if( enharmonicButton ) {
         const { style } = enharmonicButton;
@@ -2841,12 +2851,6 @@ const CircleOfFifthsClock = class {
       this.value = value;
       this.minor = array.length > 1;
     },
-    setChordAsKey() {
-      const { chord } = this;
-      if( ! chord.hasValue() ) return;
-      this.value = chord.hour;
-      this.minor = chord.offset3rd < 0;
-    }
   };
   setupToneIndicatorCanvas = () => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
