@@ -485,10 +485,7 @@
       <div id="EmbeddedSongle">
         <div id="SongleErrorMessage"></div>
       </div>
-      <div>
-        Play by <a href="https://songle.jp/" target="_blank">Songle</a>
-        [<a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a>]
-      </div>
+      <div>Embed <a href="https://songle.jp/" target="_blank">Songle</a> player</div>
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
           <label for="SongleUrl">URL</label>
@@ -764,12 +761,21 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </p>
 <h3>Songle Widget にコード演奏させる</h3>
 <p><a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> がリアルタイムに出力するコードを ClockChord で鳴らすことも可能です。</p>
-<p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>で解析された曲のURL(YouTube、niconicoなど)を入力し、[Load]ボタンをクリックしてください。
+<p>URL欄に、<a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>で解析された曲のURL(YouTube、niconicoなど)、キーがわかっている場合はkeysig欄に調号の♯の数（負数で♭の数、末尾にmをつけるとマイナー）を入力し、[Load]ボタンをクリックしてください。
 Songle Widget の埋め込みプレーヤーが表示されます（その中にさらに動画サイトの埋め込みがあるため、広告が表示されることがあります）。
-再生時には自動的に🌛ダークモード/🪭Pieモードに設定され、Songle に入力されているコードが ClockChord にリアルタイムに反映され、実際にコードが鳴ります。
 </p>
+<p>再生時には自動的に🌛ダークモード/🪭Pieモードに設定され、Songle に入力されているコードが ClockChord の文字盤にリアルタイムに反映され、実際にコードが鳴ります。キーの指定があれば、それも文字盤に反映されます。
 </p>
-<p>URLを空にして[Load]ボタンをクリックすると、埋め込みプレーヤーの表示が消えます。
+<p>転調がある場合は、ミリ秒単位の転調位置、転調先のキー、この2つを交互にカンマ区切りでkeysig欄に追加してください。
+</p>
+<p>例： -1m,123456,2,234567,-3m,345678,0</p>
+<ul>
+<li>開始時のキー：♭1個のマイナー（Dマイナー）</li>
+<li>123.456秒の位置で、♯2個（Dメジャー）に転調</li>
+<li>234.567秒の位置で、♭3個のマイナー（Cマイナー）に転調</li>
+<li>345.678秒の位置で、調号なし（Cメジャー）に転調</li>
+</ul>
+<p>
 </p>
 <p>Songleで視覚的にコード進行を覚えたので、今度は自分でコード演奏してみたい！ …と思ったら、文字盤左下にある Auto のチェックを外してみましょう。Songleによるコード演奏が止まり、自分で曲に合わせてコード演奏できるようになります。
 </p>
@@ -778,13 +784,12 @@ Songle Widget の埋め込みプレーヤーが表示されます（その中に
 </p>
 <dl>
 <dt>songle</dt>
-<dd>Songleの該当曲のURL、またはSongleに埋め込まれている動画サイトのURLを指定します。その曲のSongle Widgetが最初から埋め込まれた状態で開きます。</dd>
+<dd>Songle URL欄の入力値を指定します。URLで指定された曲の埋め込まれたSongle Widgetが、ClockChordに最初から埋め込まれた状態で開きます。</dd>
 <dt>url</dt>
-<dd>パラメータsongleと同じです（全く同じようにURLを指定できます）。</dd>
+<dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
-<dd>開いたときに設定する調（キー）を、調号の♯の数（時計の文字盤上の時刻と同じ）で指定します（負数にすることで♭の数としても指定できます）。末尾にmをつけるとマイナーキーになります。Songleの曲に転調がある場合は、追加で転調のタイミング（ミリ秒単位の位置）と転調先の調を、カンマ区切りで交互に指定します。</dd>
+<dd>keysig欄の入力値を指定します。</dd>
 </dl>
-<p>実際にこれらのパラメータを指定したさまざまなURLが<a href="https://camidion.wordpress.com/clockchord-songle-playlist/">楽曲リンク集のページ</a>にありますので参考にしてください。</p>
 <hr/>
 <h2>動作環境（Tested Environment）</h2>
 <p>下記の環境で動作を確認できています。</p>
@@ -797,7 +802,6 @@ Songle Widget の埋め込みプレーヤーが表示されます（その中に
 <hr/>
 <p>
 [<a href="./circle_of_5ths_clock_chord.js" target="_blank">JavaScript source code</a>]
-[<a href="https://camidion.wordpress.com/category/clockchord/" target="_blank">CAmiDion blog catarogy: ClockChord</a>]
 [<a href="../">Home</a>]
 </p>
 </BODY>
