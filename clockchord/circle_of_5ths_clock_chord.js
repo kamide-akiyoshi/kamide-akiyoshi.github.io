@@ -2322,8 +2322,8 @@ const PianoKeyboard = class {
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
   setupSongle = (chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
-    const url = document.getElementById("SongleUrl");
-    const keysig = document.getElementById("SongleKeySig");
+    const urlInput = document.getElementById("SongleUrl");
+    const keySigInput = document.getElementById("SongleKeySig");
     const loadButton = document.getElementById("LoadSongleUrl");
     const target = document.getElementById("EmbeddedSongle");
     const positionElement = document.getElementById("songlePosition");
@@ -2366,8 +2366,6 @@ const PianoKeyboard = class {
       };
       return sequence;
     };
-    const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
-    const initialKeySigSequenceText = searchParams.get("keysig");
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     const errorMessages = {
       100: "Could not embed: Song deleted",
@@ -2409,6 +2407,8 @@ const PianoKeyboard = class {
         widget = undefined;
         removeSongle();
       }
+      urlInput.value = urlText;
+      keySigInput.value = keySigSequenceText;
       if( !urlText ) {
         return;
       }
@@ -2469,13 +2469,11 @@ const PianoKeyboard = class {
       };
     };
     loadButton?.addEventListener("click", () => {
-      loadSongle(url.value, keysig.value);
+      loadSongle(urlInput.value, keySigInput.value);
     });
+    const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     if( initialUrlText ) {
-      loadSongle(
-        url.value = initialUrlText,
-        keysig.value = initialKeySigSequenceText
-      );
+      loadSongle(initialUrlText, searchParams.get("keysig"));
     }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
