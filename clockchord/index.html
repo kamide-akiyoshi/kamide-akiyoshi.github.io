@@ -315,7 +315,7 @@
 		margin-top: 2px;
 	}
 	#midi_sequencer {
-		margin-top: 8px;
+		margin-top: 4px;
 		padding: 0px 8px;
 		border: 1px solid;
 		border-radius: 4px;
@@ -326,6 +326,9 @@
 	#midi_sequencer > *:last-child {
 		margin-top: 8px;
 		margin-bottom: 8px;
+	}
+	#midi_sequencer > div:first-of-type, #midi_sequence > div:first-of-type {
+		margin-top: 4px;
 	}
 	.grayout {
 		color: #808080;
@@ -368,7 +371,7 @@
 	#songleLink {
 		border: 1px solid;
 	 	border-radius: 4px;
-	 	padding: 4px;
+	 	padding: 0px 8px 4px 8px;
 	}
 	#songleLink .video-player-element {
 		aspect-ratio: 16/9;
@@ -473,7 +476,8 @@
     </div>
   </detail>
   <div style="width: 100%;">
-    <div id="songleLink">
+    <fieldset id="songleLink">
+      <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
       <div>
         <span id="songleTempo">
           <img width="16" src="image/note4.svg" alt="BPM"/>=
@@ -485,9 +489,6 @@
       <div id="EmbeddedSongle">
         <div id="SongleErrorMessage"></div>
       </div>
-      <div>Embed <a href="https://songle.jp/" target="_blank">Songle</a> player [<a
-        href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a
-      >]</div>
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
           <label for="SongleUrl">URL</label>
@@ -505,8 +506,10 @@
           <button id="LoadSongleUrl">Load</button>
         </div>
       </div>
-    </div>
-    <div id="midi_sequencer">
+      <div><a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a></div>
+    </fieldset>
+    <fieldset id="midi_sequencer">
+      <legend>MIDI player</legend>
       <div id="midi_sequence">
         <div id="song_title"></div>
         <div class="controller">
@@ -534,7 +537,7 @@
         <button id="midi_file_select_button">MIDI file</button>
         <span id="midi_file_name">Select or drop here to play</span>
       </div>
-    </div>
+    </fieldset>
     <div>
       <div id="chordbar">
         <span id="chord" title="Chord"></span>
