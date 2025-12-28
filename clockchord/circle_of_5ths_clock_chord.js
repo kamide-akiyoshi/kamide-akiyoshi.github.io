@@ -3136,18 +3136,17 @@ const CircleOfFifthsClock = class {
         osdc.width = width;
         osdc.height = height;
       }
-      const changeClassByTheme = (classList, classPrefix, theme) => {
-        if( !classList ) return;
-        const newClassName = `${classPrefix}${theme}`;
-        if( !classList.contains(newClassName) ) {
-          classList.remove(`${classPrefix}${theme === 'dark' ? 'light' : 'dark'}`);
-          classList.add(newClassName);
-        }
-      };
       const redrawTheme = (theme) => {
+        const isDark = theme === 'dark';
         dial.themeColor = CircleOfFifthsClock.themeColors[theme];
-        changeClassByTheme(dial.canvas.parentElement?.classList, 'clock_', theme);
-        changeClassByTheme(dial.chord?.dialCenterLabel.element?.classList, 'center_chord_', theme);
+        [
+          dial.canvas.parentElement,
+          dial.chord?.dialCenterLabel.element,
+        ].forEach((element) => {
+          if( !element ) return;
+          const cl = element.classList;
+          isDark ? cl.add('dark') : cl.remove('dark');
+        });
         dial.draw();
         hands.draw();
       };

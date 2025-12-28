@@ -62,9 +62,7 @@
 		width: 400px; height: 400px;
 		margin: 8px 10px 0px 10px;
 	}
-	.clock_light {
-	}
-	.clock_dark {
+	.clock.dark {
 		color: white;
 		background-color: #404040;
 	}
@@ -125,11 +123,9 @@
 		transform: translate(-50%, -50%);
 		padding: 10px;
 		border-radius: 50%;
-	}
-	.center_chord_light {
 		background: radial-gradient(#FFFFFFD0 50%, #FFFFFF00);
 	}
-	.center_chord_dark {
+	#center_chord.dark {
 		background: radial-gradient(#404040D0 50%, #40404000);
 	}
 	#volume {
@@ -397,7 +393,7 @@
       <img src="image/speaker.svg" alt="Volume"/>
       <input id="volume" type="range" value="0.5" min="0" max="1.6" step="0.01"/>
     </label>
-    <div class="clock clock_light">
+    <div class="clock">
       <label id="minor_label" for="minor">
         <input id="minor" type="checkbox">m</input>
       </label>
@@ -410,7 +406,7 @@
       <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
       <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
-      <span id="center_chord" class="center_chord_light disable_selection chord-tap"></span>
+      <span id="center_chord" class="disable_selection chord-tap"></span>
       <div id="background_mode_select">
         <label for="bg_pie" aria-label="Pie" title="Pie"><input type="radio" id="bg_pie" name="background_mode" value="pie" checked>🪭</input></label>
         <label for="bg_donut" aria-label="Donut" title="Donut"><input type="radio" id="bg_donut" name="background_mode" value="donut">⭕</input></label>
