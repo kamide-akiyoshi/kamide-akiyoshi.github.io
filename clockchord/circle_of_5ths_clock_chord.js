@@ -3151,6 +3151,10 @@ const CircleOfFifthsClock = class {
         dial.draw();
         hands.draw();
       };
+      const redrawBackgroundMode = (mode) => {
+        dial.backgroundMode = mode;
+        dial.draw();
+      };
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
         dial.darkModeSelect = darkModeSelect;
@@ -3179,13 +3183,17 @@ const CircleOfFifthsClock = class {
           },
           get: () => backgroundModeSelect.querySelector('input:checked')?.value,
         });
-        backgroundModeSelect.addEventListener('change', e => {
-          dial.backgroundMode = e.target.value;
-          dial.draw();
-        });
+        backgroundModeSelect.addEventListener('change', e => redrawBackgroundMode(e.target.value));
         dial.backgroundMode = backgroundModeSelect.value;
       } else {
         dial.backgroundMode = "donut";
+      }
+      if( darkModeSelect || backgroundModeSelect ) {
+        // Restore the currently selected theme display when page back
+        window.addEventListener("pageshow", () => {
+          darkModeSelect && redrawTheme(darkModeSelect.value);
+          backgroundModeSelect && redrawBackgroundMode(backgroundModeSelect.value);
+        });
       }
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
       chordButtonCanvas && this.listen(chordButtonCanvas);
