@@ -2549,6 +2549,19 @@ const CircleOfFifthsClock = class {
       r > this.dial.borderRadius[2] ?  1 : // sus4
       0, // Major
     keySignatureTextAt0: 'key',
+    set theme(value) {
+      const isDark = value === 'dark';
+      [
+        this.canvas.parentElement,
+        this.chord?.dialCenterLabel.element,
+      ].forEach((element) => {
+        if( !element ) return;
+        const cl = element.classList;
+        isDark ? cl.add('dark') : cl.remove('dark');
+      });
+      this.themeColor = CircleOfFifthsClock.themeColors[value];
+      this.draw();
+    },
     draw: () => {
       const { dial, keySignature } = this;
       const {
@@ -3137,17 +3150,7 @@ const CircleOfFifthsClock = class {
         osdc.height = height;
       }
       const redrawTheme = (theme) => {
-        const isDark = theme === 'dark';
-        dial.themeColor = CircleOfFifthsClock.themeColors[theme];
-        [
-          dial.canvas.parentElement,
-          dial.chord?.dialCenterLabel.element,
-        ].forEach((element) => {
-          if( !element ) return;
-          const cl = element.classList;
-          isDark ? cl.add('dark') : cl.remove('dark');
-        });
-        dial.draw();
+        dial.theme = theme;
         hands.draw();
       };
       const redrawBackgroundMode = (mode) => {
