@@ -1421,11 +1421,16 @@ const PianoKeyboard = class {
     keyOrChordChanged: () => {
       const { chord } = this;
       const {
-        hasValue,
         keySignature,
         keySignatureSetButton: { style },
       } = chord;
-      style.visibility = (hasValue && ! Music.enharmonicallyEquals(chord.hour, keySignature.value)) ? 'visible' : 'hidden';
+      style.visibility = (
+        chord.hasValue &&
+        ! (
+          chord.isMinor === keySignature.minor &&
+          Music.enharmonicallyEquals(chord.hour, keySignature.value)
+        )
+      ) ? 'visible' : 'hidden';
     },
     strum: (direction) => {
       const {
