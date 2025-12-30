@@ -1291,6 +1291,8 @@ const PianoKeyboard = class {
         chord.hour -= 3;
         chord.offset5th = -1;
         suffix = suffix.replace("dim", "");
+      } else if( suffix.startsWith("aug") ) {
+        chord.offset5th = 1; suffix = suffix.replace("aug", "");
       } else if( suffix.startsWith("m") ) {
         chord.offset3rd = -1;
         chord.hour -= 3;
@@ -1324,9 +1326,7 @@ const PianoKeyboard = class {
       if( suffix.startsWith("sus4") ) {
         chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
       }
-      if( suffix.startsWith("aug") ) {
-        chord.offset5th = 1; suffix = suffix.replace("aug", "");
-      } if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
+      if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
         chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
       }
       return;
