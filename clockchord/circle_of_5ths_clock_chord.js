@@ -1231,8 +1231,8 @@ const PianoKeyboard = class {
         cls.push(cl);
       }
     },
-    clear: () => {
-      const { chord } = this;
+    clear() {
+      const chord = this;
       const {
         label,
         dialCenterLabel,
@@ -1258,6 +1258,8 @@ const PianoKeyboard = class {
     },
     get hasValue() { return "hour" in this; },
     get hasBass() { return "majorBassHour" in this; },
+    get isMinor() { return this.offset3rd < 0; },
+    get isSus4() { return this.offset3rd > 0; },
     parseText: (rawText) => {
       const { chord } = this;
       chord.clear();
@@ -1363,8 +1365,8 @@ const PianoKeyboard = class {
       } = chord;
       stop();
       if( ! hasValue ) return;
-      const { hasBass } = chord;
-      const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
+      const { hasBass, isMinor, isSus4 } = chord;
+      const majorRootHour = hour + (isMinor ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
         ? Music.togglePitchNumberAndMajorHour(majorBassHour) + 24
@@ -1388,14 +1390,14 @@ const PianoKeyboard = class {
       if( ! rootPitchName ) return;
       if( label || dialCenterLabel || chordTextInput ) {
         let sub = '', sup = '';
-        if( offset3rd < 0 && offset5th < 0 && offset7th == 1 ) {
-          sup += 'dim' + (add9th ? '9':'7');
+        if( isMinor && offset5th < 0 && offset7th == 1 ) {
+          sup += `dim${add9th ? 9 : 7}`;
         } else {
-          offset3rd < 0 && (sub += 'm');
+          isMinor && (sub += 'm');
           offset5th > 0 && (sup += 'aug');
           sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th ?? 0] ?? "";
           offset5th < 0 && (sup += '-5');
-          offset3rd > 0 && (sup += 'sus4');
+          isSus4 && (sup += 'sus4');
         }
         let htmlChordText = pitchNameToHtml(rootPitchName);
         sub && (htmlChordText += `<sub>${sub}</sub>`);
@@ -2830,7 +2832,7 @@ const CircleOfFifthsClock = class {
         if( ! chord.hasValue ) return;
         hour = chord.hour;
         if( this.minorElement ) {
-          this.minorElement.checked = chord.offset3rd < 0;
+          this.minorElement.checked = chord.isMinor;
         }
       } else {
         hour = hourOrChord;
@@ -3304,7 +3306,7 @@ const CircleOfFifthsClock = class {
       chord.offset5th = 0;
       const { shiftButtonStatus } = this;
       if( event.altKey || shiftButtonStatus?.button_flat5 ) {
-        if( chord.offset3rd == 1 ) {
+        if( chord.isSus4 ) {
           chord.offset3rd = 0; chord.offset5th = 1; // replace sus4 to augumented
         } else {
           chord.offset5th = -1; // -5
