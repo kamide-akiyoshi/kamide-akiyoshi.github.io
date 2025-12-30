@@ -1256,8 +1256,8 @@ const PianoKeyboard = class {
       chordTextInput.value = "";
       pianoKeyElementClassLists.clear();
     },
-    hasValue: () => "hour" in this.chord,
-    hasBass: () => "majorBassHour" in this.chord,
+    get hasValue() { return "hour" in this; },
+    get hasBass() { return "majorBassHour" in this; },
     parseText: (rawText) => {
       const { chord } = this;
       chord.clear();
@@ -1362,8 +1362,8 @@ const PianoKeyboard = class {
         pitchNameToHtml,
       } = chord;
       stop();
-      if( ! hasValue() ) return;
-      const hasBass = chord.hasBass();
+      if( ! hasValue ) return;
+      const { hasBass } = chord;
       const majorRootHour = hour + (offset3rd < 0 ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
@@ -1419,10 +1419,11 @@ const PianoKeyboard = class {
     keyOrChordChanged: () => {
       const { chord } = this;
       const {
+        hasValue,
         keySignature,
         keySignatureSetButton: { style },
       } = chord;
-      style.visibility = (chord.hasValue() && ! Music.enharmonicallyEquals(chord.hour, keySignature.value)) ? 'visible' : 'hidden';
+      style.visibility = (hasValue && ! Music.enharmonicallyEquals(chord.hour, keySignature.value)) ? 'visible' : 'hidden';
     },
     strum: (direction) => {
       const {
@@ -2826,7 +2827,7 @@ const CircleOfFifthsClock = class {
       const { element, dial, chord, enharmonicButton } = this;
       let hour;
       if( hourOrChord === chord ) {
-        if( ! chord.hasValue() ) return;
+        if( ! chord.hasValue ) return;
         hour = chord.hour;
         if( this.minorElement ) {
           this.minorElement.checked = chord.offset3rd < 0;
