@@ -2810,7 +2810,10 @@ const CircleOfFifthsClock = class {
       this.element = document.getElementById('keyselect') || {};
       if( this.element.addEventListener ) {
         (this.minorElement = document.getElementById('minor') || {}).addEventListener?.(
-          'change', event => { this.dial.draw(); }
+          'change', event => {
+            this.chord?.keyOrChordChanged();
+            this.dial.draw();
+          }
         );
         for( let hour = -7; hour <= 7; hour++ ) {
           const option = document.createElement('option');
