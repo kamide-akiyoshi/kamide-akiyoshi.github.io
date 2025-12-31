@@ -2863,6 +2863,7 @@ const CircleOfFifthsClock = class {
     set minor(isMinor) {
       if( !this.minorElement ) return;
       this.minorElement.checked = isMinor;
+      this.chord?.keyOrChordChanged();
       this.dial.draw();
     },
     set text(textValue) {
