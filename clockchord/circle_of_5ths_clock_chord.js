@@ -1261,8 +1261,8 @@ const PianoKeyboard = class {
     get isSus2() { return this.offset3rd === -2; },
     get isMinor() { return this.offset3rd === -1; },
     get isSus4() { return this.offset3rd === 1; },
-    parseText: (rawText) => {
-      const { chord } = this;
+    parseText(rawText) {
+      const chord = this;
       chord.clear();
       const trimmedText = rawText?.trim();
       if( !trimmedText ) return;
@@ -2282,19 +2282,23 @@ const PianoKeyboard = class {
         "[": "BracketRight",
       },
       activeNoteNumbers: new Map(),
+      showBindings(origin, show) {
+        this.keysArray.forEach(
+          (key, index) => pianoKeyElements[origin + index].textContent = show ? key : ""
+        );
+      },
+      setup() {
+        const { keysArray, toCode } = this;
+        this.codeToIndexMap = new Map(Array.from(
+          keysArray,
+          (key, index) => [
+            toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
+            index
+          ]
+        ));
+      },
     };
-    pcKey.codeToIndexMap = new Map(Array.from(
-      pcKey.keysArray,
-      (key, index) => [
-        pcKey.toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
-        index
-      ]
-    ));
-    pcKey.showBindings = (origin, show) => {
-      pcKey.keysArray.forEach(
-        (key, index) => pianoKeyElements[origin + index].textContent = show ? key : ""
-      );
-    };
+    pcKey.setup();
     keyboard.addEventListener("keydown", e => {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
