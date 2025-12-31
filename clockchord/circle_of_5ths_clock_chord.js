@@ -1261,7 +1261,7 @@ const PianoKeyboard = class {
     get isSus2() { return this.offset3rd === -2; },
     get isMinor() { return this.offset3rd === -1; },
     get isSus4() { return this.offset3rd === 1; },
-     parseText: (rawText) => {
+    parseText: (rawText) => {
       const { chord } = this;
       chord.clear();
       const trimmedText = rawText?.trim();
@@ -1273,69 +1273,62 @@ const PianoKeyboard = class {
       [chord.hour, suffix] = parsedRoot;
       if( bassText ) {
         const parsedBass = Music.parsePitchName(bassText);
-        parsedBass && ([chord.majorBassHour] = parsedBass);
+        if( parsedBass ) [chord.majorBassHour] = parsedBass;
       }
       suffix = suffix.replace(/\(|\)|\,/g, "");
-      if( suffix.startsWith("dim9") ) {
+      const eat = (str) => {
+        if( !suffix.startsWith(str) ) return false;
+        suffix = suffix.replace(str, ""); return true;
+      };
+      // dim/aug/minor
+      const setMinor = () => {
         chord.offset3rd = -1;
         chord.hour -= 3;
+      };
+      if( eat("dim9") ) {
+        setMinor();
         chord.offset5th = -1;
         chord.offset7th = 1;
         chord.add9th = true;
-        suffix = suffix.replace("dim9", "");
-      } else if( suffix.startsWith("dim7") ) {
-        chord.offset3rd = -1;
-        chord.hour -= 3;
-        chord.offset5th = -1;
-        chord.offset7th = 1;
-        suffix = suffix.replace("dim7", "");
-      } else if( suffix.startsWith("dim") ) {
-        chord.offset3rd = -1;
-        chord.hour -= 3;
-        chord.offset5th = -1;
-        suffix = suffix.replace("dim", "");
-      } else if( suffix.startsWith("aug") ) {
-        chord.offset5th = 1; suffix = suffix.replace("aug", "");
-      } else if( suffix.startsWith("m") ) {
-        chord.offset3rd = -1;
-        chord.hour -= 3;
-        suffix = suffix.replace("m", "");
       }
-      if( suffix.startsWith("add9") ) {
-        chord.add9th = true;
-        suffix = suffix.replace("add9", "");
-      } else if( suffix.startsWith("M9") ) {
+      else if( eat("dim7") ) {
+        setMinor();
+        chord.offset5th = -1;
+        chord.offset7th = 1;
+      }
+      else if( eat("dim") ) {
+        setMinor();
+        chord.offset5th = -1;
+      }
+      else if( eat("aug") ) chord.offset5th = 1;
+      else if( eat("m") ) setMinor();
+      //
+      // 6th/7th/9th
+      if( eat("add9") ) chord.add9th = true;
+      else if( eat("M9") ) {
         chord.offset7th = 3;
         chord.add9th = true;
-        suffix = suffix.replace("M9", "");
-      } else if( suffix.startsWith("M7") ) {
-        chord.offset7th = 3;
-        suffix = suffix.replace("M7", "");
-      } else if( suffix.startsWith("9") ) {
+      }
+      else if( eat("M7") ) chord.offset7th = 3;
+      else if( eat("9") ) {
         chord.offset7th = 2;
         chord.add9th = true;
-        suffix = suffix.replace("9", "");
-      } else if( suffix.startsWith("7") ) {
-        chord.offset7th = 2;
-        suffix = suffix.replace("7", "");
-      } else if( suffix.startsWith("69") ) {
+      }
+      else if( eat("7") ) chord.offset7th = 2;
+      else if( eat("69") ) {
         chord.offset7th = 1;
         chord.add9th = true;
-        suffix = suffix.replace("69", "");
-      } else if( suffix.startsWith("6") ) {
-        chord.offset7th = 1;
-        suffix = suffix.replace("6", "");
       }
-      if( suffix.startsWith("sus4") ) {
-        chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
-      }
-      if( suffix.startsWith("sus2") ) {
-        chord.offset3rd = -2; suffix = suffix.replace("sus2", "");
+      else if( eat("6") ) chord.offset7th = 1;
+      //
+      // sus4/sus2
+      if( eat("sus4") ) chord.offset3rd = 1;
+      else if( eat("sus2") ) {
+        chord.offset3rd = -2;
         chord.add9th = false; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
       }
-      if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
-        chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
-      }
+      // -5/b5
+      if( eat("-5") || eat("b5") ) chord.offset5th = -1;
       return;
     },
     pitchNameToHtml: ([abc, fs]) => fs ? `${abc}<sup>${fs}</sup>` : abc,
