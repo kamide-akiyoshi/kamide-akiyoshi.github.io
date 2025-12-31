@@ -1258,9 +1258,10 @@ const PianoKeyboard = class {
     },
     get hasValue() { return "hour" in this; },
     get hasBass() { return "majorBassHour" in this; },
-    get isMinor() { return this.offset3rd < 0; },
-    get isSus4() { return this.offset3rd > 0; },
-    parseText: (rawText) => {
+    get isSus2() { return this.offset3rd === -2; },
+    get isMinor() { return this.offset3rd === -1; },
+    get isSus4() { return this.offset3rd === 1; },
+     parseText: (rawText) => {
       const { chord } = this;
       chord.clear();
       const trimmedText = rawText?.trim();
@@ -1328,6 +1329,10 @@ const PianoKeyboard = class {
       if( suffix.startsWith("sus4") ) {
         chord.offset3rd = 1; suffix = suffix.replace("sus4", "");
       }
+      if( suffix.startsWith("sus2") ) {
+        chord.offset3rd = -2; suffix = suffix.replace("sus2", "");
+        chord.add9th = false; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
+      }
       if( suffix.startsWith("-5") || suffix.startsWith("b5") ) {
         chord.offset5th = -1; suffix = suffix.replace("(-|b)5", "");
       }
@@ -1365,7 +1370,7 @@ const PianoKeyboard = class {
       } = chord;
       stop();
       if( ! hasValue ) return;
-      const { hasBass, isMinor, isSus4 } = chord;
+      const { hasBass, isSus2, isMinor, isSus4 } = chord;
       const majorRootHour = hour + (isMinor ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
@@ -1397,7 +1402,7 @@ const PianoKeyboard = class {
           offset5th > 0 && (sup += 'aug');
           sup += (add9th ? ['add9','69','9','M9'] : ['','6','7','M7'])[offset7th ?? 0] ?? "";
           offset5th < 0 && (sup += '-5');
-          isSus4 && (sup += 'sus4');
+          if( isSus4 ) sup += 'sus4'; else if( isSus2 ) sup += 'sus2';
         }
         let htmlChordText = pitchNameToHtml(rootPitchName);
         sub && (htmlChordText += `<sub>${sub}</sub>`);
