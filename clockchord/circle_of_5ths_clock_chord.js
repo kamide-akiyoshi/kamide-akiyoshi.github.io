@@ -2276,11 +2276,6 @@ const PianoKeyboard = class {
     ['dblclick','selectstart'].forEach(type => keyboard.addEventListener(type, e => e.preventDefault()));
     const pcKey = {
       keysArray: Array.from("Q2W3ER5T6Y7UI9O0P@^["),
-      toCode: {
-        "@": "BracketLeft",
-        "^": "Equal",
-        "[": "BracketRight",
-      },
       activeNoteNumbers: new Map(),
       showBindings(origin, show) {
         this.keysArray.forEach(
@@ -2288,9 +2283,13 @@ const PianoKeyboard = class {
         );
       },
       setup() {
-        const { keysArray, toCode } = this;
+        const toCode = {
+          "@": "BracketLeft",
+          "^": "Equal",
+          "[": "BracketRight",
+        };
         this.codeToIndexMap = new Map(Array.from(
-          keysArray,
+          this.keysArray,
           (key, index) => [
             toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
             index
