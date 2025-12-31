@@ -2288,13 +2288,14 @@ const PianoKeyboard = class {
           "^": "Equal",
           "[": "BracketRight",
         };
-        this.codeToIndexMap = new Map(Array.from(
+        const codeToIndexMap = new Map(Array.from(
           this.keysArray,
           (key, index) => [
             toCode[key] ?? `${key < 10 ? "Digit" : "Key"}${key}`,
             index
           ]
         ));
+        this.indexOfCode = (code) => codeToIndexMap.get(code) ?? -1;
       },
     };
     pcKey.setup();
@@ -2302,7 +2303,7 @@ const PianoKeyboard = class {
       if( e.repeat ) return;
       const { activeNoteNumbers } = pcKey;
       if( activeNoteNumbers.has(e.code) ) return;
-      const index = pcKey.codeToIndexMap.get(e.code) ?? -1;
+      const index = pcKey.indexOfCode(e.code);
       if( index < 0 ) return;
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
