@@ -1220,7 +1220,7 @@ const PianoKeyboard = class {
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.value = chord);
+      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.numberOfSharps = chord);
       const cls = chord.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
@@ -1426,7 +1426,7 @@ const PianoKeyboard = class {
         chord.hasValue &&
         ! (
           chord.isMinor === keySignature.minor &&
-          Music.enharmonicallyEquals(chord.hour, keySignature.value)
+          Music.enharmonicallyEquals(chord.hour, keySignature.numberOfSharps)
         )
       ) ? 'visible' : 'hidden';
     },
@@ -1914,7 +1914,7 @@ const PianoKeyboard = class {
           {
             const { keySignature: hour, minor } = event;
             const { keySignature } = toneIndicatorCanvas;
-            keySignature.value = hour;
+            keySignature.numberOfSharps = hour;
             keySignature.minor = minor;
             chord.clear(); // To hide key signature change button
             keyElement.textContent = `Key:${Music.majorMinorTextOf(hour, minor)}`;
@@ -2585,7 +2585,7 @@ const CircleOfFifthsClock = class {
       if( !themeColor ) return;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const selectedKeyHour = keySignature.value;
+      const selectedKeyHour = keySignature.numberOfSharps;
       const isMinorKey = keySignature.minor;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
@@ -2823,19 +2823,19 @@ const CircleOfFifthsClock = class {
           option.appendChild(document.createTextNode(Music.keySignatureTextAt(hour)||Music.NATURAL));
           this.element.appendChild(option);
         }
-        this.element.addEventListener('change', event => this.value = event.target.value);
+        this.element.addEventListener('change', event => this.numberOfSharps = event.target.value);
         (this.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
           'click', event => {
             const { enharmonicHour } = this;
-            if( ! enharmonicHour || this.value === enharmonicHour ) return;
-            this.value = enharmonicHour;
+            if( ! enharmonicHour || this.numberOfSharps === enharmonicHour ) return;
+            this.numberOfSharps = enharmonicHour;
           }
         );
       }
-      this.value = 0;
+      this.numberOfSharps = 0;
     },
-    get value() { return this.element?.value - 0; },
-    set value(hourOrChord) {
+    get numberOfSharps() { return this.element?.value - 0; },
+    set numberOfSharps(hourOrChord) {
       const { element, dial, chord, enharmonicButton } = this;
       let hour;
       if( hourOrChord === chord ) {
@@ -2874,7 +2874,7 @@ const CircleOfFifthsClock = class {
       const array = textValue.split("m");
       const value = parseInt(array[0]);
       if( isNaN(value) ) return;
-      this.value = value;
+      this.numberOfSharps = value;
       this.minor = array.length > 1;
     },
   };
@@ -2889,7 +2889,7 @@ const CircleOfFifthsClock = class {
     const toneIndicating = Array.from({ length: 12 }, () => 0);
     const bassToneIndicating = [...toneIndicating];
     const getColorOf = (hour, flatThreshold) => {
-      let offset = hour - keySignature?.value + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
+      let offset = hour - keySignature?.numberOfSharps + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
       if( offset < 0 ) offset += 12; else if ( offset >= 12 ) offset -= 12;
       return dial.themeColor.indicator[offset < 7 ? 1 : offset < flatThreshold ? 2 : 0];
     };
@@ -3132,7 +3132,7 @@ const CircleOfFifthsClock = class {
       const ratio = numerator - beat < 2 ? 0 : 1 / (2 ** beat);
       const outer = dial.borderRadius[keySignature.minor ? 1 : 2];
       const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
-      const startAngle = (keySignature.value - 3.5) * radianPerHour;
+      const startAngle = (keySignature.numberOfSharps - 3.5) * radianPerHour;
       const endAngle = startAngle + radianPerHour;
       context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 15%, transparent)`;
       context.beginPath();
@@ -3270,7 +3270,7 @@ const CircleOfFifthsClock = class {
           }
           if( pcKeyBindMap.has(event.code) ) {
             [chord.hour, chord.offset3rd] = pcKeyBindMap.get(event.code);
-            chord.hour += keySignature.value;
+            chord.hour += keySignature.numberOfSharps;
           } else {
             switch(event.code) {
               case 'Space':
@@ -3282,10 +3282,10 @@ const CircleOfFifthsClock = class {
               case 'Tab':
                 // Move focus (Keep default action)
                 return;
-              case 'ArrowLeft': keySignature.value-- ; event.preventDefault(); return;
-              case 'ArrowRight': keySignature.value++ ; event.preventDefault(); return;
-              case 'ArrowUp': keySignature.value -= 5 ; event.preventDefault(); return;
-              case 'ArrowDown': keySignature.value += 5 ; event.preventDefault(); return;
+              case 'ArrowLeft': keySignature.numberOfSharps-- ; event.preventDefault(); return;
+              case 'ArrowRight': keySignature.numberOfSharps++ ; event.preventDefault(); return;
+              case 'ArrowUp': keySignature.numberOfSharps -= 5 ; event.preventDefault(); return;
+              case 'ArrowDown': keySignature.numberOfSharps += 5 ; event.preventDefault(); return;
               default: event.preventDefault(); return;
             }
           }
@@ -3312,7 +3312,7 @@ const CircleOfFifthsClock = class {
           }
           break;
       }
-      const relativeHour = chord.hour - keySignature.value;
+      const relativeHour = chord.hour - keySignature.numberOfSharps;
       if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
       chord.offset5th = 0;
       const { shiftButtonStatus } = this;
