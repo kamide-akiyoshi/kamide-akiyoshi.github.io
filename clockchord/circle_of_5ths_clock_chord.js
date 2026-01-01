@@ -1220,7 +1220,7 @@ const PianoKeyboard = class {
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.numberOfSharps = chord);
+      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.parse(chord));
       const cls = chord.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
@@ -1914,8 +1914,7 @@ const PianoKeyboard = class {
           {
             const { keySignature: hour, minor } = event;
             const { keySignature } = toneIndicatorCanvas;
-            keySignature.numberOfSharps = hour;
-            keySignature.minor = minor;
+            keySignature.parse([hour, minor]);
             chord.clear(); // To hide key signature change button
             keyElement.textContent = `Key:${Music.majorMinorTextOf(hour, minor)}`;
             keyElement.classList.remove("grayout");
@@ -2361,7 +2360,7 @@ const PianoKeyboard = class {
       let nextIndex = 1;
       let nextPosition = sequence[nextIndex]?.position;
       const changeKeySig = (to) => {
-        chord.keySignature.text = to.keysig;
+        chord.keySignature.parse(to.keysig);
       };
       sequence.handleBeatPlay = (newPosition) => {
         if( nextPosition > newPosition ) return;
@@ -2834,19 +2833,9 @@ const CircleOfFifthsClock = class {
       }
       this.numberOfSharps = 0;
     },
-    get numberOfSharps() { return this.element?.value - 0; },
-    set numberOfSharps(hourOrChord) {
+    get numberOfSharps() { return parseInt(this.element?.value); },
+    set numberOfSharps(hour) {
       const { element, dial, chord, enharmonicButton } = this;
-      let hour;
-      if( hourOrChord === chord ) {
-        if( ! chord.hasValue ) return;
-        hour = chord.hour;
-        if( this.minorElement ) {
-          this.minorElement.checked = chord.isMinor;
-        }
-      } else {
-        hour = hourOrChord;
-      }
       element.value = hour = Music.normalizeHourAsKey(hour);
       if( enharmonicButton ) {
         const { style } = enharmonicButton;
@@ -2869,13 +2858,26 @@ const CircleOfFifthsClock = class {
       this.chord?.keyOrChordChanged();
       this.dial.draw();
     },
-    set text(textValue) {
-      if( !textValue ) return;
-      const array = textValue.split("m");
-      const value = parseInt(array[0]);
-      if( isNaN(value) ) return;
-      this.numberOfSharps = value;
-      this.minor = array.length > 1;
+    parse(value) {
+      if( !value ) return;
+      if( value === this.chord ) {
+        if( ! value.hasValue ) return;
+        this.minorElement.checked = value.isMinor;
+        this.numberOfSharps = value.hour;
+        return;
+      }
+      if( Array.isArray(value) ) {
+        const [hour, minor] = value;
+        this.minorElement.checked = minor;
+        this.numberOfSharps = hour;
+        return;
+      }
+      const array = value.split?.("m");
+      if( !array ) return;
+      const hour = parseInt(array[0]);
+      if( isNaN(hour) ) return;
+      this.minorElement.checked = array.length > 1
+      this.numberOfSharps = hour;
     },
   };
   setupToneIndicatorCanvas = () => {
@@ -3241,7 +3243,7 @@ const CircleOfFifthsClock = class {
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
     const initialKeySig = searchParams.get("keysig")?.split(",", 1)[0];
-    if( initialKeySig ) keySignature.text = initialKeySig;
+    if( initialKeySig ) keySignature.parse(initialKeySig);
     //
     // PC keyboard bindings
     const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
