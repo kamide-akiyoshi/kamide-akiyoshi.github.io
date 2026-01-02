@@ -2866,22 +2866,19 @@ const CircleOfFifthsClock = class {
         return;
       }
       if( value === this.chord ) {
-        if( ! value.hasValue ) return;
-        this.minorElement.checked = value.isMinor;
-        this.numberOfSharps = value.hour;
+        if( value.hasValue ) this.parse([value.hour, value.isMinor]);
         return;
       }
-      const array = value.split?.("m");
-      if( !array ) return;
-      const minor = array.length > 1;
-      let hour = parseInt(array[0]);
+      if( !value.split ) return;
+      const splitStrings = value.split("m", 2);
+      const [root, minor] = [splitStrings[0], splitStrings.length > 1];
+      let hour = parseInt(root);
       if( isNaN(hour) ) {
-        const result = Music.parsePitchName(array[0]);
-        if( !result ) return;
-        hour = result[0]; if( minor ) hour -= 3;
+        const parsedRoot = Music.parsePitchName(root);
+        if( !parsedRoot ) return;
+        [hour] = parsedRoot; if( minor ) hour -= 3;
       }
-      this.minorElement.checked = minor;
-      this.numberOfSharps = hour;
+      this.parse([hour, minor]);
     },
   };
   setupToneIndicatorCanvas = () => {
