@@ -2483,7 +2483,7 @@ const PianoKeyboard = class {
     });
     const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     if( initialUrlText ) {
-      loadSongle(initialUrlText, searchParams.get("keysig"));
+      loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"));
     }
   };
   constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
@@ -3246,7 +3246,7 @@ const CircleOfFifthsClock = class {
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
-    const initialKeySig = searchParams.get("keysig")?.split(",", 1)[0];
+    const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
     if( initialKeySig ) keySignature.parse(initialKeySig);
     //
     // PC keyboard bindings

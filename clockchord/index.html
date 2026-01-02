@@ -491,8 +491,8 @@
           <input id="SongleUrl" type="text" name="url" title="Song URL registered on Songle"/>
         </div>
         <div class="SongleUrlFormLine">
-          <label for="SongleKeySig">KeySig</label>
-          <input id="SongleKeySig" type="text" name="keysig"
+          <label for="SongleKeySig">Key</label>
+          <input id="SongleKeySig" type="text" name="key"
             placeholder="Bb,123456,Am,789012,F#m,…"
             title="Key-signature timeline (key,millisecond,key,ms,key,ms,key,…)"
           />
@@ -763,7 +763,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <h4>操作方法</h4>
 <ol>
 <li><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲のURL(YouTube、niconicoなど)を入力</li>
-<li>曲のキー（例：B♭、F♯m など）がわかっていればkeysig欄に入力<ul>
+<li>曲のキー（例：B♭、F♯m など）がわかっていればKey欄に入力<ul>
   <li>フラット（♭）は小文字の b、シャープ（♯）は半角記号の # としても指定できます。</li>
   <li>音名の代わりに調号の♯の数（負数で♭の数）を使った指定も可能です。<ul>
     <li>例：A → 3、Am → 0m、C → 0、Cm → -3m</li>
@@ -780,7 +780,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 曲のコード進行を視覚的に実感できます。
 </p>
 <h4>転調がある場合</h4>
-<p>keysig欄に入力したキーに追加で、転調位置（ミリ秒[ms]単位）、転調先のキー、この2つを交互にカンマ区切りで指定してください。
+<p>Key欄に入力したキーに追加で、転調位置（ミリ秒[ms]単位）、転調先のキー、この2つを交互にカンマ区切りで指定してください。
 </p>
 <p>例：Dm,123456,Bb,234567,F#m</p>
 <ul>
@@ -802,11 +802,13 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <dt>url</dt>
 <dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
-<dd>keysig欄の入力値を指定します。<br/>※ シャープとして半角の # を直接指定しても、<a
+<dd>Key欄の入力値を指定します。<br/>※ シャープとして半角の # を直接指定しても、<a
  href="https://developer.mozilla.org/ja/docs/Web/URI/Reference/Fragment/Text_fragments" target="_blank">テキストフラグメント</a
 >として解釈され、無視されてしまいます。その場合はシャープ記号 ♯ で代用するか、または %23 のように<a
  href="https://developer.mozilla.org/ja/docs/Glossary/Percent-encoding" target="_blank">パーセントエンコーディングを使ってエスケープ</a
 >する必要があります。</dd>
+<dt>key</dt>
+<dd>パラメータkeysigと同じです。</dd>
 </dl>
 <hr/>
 <h2>動作環境（Tested Environment）</h2>
