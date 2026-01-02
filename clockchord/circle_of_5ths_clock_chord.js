@@ -2859,24 +2859,28 @@ const CircleOfFifthsClock = class {
       this.dial.draw();
     },
     parse(value) {
-      if( !value ) return;
-      if( value === this.chord ) {
-        if( ! value.hasValue ) return;
-        this.minorElement.checked = value.isMinor;
-        this.numberOfSharps = value.hour;
-        return;
-      }
       if( Array.isArray(value) ) {
         const [hour, minor] = value;
         this.minorElement.checked = minor;
         this.numberOfSharps = hour;
         return;
       }
+      if( value === this.chord ) {
+        if( ! value.hasValue ) return;
+        this.minorElement.checked = value.isMinor;
+        this.numberOfSharps = value.hour;
+        return;
+      }
       const array = value.split?.("m");
       if( !array ) return;
-      const hour = parseInt(array[0]);
-      if( isNaN(hour) ) return;
-      this.minorElement.checked = array.length > 1
+      const minor = array.length > 1;
+      let hour = parseInt(array[0]);
+      if( isNaN(hour) ) {
+        const result = Music.parsePitchName(array[0]);
+        if( !result ) return;
+        hour = result[0]; if( minor ) hour -= 3;
+      }
+      this.minorElement.checked = minor;
       this.numberOfSharps = hour;
     },
   };

@@ -762,7 +762,15 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <h4>操作方法</h4>
 <ol>
 <li><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲のURL(YouTube、niconicoなど)を入力</li>
-<li>曲のキーがわかっている場合、調号の♯の数（負数で♭の数、末尾にmをつけるとマイナー）をkeysig欄に入力</li>
+<li>曲のキーがわかっている場合はkeysig欄に入力<ul>
+  <li>例：B♭、Bb、F♯m、F#m、A</li>
+  <li>音名の代わりに、調号の♯の数（負数で♭の数）も指定できます。<ul>
+    <li>例：A → 3、Cm → -3m</li>
+  </ul></li>
+  <li>調号の♯、♭が7個を超えるようなキー（例：G♯、8）を指定した場合<ul>
+    <li>7個以内に収まる異名同音のキー（例：A♭、-4）に正規化されます。</li>
+  </ul></li>
+</ul></li>
 <li>[Load]ボタンをクリック</li>
 </ol>
 <p>→ Songle Widget の埋め込みプレーヤーが表示されます（YouTubeの広告や、niconicoの流れるコメントも表示されます）。
@@ -776,10 +784,10 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </p>
 <p>例： -1m,123456,2,234567,-3m,345678,0</p>
 <ul>
-<li>開始時のキー：♭1個のマイナー（Dマイナー）</li>
-<li>123.456秒の位置で、♯2個（Dメジャー）に転調</li>
-<li>234.567秒の位置で、♭3個のマイナー（Cマイナー）に転調</li>
-<li>345.678秒の位置で、調号なし（Cメジャー）に転調</li>
+<li>開始時のキー：♭1個のマイナー Dm</li>
+<li>123.456秒の位置で、♯2個 D に転調</li>
+<li>234.567秒の位置で、♭3個のマイナー Cm に転調</li>
+<li>345.678秒の位置で、調号なし C に転調</li>
 </ul>
 <p>転調位置を把握するには、再生途中で転調した！と思った瞬間に一時停止し、埋め込みプレーヤーの上に表示されている現在の再生位置[ms]を確認してください。
 </p>
@@ -795,7 +803,11 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <dt>url</dt>
 <dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
-<dd>keysig欄の入力値を指定します。</dd>
+<dd>keysig欄の入力値を指定します。ただし、シャープとして半角の # を直接指定しても<a
+ href="https://developer.mozilla.org/ja/docs/Web/URI/Reference/Fragment/Text_fragments" target="_blank">テキストフラグメント</a
+>として解釈されるため、シャープ記号 ♯ として指定するか、%23 のように<a
+ href="https://developer.mozilla.org/ja/docs/Glossary/Percent-encoding" target="_blank">パーセントエンコーディングを使ってエスケープ</a
+>する必要があります。</dd>
 </dl>
 <hr/>
 <h2>動作環境（Tested Environment）</h2>
