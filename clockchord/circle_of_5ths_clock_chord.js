@@ -2422,7 +2422,11 @@ const PianoKeyboard = class {
       if( !urlText ) {
         return;
       }
-      const keySigSequence = toKeySigSequence(keySigSequenceText);
+      if( ! keySigSequenceText && typeof SONG_KEYS !== "undefined" ) {
+        const songKey = SONG_KEYS.get(urlText);
+        if( songKey ) keySigInput.value = songKey;
+      }
+      const keySigSequence = toKeySigSequence(keySigInput.value);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
