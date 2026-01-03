@@ -70,10 +70,8 @@
 	#keyselect_label {
 		top: 1px;
 		left: 2px;
-	}
-	#keyselect {
-		z-index: 1;
-		top: 20px;
+		display: flex;
+		flex-direction: column;
 	}
 	#minor_label {
 	  z-index: 1;
@@ -394,12 +392,11 @@
       <input id="volume" type="range" value="0.5" min="0" max="1.6" step="0.01"/>
     </label>
     <div class="clock">
-      <label id="minor_label" for="minor">
-        <input id="minor" type="checkbox">m</input>
-      </label>
+      <label id="minor_label" for="minor"><input id="minor" type="checkbox">m</input></label>
       <button id="setkey" title="Set the chord as key signature"></button>
-      <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key</label>
-      <select id="keyselect" style="height: 32px;"></select>
+      <label id="keyselect_label" for="keyselect" title="Select key signature to match ♯/♭ notation">Key<select id="keyselect" style="height: 32px;">
+        <option value="0"></option>
+      </select></label>
       <button id="enharmonic" title="Enharmonic key"></button>
       <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
       <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px"></canvas>
