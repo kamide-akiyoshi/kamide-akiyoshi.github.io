@@ -763,9 +763,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <ol>
 <li><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>登録楽曲のURL（YouTube、niconicoなど）</li>
 <li>曲のキー（例：B♭、F♯m など）<ul>
-  <li>キーが不明な場合<ul>
-    <li>とりあえず省略して再生し、曲が終わったように聞こえるコードを探してみましょう（それがそのままキーになります）。</li>
-  </ul></li>
+  <li>省略した場合、曲のURLをもとに内部データ（song_keys.js）から自動的にキーを探し、もし見つかれば補完します。</li>
   <li>フラットやシャープとして使える文字<ul>
     <li>フラット：♭ b
     <li>シャープ：♯ #
