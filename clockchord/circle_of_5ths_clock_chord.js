@@ -2348,8 +2348,7 @@ const PianoKeyboard = class {
     });
     const toKeySigSequence = (text) => {
       if( !text ) return;
-      const splitArray = text.split(",");
-      const sequence = splitArray.reduce((result, current, index) => {
+      const sequence = text.split(",").reduce((result, current, index) => {
         if( index & 1 ) {
           result.push({ position: parseInt(current) });
         } else {
