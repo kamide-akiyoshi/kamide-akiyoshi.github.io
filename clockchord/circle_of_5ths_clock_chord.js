@@ -2423,8 +2423,7 @@ const PianoKeyboard = class {
         return;
       }
       if( ! keySigSequenceText && typeof SONG_KEYS !== "undefined" ) {
-        const songKey = SONG_KEYS.get(urlText);
-        if( songKey ) keySigInput.value = songKey;
+        keySigInput.value = SONG_KEYS.get(urlText) ?? "";
       }
       const keySigSequence = toKeySigSequence(keySigInput.value);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
@@ -2483,7 +2482,14 @@ const PianoKeyboard = class {
       };
     };
     loadButton?.addEventListener("click", () => {
-      loadSongle(urlInput.value, keySigInput.value);
+      let url = urlInput.value;
+      try {
+        // Decode if percent-encoded URL entered (such as the content URL copied from Songle URL)
+        url = decodeURIComponent(url);
+      } catch(error) {
+        console.error(error);
+      }
+      loadSongle(url, keySigInput.value);
     });
     const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     if( initialUrlText ) {
