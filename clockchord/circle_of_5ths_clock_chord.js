@@ -2333,6 +2333,7 @@ const PianoKeyboard = class {
   };
   setupSongle = (chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
     const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
+    const HTTPS_URL_PREFIX = "https://";
     const urlInput = document.getElementById("SongleUrl");
     const keySigInput = document.getElementById("SongleKeySig");
     const loadButton = document.getElementById("LoadSongleUrl");
@@ -2488,6 +2489,8 @@ const PianoKeyboard = class {
         url = decodeURIComponent(url);
         if( url.startsWith(SONGLE_SONG_URL_PREFIX) ) {
           url = url.replace(SONGLE_SONG_URL_PREFIX, "");
+        } else if( url.startsWith(HTTPS_URL_PREFIX) ) {
+          url = url.replace(HTTPS_URL_PREFIX, "");
         }
       } catch(error) {
         console.error(error);
