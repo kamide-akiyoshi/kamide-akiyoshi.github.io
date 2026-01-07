@@ -108,5 +108,7 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=4tlUwgtgdZA", "Eb"],
   ["www.youtube.com/watch?v=gU5oN0KVofU", "G,235000,A"],
   ["www.youtube.com/watch?v=teMdjJ3w9iM", "Fm"],
+  ["staff.aist.go.jp/m.goto/RWC-MDB/MP3/RWC-MDB-P-2001.No.016.mp3", "Am"],
+  ["staff.aist.go.jp/m.goto/RWC-MDB/MP3/RWC-MDB-P-2001.No.087.mp3", "F#"],
 ]);
 
