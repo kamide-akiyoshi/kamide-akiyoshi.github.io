@@ -110,5 +110,6 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=teMdjJ3w9iM", "Fm"],
   ["staff.aist.go.jp/m.goto/RWC-MDB/MP3/RWC-MDB-P-2001.No.016.mp3", "Am"],
   ["staff.aist.go.jp/m.goto/RWC-MDB/MP3/RWC-MDB-P-2001.No.087.mp3", "F#"],
+  ["staff.aist.go.jp/t.nakano/music/VocaWatcher.Prologue.Miku.mp3", "C#m"],
 ]);
 
