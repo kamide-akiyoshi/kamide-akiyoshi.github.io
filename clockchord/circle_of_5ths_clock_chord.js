@@ -18,8 +18,9 @@ const Music = class {
   static CHAR_CODE_A = 'A'.charCodeAt(0);
   static {
     const fsa = this.FLAT_SHARP_ARRAY;
+    fsa.CENTER_INDEX = 2;
     fsa.INDEX_ENTRIES = fsa.flatMap((patterns, index) => {
-      const fsi7 = (index - 2) * 7;
+      const fsi7 = (index - fsa.CENTER_INDEX) * 7;
       return patterns.map((pattern) => ([pattern, fsi7]));
     }).sort(
       // Descending order of pattern length (longer pattern first)
@@ -50,7 +51,7 @@ const Music = class {
   static keySignatureTextAt = (hour) => {
     if( ! hour ) return '';
     const n = Math.abs(hour);
-    const fs = this.FLAT_SHARP_ARRAY[Math.sign(hour) + 2][0];
+    const fs = this.FLAT_SHARP_ARRAY[this.FLAT_SHARP_ARRAY.CENTER_INDEX + Math.sign(hour)][0];
     return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
   };
   static majorMinorTextOf = (hour = 0, minor) => {
