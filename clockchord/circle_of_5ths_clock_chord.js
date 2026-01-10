@@ -1274,7 +1274,12 @@ const PianoKeyboard = class {
       [chord.hour, suffix] = parsedRoot;
       if( bassText ) {
         const parsedBass = Music.parsePitchName(bassText);
-        if( parsedBass ) [chord.majorBassHour] = parsedBass;
+        if( parsedBass ) {
+          const [majorBassHour] = parsedBass;
+          if( ! Music.enharmonicallyEquals(majorBassHour, chord.hour) ) {
+            chord.majorBassHour = majorBassHour;
+          }
+        }
       }
       suffix = suffix.replace(/\(|\)|\,/g, "");
       const eat = (str) => {
