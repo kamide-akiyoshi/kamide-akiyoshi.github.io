@@ -770,7 +770,9 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
   <li>% でエンコードされたままでも自動的にデコードされます。</li>
 </ul></li>
 <li>曲のキー（例：B♭、F♯m など）<ul>
-  <li>省略した場合、楽曲URLをもとに内部データ（song_keys.js）から検索し、もし見つかれば補完します。</li>
+  <li>省略した場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかれば補完します。<ul>
+    <li>Songleにはキーを解析・保存する機能がないため、代替としてClockChord側に保存しています。</li>
+  </ul></li>
   <li>フラットやシャープとして使える文字<ul>
     <li>フラット：♭ b
     <li>シャープ：♯ #
@@ -816,7 +818,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <dt>url</dt>
 <dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
-<dd>Key欄の入力値を指定します。省略した場合、楽曲URLをもとに内部データ（song_keys.js）から検索し、もし見つかればそれが入力値として使われます。
+<dd>Key欄の入力値を指定します。省略した場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかればそれが入力値として使われます。
 <br/>※ シャープとして半角の # を直接指定しても、<a
  href="https://developer.mozilla.org/ja/docs/Web/URI/Reference/Fragment/Text_fragments" target="_blank">テキストフラグメント</a
 >として解釈され、無視されてしまいます。その場合はシャープ記号 ♯ で代用するか、または %23 のように<a
