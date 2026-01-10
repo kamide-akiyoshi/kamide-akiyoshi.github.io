@@ -399,7 +399,7 @@
     <div class="clock">
       <label id="minor_label" for="minor"><input id="minor" type="checkbox">m</input></label>
       <button id="setkey" title="Set the chord as key signature"></button>
-      <label id="keyselect_label" for="keyselect" title="Select key signature to normalize chord ♯/♭ notation">Key<select id="keyselect" style="height: 32px;">
+      <label id="keyselect_label" for="keyselect" title="Select key signature to normalize ♯/♭ notation">Key<select id="keyselect" style="height: 32px;">
         <option value="0"></option>
       </select></label>
       <button id="enharmonic" title="Enharmonic key"></button>
@@ -494,10 +494,7 @@
         </div>
         <div class="SongleUrlFormLine">
           <label for="SongleKeySig">Key</label>
-          <input id="SongleKeySig" type="text" name="key"
-            placeholder="Bb,123456,Am,789012,F#m,…"
-            title="Key-signature timeline (key,millisecond,key,ms,key,ms,key,…)"
-          />
+          <input id="SongleKeySig" type="text" name="key" title="Song key timeline (key,millisecond,key,ms,key,ms,key,…)"/>
           <button id="LoadSongleUrl">Load</button>
         </div>
       </div>
