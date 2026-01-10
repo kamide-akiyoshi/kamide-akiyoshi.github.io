@@ -1331,7 +1331,7 @@ const PianoKeyboard = class {
       if( eat("sus4") ) chord.offset3rd = 1;
       else if( eat("sus2") ) {
         chord.offset3rd = -2;
-        chord.add9th = false; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
+        delete chord.add9th; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
       }
       // -5/b5
       if( eat("-5") || eat("b5") ) chord.offset5th = -1;
