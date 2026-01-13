@@ -2898,10 +2898,9 @@ const CircleOfFifthsClock = class {
       this.parse([hour, minor]);
     },
   };
-  setupToneIndicatorCanvas = () => {
+  setupToneIndicatorCanvas = (dial, keySignature) => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
     const BASS_MAX_NOTE_NUMBER = 48;
-    const { dial, keySignature } = this;
     canvas.dial = dial;
     canvas.keySignature = keySignature;
     const { width, height } = canvas;
@@ -3139,11 +3138,10 @@ const CircleOfFifthsClock = class {
     };
     return canvas;
   };
-  setupBeatCanvas = () => {
+  setupBeatCanvas = (dial, keySignature) => {
     const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     const radianPerHour = Math.PI / 6;
     const context = beatCanvas.getContext("2d");
-    const { dial, keySignature } = this;
     const { center, canvas: { width, height } } = dial;
     const cxy = [center.x, center.y];
     beatCanvas.drawBeat = (beat, numerator) => {
@@ -3247,8 +3245,8 @@ const CircleOfFifthsClock = class {
     const { keySignature, dial } = this;
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
-      this.setupToneIndicatorCanvas(),
-      this.setupBeatCanvas(),
+      this.setupToneIndicatorCanvas(dial, keySignature),
+      this.setupBeatCanvas(dial, keySignature),
       dial.darkModeSelect,
       dial.backgroundModeSelect,
       searchParams
