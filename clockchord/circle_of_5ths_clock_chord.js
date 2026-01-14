@@ -1583,7 +1583,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas, darkModeSelect, backgroundModeSelect) => {
+  setupMidiSequencer = (beatCanvas, setDarkPlayMode) => {
     const {
       chord,
       toneIndicatorCanvas,
@@ -1985,8 +1985,7 @@ const PianoKeyboard = class {
       timeSignatureElement.textContent = "4/4";
       keyElement.textContent = `Key:${Music.majorMinorTextOf()}`;
       tickPositionSlider.max = midiSequence.tickLength;
-      darkModeSelect.value = "dark";
-      backgroundModeSelect.value = "pie";
+      setDarkPlayMode();
       setTickPosition(0);
       midiSequencerElement.prepend(midiSequenceElement);
     };
@@ -2337,7 +2336,7 @@ const PianoKeyboard = class {
     keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
-  setupSongle = (chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) => {
+  setupSongle = (chord, beatCanvas, setDarkPlayMode, searchParams) => {
     const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
     const HTTPS_URL_PREFIX = "https://";
     const urlInput = document.getElementById("SongleUrl");
@@ -2475,8 +2474,7 @@ const PianoKeyboard = class {
           chord.stop();
           chordElement.textContext = "";
         });
-        darkModeSelect.value = "dark";
-        backgroundModeSelect.value = "pie";
+        setDarkPlayMode();
       };
       window.onSongleWidgetError = (apiKey, songleWidget) => {
         const { status } = widget = songleWidget;
@@ -2508,7 +2506,7 @@ const PianoKeyboard = class {
       loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"));
     }
   };
-  constructor(toneIndicatorCanvas, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams) {
+  constructor(toneIndicatorCanvas, beatCanvas, setDarkPlayMode, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -2526,9 +2524,9 @@ const PianoKeyboard = class {
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas, darkModeSelect, backgroundModeSelect);
+    setupMidiSequencer(beatCanvas, setDarkPlayMode);
     setupPianoKeyboard();
-    setupSongle(chord, beatCanvas, darkModeSelect, backgroundModeSelect, searchParams);
+    setupSongle(chord, beatCanvas, setDarkPlayMode, searchParams);
   }
 }
 
@@ -3192,7 +3190,6 @@ const CircleOfFifthsClock = class {
       };
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
-        dial.darkModeSelect = darkModeSelect;
         Object.defineProperty(darkModeSelect, 'value', {
           set: (value) => {
             darkModeSelect.querySelector(`input[value="${value}"]:not(:checked)`)?.click();
@@ -3230,6 +3227,10 @@ const CircleOfFifthsClock = class {
           backgroundModeSelect && redrawBackgroundMode(backgroundModeSelect.value);
         });
       }
+      this.setDarkPlayMode = () => {
+        darkModeSelect.value = "dark";
+        backgroundModeSelect.value = "pie";
+      };
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
       chordButtonCanvas && this.listen(chordButtonCanvas);
       setSystemTheme();
@@ -3247,8 +3248,7 @@ const CircleOfFifthsClock = class {
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       this.setupToneIndicatorCanvas(dial, keySignature),
       this.setupBeatCanvas(dial, keySignature),
-      dial.darkModeSelect,
-      dial.backgroundModeSelect,
+      this.setDarkPlayMode,
       searchParams
     );
     canvas.focus();
