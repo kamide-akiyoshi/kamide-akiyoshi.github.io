@@ -3254,7 +3254,6 @@ const CircleOfFifthsClock = class {
     canvas.focus();
     chord.keySignature = keySignature;
     chord.buttonCanvas = canvas;
-    chord.dial = dial;
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
@@ -3422,7 +3421,7 @@ const CircleOfFifthsClock = class {
     };
     canvas.selectChord = () => {
       canvas.clearChord();
-      const { dial, hour, offset3rd = 0 } = chord;
+      const { hour, offset3rd = 0 } = chord;
       const centerXY = [
         dial.center.x,
         dial.center.y,
