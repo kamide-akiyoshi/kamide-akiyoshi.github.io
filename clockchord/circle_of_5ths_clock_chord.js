@@ -2899,8 +2899,6 @@ const CircleOfFifthsClock = class {
   setupToneIndicatorCanvas = (dial, keySignature) => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
     const BASS_MAX_NOTE_NUMBER = 48;
-    canvas.dial = dial;
-    canvas.keySignature = keySignature;
     const { width, height } = canvas;
     const { center, borderRadius } = dial;
     const toneIndicating = Array.from({ length: 12 }, () => 0);
