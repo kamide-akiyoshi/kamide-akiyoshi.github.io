@@ -2598,7 +2598,6 @@ const CircleOfFifthsClock = class {
         center,
         themeColor,
         backgroundMode,
-        chord,
       } = dial;
       if( !themeColor ) return;
       const { width, height } = canvas;
