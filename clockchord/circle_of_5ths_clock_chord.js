@@ -1586,7 +1586,6 @@ const PianoKeyboard = class {
   setupMidiSequencer = (beatCanvas, setDarkPlayMode) => {
     const {
       chord,
-      toneIndicatorCanvas,
       selectedMidiOutputPorts,
     } = this;
     const textDecoders = {};
@@ -1919,9 +1918,9 @@ const PianoKeyboard = class {
         case 0x59:
           {
             const { keySignature: hour, minor } = event;
-            const { keySignature } = toneIndicatorCanvas;
+            const { keySignature } = chord;
             keySignature.parse([hour, minor]);
-            chord.clear(); // To hide key signature change button
+            chord.clear(); // Unselect chord to hide key signature change button
             keyElement.textContent = `Key:${Music.majorMinorTextOf(hour, minor)}`;
             keyElement.classList.remove("grayout");
           }
