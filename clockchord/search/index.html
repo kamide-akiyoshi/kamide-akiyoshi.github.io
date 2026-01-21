@@ -1,0 +1,83 @@
+<html>
+<head>
+<title>ClockChord Songle Search</title>
+<style>
+	#search_result_container {
+		margin-top: 8px;
+		margin-bottom: 8px;
+	}
+</style>
+</head>
+<body>
+  <h1>ClockChord Songle Search</h1>
+  <div>Keyword: <input id="keyword" name="q" type="text"></input> <button onClick="showSearchResult();">Search</button></div>
+  <div id="search_result_container"></div>
+  <div>
+    <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a>
+    |
+    <a href="https://kamide-akiyoshi.github.io/clockchord/">ClockChord</a>
+  </div>
+</body>
+<script src="https://kamide-akiyoshi.github.io/clockchord/song_keys.js"></script>
+<script>
+const CLOCKCHORD_URL = "https://kamide-akiyoshi.github.io/clockchord/";
+const resultContainer = document.getElementById("search_result_container");
+const showSearchResult = (page = 1) => {
+  while(resultContainer.firstChild) {
+    resultContainer.removeChild(resultContainer.firstChild);
+  }
+  const keyword = document.getElementById("keyword").value;
+  if( !keyword ) {
+    return;
+  }
+  const pageOption = page <= 1 ? null : `&page=${page}`;
+  const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${pageOption ?? ""}`;
+  fetch(searchUrl).then((response) => response.json()).then((songs) => {
+    if( page > 1 ) {
+      const previous = document.createElement("button");
+      previous.textContent = "↑Previous";
+      previous.addEventListener("click", (event) => {
+        showSearchResult(page - 1);
+        event.preventDefault();
+      }, { once: true });
+      resultContainer.appendChild(previous);
+    }
+    songs.forEach((song) => {
+      const { url, title, artist: { name } } = song;
+      const encordedSongUrl = url.replace("https://songle.jp/songs/", "");
+      const songUrl = decodeURIComponent(encordedSongUrl);
+      const hasSongKey = typeof SONG_KEYS !== "undefined" && SONG_KEYS.has(songUrl);
+      const line = document.createElement("div");
+      if( hasSongKey ) {
+        const keySpan = document.createElement("span");
+        const label = "Song key available";
+        keySpan.title = label;
+        keySpan.ariaLabel = label;
+        keySpan.textContent = "🔑";
+        line.appendChild(keySpan);
+      }
+      const a = document.createElement("a");
+      a.href = `${CLOCKCHORD_URL}?url=${encordedSongUrl}`;
+      a.textContent = title;
+      line.appendChild(a);
+      const artistSpan = document.createElement("span");
+      artistSpan.textContent = ` by ${name}`;
+      line.appendChild(artistSpan);
+      resultContainer.appendChild(line);
+    });
+    if( songs.length >= 40 ) {
+      const next = document.createElement("button");
+      next.textContent = "↓Next";
+      next.addEventListener("click", (event) => {
+        showSearchResult(page + 1);
+        event.preventDefault();
+      }, { once: true });
+      resultContainer.appendChild(next);
+    }
+  });
+};
+const addSearchResult = () => {
+};
+</script>
+</html>
+
