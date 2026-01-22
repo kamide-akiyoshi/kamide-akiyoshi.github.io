@@ -18,9 +18,11 @@
 	}
 </style>
 </head>
-<body>
+<body onLoad="showSearchResult();">
   <h1>ClockChord Songle Search</h1>
-  <div>Keyword: <input id="keyword" name="q" type="text"></input> <button onClick="showSearchResult();">Search</button></div>
+  <form>
+    <div>Keyword: <input type="search" name="q"></input> <input type="submit" value="Search"></input></div>
+  </form>
   <div id="search_result_container"></div>
   <div>
     <a href="https://camidion.wordpress.com/clockchord-songle-playlist/">Recommended songs</a>
@@ -34,24 +36,20 @@
 <script>
 const CLOCKCHORD_URL = "https://kamide-akiyoshi.github.io/clockchord/";
 const resultContainer = document.getElementById("search_result_container");
-const showSearchResult = (page = 1) => {
-  while(resultContainer.firstChild) {
-    resultContainer.removeChild(resultContainer.firstChild);
-  }
-  const keyword = document.getElementById("keyword").value;
+const getPageOption = (page) => page <= 1 ? null : `&page=${page}`;
+const showSearchResult = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const keyword = searchParams.get("q");
   if( !keyword ) {
     return;
   }
-  const pageOption = page <= 1 ? null : `&page=${page}`;
-  const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${pageOption ?? ""}`;
+  const page = parseInt(searchParams.get("page") ?? 1);
+  const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
   fetch(searchUrl).then((response) => response.json()).then((songs) => {
     if( page > 1 ) {
-      const previous = document.createElement("button");
+      const previous = document.createElement("a");
       previous.textContent = "↑Previous";
-      previous.addEventListener("click", (event) => {
-        showSearchResult(page - 1);
-        event.preventDefault();
-      }, { once: true });
+      previous.href = `?q=${keyword}${getPageOption(page - 1) ?? ""}`;
       resultContainer.appendChild(previous);
     }
     songs.forEach((song) => {
@@ -89,17 +87,12 @@ const showSearchResult = (page = 1) => {
       resultContainer.appendChild(line);
     });
     if( songs.length >= 40 ) {
-      const next = document.createElement("button");
+      const next = document.createElement("a");
       next.textContent = "↓Next";
-      next.addEventListener("click", (event) => {
-        showSearchResult(page + 1);
-        event.preventDefault();
-      }, { once: true });
+      next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
       resultContainer.appendChild(next);
     }
   });
-};
-const addSearchResult = () => {
 };
 </script>
 </html>
