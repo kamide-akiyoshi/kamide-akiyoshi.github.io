@@ -9,6 +9,9 @@
 		margin-top: 8px;
 		margin-bottom: 8px;
 	}
+	.small {
+		font-size: 90%;
+	}
 	.song_hostname {
 		color: gray;
 		margin-left: 0.5em;
@@ -69,15 +72,17 @@ const showSearchResult = (page = 1) => {
       line.appendChild(a);
       const bySpan = document.createElement("span");
       bySpan.textContent = " by ";
-      line.appendChild(bySpan);
+      bySpan.classList.add("small");
       const artistLink = document.createElement("a");
       artistLink.textContent = artist.name;
       artistLink.href = `https://songle.jp/artists/${artist.id}`;
       artistLink.target = "_blank";
-      line.appendChild(artistLink);
+      bySpan.appendChild(artistLink);
+      line.appendChild(bySpan);
       const songSiteSpan = document.createElement("span");
       songSiteSpan.textContent = new URL(`https://${songUrl}`).hostname;
       songSiteSpan.classList.add("song_hostname");
+      songSiteSpan.classList.add("small");
       line.appendChild(songSiteSpan);
       resultContainer.appendChild(line);
     });
