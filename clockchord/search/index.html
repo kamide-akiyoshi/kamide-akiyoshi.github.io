@@ -9,6 +9,10 @@
 		margin-top: 8px;
 		margin-bottom: 8px;
 	}
+	.song_hostname {
+		color: gray;
+		margin-left: 0.5em;
+	}
 </style>
 </head>
 <body>
@@ -46,7 +50,7 @@ const showSearchResult = (page = 1) => {
       resultContainer.appendChild(previous);
     }
     songs.forEach((song) => {
-      const { url, title, artist: { name } } = song;
+      const { url, title, artist } = song;
       const encordedSongUrl = url.replace("https://songle.jp/songs/", "");
       const songUrl = decodeURIComponent(encordedSongUrl);
       const hasSongKey = typeof SONG_KEYS !== "undefined" && SONG_KEYS.has(songUrl);
@@ -63,9 +67,18 @@ const showSearchResult = (page = 1) => {
       a.href = `${CLOCKCHORD_URL}?url=${encordedSongUrl}`;
       a.textContent = title;
       line.appendChild(a);
-      const artistSpan = document.createElement("span");
-      artistSpan.textContent = ` by ${name}`;
-      line.appendChild(artistSpan);
+      const bySpan = document.createElement("span");
+      bySpan.textContent = " by ";
+      line.appendChild(bySpan);
+      const artistLink = document.createElement("a");
+      artistLink.textContent = artist.name;
+      artistLink.href = `https://songle.jp/artists/${artist.id}`;
+      artistLink.target = "_blank";
+      line.appendChild(artistLink);
+      const songSiteSpan = document.createElement("span");
+      songSiteSpan.textContent = new URL(`https://${songUrl}`).hostname;
+      songSiteSpan.classList.add("song_hostname");
+      line.appendChild(songSiteSpan);
       resultContainer.appendChild(line);
     });
     if( songs.length >= 40 ) {
