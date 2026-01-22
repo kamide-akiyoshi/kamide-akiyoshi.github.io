@@ -21,7 +21,7 @@
 <body onLoad="showSearchResult();">
   <h1>ClockChord Songle Search</h1>
   <form>
-    <div>Keyword: <input type="search" name="q"></input> <input type="submit" value="Search"></input></div>
+    <div><input type="search" name="q"></input> <input type="submit" value="Search"></input></div>
   </form>
   <div id="search_result_container"></div>
   <div>
@@ -36,6 +36,7 @@
 <script>
 const CLOCKCHORD_URL = "https://kamide-akiyoshi.github.io/clockchord/";
 const resultContainer = document.getElementById("search_result_container");
+const searchTextElement = document.querySelector("input[type='search']");
 const getPageOption = (page) => page <= 1 ? null : `&page=${page}`;
 const showSearchResult = () => {
   const searchParams = new URLSearchParams(window.location.search);
@@ -43,6 +44,7 @@ const showSearchResult = () => {
   if( !keyword ) {
     return;
   }
+  searchTextElement.value = keyword;
   const page = parseInt(searchParams.get("page") ?? 1);
   const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
   fetch(searchUrl).then((response) => response.json()).then((songs) => {
