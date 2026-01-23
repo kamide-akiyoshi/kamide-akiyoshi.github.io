@@ -374,6 +374,18 @@
 	#SongleErrorMessage {
 		color: red;
 	}
+	#SongleKeyTimeline {
+		display: flex;
+	}
+	#SongleKeyTimeline > .key {
+		font-size: 80%;
+	}
+	#SongleKeyTimeline > .key:nth-child(odd) {
+		background-color: #FFFF99;
+	}
+	#SongleKeyTimeline > .key:nth-child(even) {
+		background-color: #FFCC99;
+	}
 	#songleChord {
 		font-size: 150%;
 		line-height: 1;
@@ -486,6 +498,7 @@
       </div>
       <div id="EmbeddedSongle">
         <div id="SongleErrorMessage"></div>
+        <div id="SongleKeyTimeline"></div>
       </div>
       <div>
         <form action="search">

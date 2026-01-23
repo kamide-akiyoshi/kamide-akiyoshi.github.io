@@ -2339,20 +2339,21 @@ const PianoKeyboard = class {
     const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
     const HTTPS_URL_PREFIX = "https://";
     const urlInput = document.getElementById("SongleUrl");
-    const keySigInput = document.getElementById("SongleKeySig");
+    const songKeyInput = document.getElementById("SongleKeySig");
     const loadButton = document.getElementById("LoadSongleUrl");
-    const target = document.getElementById("EmbeddedSongle");
+    const widgetParent = document.getElementById("EmbeddedSongle");
+    const errorMessageElement = document.getElementById("SongleErrorMessage");
+    const keyTimelineElement = document.getElementById("SongleKeyTimeline");
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
     tempoElement.style.display = "none";
     const bpmElement = document.getElementById("songleBpm");
     const chordElement = document.getElementById("songleChord");
-    const errorMessageElement = document.getElementById("SongleErrorMessage");
     const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
     autoChordPlayCheckbox.addEventListener("change", (event) => {
       event.target.checked ? chord.clear() : chord.stop();
     });
-    const toKeySigSequence = (text) => {
+    const toSongKeyTimeline = (text) => {
       if( !text ) return;
       const sequence = text.split(",").reduce((result, current, index) => {
         if( index & 1 ) {
@@ -2381,6 +2382,23 @@ const PianoKeyboard = class {
       };
       return sequence;
     };
+    keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
+      while( keyTimelineElement.firstChild ) {
+        keyTimelineElement.removeChild(keyTimelineElement.firstChild);
+      }
+      if( !songKeyTimeline ) {
+        return;
+      }
+      songKeyTimeline.forEach((t, i) => {
+        const { position, keysig } = t;
+        const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
+        const element = document.createElement("div");
+        element.textContent = keysig;
+        element.classList.add("key");
+        element.style.width = `${(endPosition - position) / duration * 100}%`;
+        keyTimelineElement.appendChild(element);
+      });
+    };
     const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
     const errorMessages = {
       100: "Could not embed: Song deleted",
@@ -2398,6 +2416,7 @@ const PianoKeyboard = class {
         widgetElement.remove();
         widgetElement = undefined;
       }
+      keyTimelineElement.setSongKeyTimeline();
       [
         bpmElement,
         positionElement,
@@ -2407,8 +2426,8 @@ const PianoKeyboard = class {
       tempoElement.style.display = "none";
       ClockChord.setSongTitleToDocument(undefined);
     };
-    const loadSongle = (urlText, keySigSequenceText) => {
-      if( !target ) {
+    const loadSongle = (urlText, songKeyTimelineText) => {
+      if( !widgetParent ) {
         alert("Parent element not found to embed the Songle Widget");
         return;
       }
@@ -2423,14 +2442,14 @@ const PianoKeyboard = class {
         removeSongle();
       }
       urlInput.value = urlText;
-      keySigInput.value = keySigSequenceText;
+      songKeyInput.value = songKeyTimelineText;
       if( !urlText ) {
         return;
       }
-      if( ! keySigSequenceText && typeof SONG_KEYS !== "undefined" ) {
-        keySigInput.value = SONG_KEYS.get(urlText) ?? "";
+      if( ! songKeyTimelineText && typeof SONG_KEYS !== "undefined" ) {
+        songKeyInput.value = SONG_KEYS.get(urlText) ?? "";
       }
-      const keySigSequence = toKeySigSequence(keySigInput.value);
+      const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
       widgetElement = SongleWidgetAPI.createSongleWidgetElement({
         api: "songle-link",
         url: urlText,
@@ -2439,10 +2458,11 @@ const PianoKeyboard = class {
         videoPlayerSizeH: "auto",
         songleWidgetSizeW: "auto",
       });
-      target.appendChild(widgetElement);
+      widgetParent.insertBefore(widgetElement, keyTimelineElement);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
         const { song } = widget = songleWidget;
         ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
+        keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
         widget.on("chordPlay", (event) => {
           const chordSymbol = event.chord.name;
           chordElement.textContent = chordSymbol;
@@ -2461,10 +2481,10 @@ const PianoKeyboard = class {
           positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`
           tempoElement.style.display = null;
           bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
-          keySigSequence?.handleBeatPlay(widget.position.milliseconds);
+          songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
         });
         const handleSeek = () => {
-          keySigSequence && setTimeout(() => keySigSequence.handleSeek(widget.position.milliseconds), 0);
+          songKeyTimeline && setTimeout(() => songKeyTimeline.handleSeek(widget.position.milliseconds), 0);
         };
         widget.on("seek", handleSeek);
         widget.on("play", handleSeek);
@@ -2498,7 +2518,7 @@ const PianoKeyboard = class {
       } catch(error) {
         console.error(error);
       }
-      loadSongle(url, keySigInput.value);
+      loadSongle(url, songKeyInput.value);
     });
     const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
     if( initialUrlText ) {
