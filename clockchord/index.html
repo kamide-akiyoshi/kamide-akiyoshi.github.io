@@ -392,6 +392,14 @@
 		font-style: italic;
 		font-weight: bold;
 	}
+	#songleSearchForm {
+		display: flex;
+		gap: 4px;
+		margin-top: 4px;
+	}
+	#search_keyword {
+		width: 100%;
+	}
 </style>
 </HEAD>
 <BODY BGCOLOR=white>
@@ -499,9 +507,9 @@
         <div id="SongleKeyTimeline"></div>
       </div>
       <div>
-        <form action="search">
+        <form id="songleSearchForm" action="search">
           <label for="search_keyword"><a href="search">Search</a></label>
-          <input type="search" name="q" size="50" id="search_keyword"></input> <input type="submit" value="Search"></input>
+          <input type="search" name="q" id="search_keyword"></input> <input type="submit" value="Search"></input>
         </form>
       </div>
       <div id="SongleUrlForm">
