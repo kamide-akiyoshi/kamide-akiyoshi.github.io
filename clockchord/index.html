@@ -777,17 +777,26 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p>※ MIDIの規格上、MIDIポートにメタイベントを流すことはできないので、外部のMIDIシーケンサーで再生しても調号の自動選択は働きません。
 調号を自動選択させたい場合は、内蔵MIDIシーケンサーで再生してください。
 </p>
-<h3>Songle Widget にコード演奏させる</h3>
-<p><a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> がリアルタイムに出力するコードを ClockChord で自動的に鳴らすこともできます。</p>
-<h4>操作方法</h4>
+<h3>Songle player</h3>
+<p>Songle player の枠内には、<a href="https://widget.songle.jp/" target="_blank">Songle Widget</a>（<a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>のプレーヤー）を埋め込むことができます。
+Songle Widget で再生中、リアルタイムに送信されるコードを ClockChord で自動的に鳴らすことができます。</p>
+<h4>Songle登録曲の検索</h4>
+<p>Search欄にキーワードを入力して検索し、検索結果の曲名リンクをクリックするだけで、Songle Widget の埋め込まれた ClockChord が開きます。
+</p>
+<p>先頭に🔑（鍵マーク）のついた曲は、<a href="./song_keys.js" target="_blank">song_keys.js</a> にキー（調）が登録されています。
+再生開始時や転調時、自動的にこのキーが時計の文字盤に設定されます。
+</p>
+<p>（この検索機能は <a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> を呼び出すことによって実現しています）
+</p>
+<h4>楽曲URLを指定して開く</h4>
 <p>Songle player の枠に下記の値を入力し、[Load]ボタンをクリックします。</p>
 <ol>
-<li><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲URL（YouTube、niconicoなど）<ul>
+<li>Songleに登録されている楽曲のURL（YouTube、niconicoなど）<ul>
   <li>https://songle.jp/songs/<span class="song_url">楽曲URL</span> の形式のままでも、<span class="song_url">楽曲URL</span> の部分だけでも受け付けます。</li>
   <li>% でエンコードされたままでも自動的にデコードされます。</li>
 </ul></li>
 <li>曲のキー（例：B♭、F♯m など）<ul>
-  <li>省略した場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかれば補完します。<ul>
+  <li>指定がない場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかれば補完します。<ul>
     <li>Songleにはキーを解析・保存する機能がないため、代替としてClockChord側に保存しています。</li>
   </ul></li>
   <li>フラットやシャープとして使える文字<ul>
