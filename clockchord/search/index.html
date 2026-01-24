@@ -47,11 +47,15 @@ const showSearchResult = () => {
   searchTextElement.value = keyword;
   const page = parseInt(searchParams.get("page") ?? 1);
   const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
-  const searchingElement = document.createElement("div");
-  searchingElement.textContent = "⏳ Searching...";
-  resultContainer.appendChild(searchingElement);
+  const statusElement = document.createElement("div");
+  statusElement.textContent = "⏳ Searching...";
+  resultContainer.appendChild(statusElement);
   fetch(searchUrl).then((response) => response.json()).then((songs) => {
-    searchingElement.remove();
+    if( !Array.isArray(songs) ) {
+      statusElement.textContent = "Not found";
+      return;
+    }
+    statusElement.remove();
     if( page > 1 ) {
       const previous = document.createElement("a");
       previous.textContent = "↑Previous";
