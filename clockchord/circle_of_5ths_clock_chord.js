@@ -2393,7 +2393,7 @@ const PianoKeyboard = class {
         const { position, keysig } = t;
         const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
         const element = document.createElement("div");
-        element.textContent = keysig;
+        element.textContent = i ? keysig : `🔑${keysig}`;
         element.classList.add("key");
         element.style.width = `${(endPosition - position) / duration * 100}%`;
         keyTimelineElement.appendChild(element);
