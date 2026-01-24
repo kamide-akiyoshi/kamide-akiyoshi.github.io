@@ -47,7 +47,11 @@ const showSearchResult = () => {
   searchTextElement.value = keyword;
   const page = parseInt(searchParams.get("page") ?? 1);
   const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
+  const searchingElement = document.createElement("div");
+  searchingElement.textContent = "⏳ Searching...";
+  resultContainer.appendChild(searchingElement);
   fetch(searchUrl).then((response) => response.json()).then((songs) => {
+    searchingElement.remove();
     if( page > 1 ) {
       const previous = document.createElement("a");
       previous.textContent = "↑Previous";
@@ -94,6 +98,10 @@ const showSearchResult = () => {
       next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
       resultContainer.appendChild(next);
     }
+  }).catch((error) => {
+    searchingElement.remove();
+    console.error(error);
+    alert("Search failed");
   });
 };
 </script>
