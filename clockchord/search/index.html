@@ -18,7 +18,7 @@
 	}
 </style>
 </head>
-<body onLoad="showSearchResult();">
+<body onLoad="searchSongle();">
   <h1>ClockChord Songle Search</h1>
   <form>
     <div><input type="search" name="q"></input> <input type="submit" value="Search"></input></div>
@@ -34,25 +34,41 @@
 </body>
 <script src="https://kamide-akiyoshi.github.io/clockchord/song_keys.js"></script>
 <script>
-const CLOCKCHORD_URL = "https://kamide-akiyoshi.github.io/clockchord/";
-const resultContainer = document.getElementById("search_result_container");
-const searchTextElement = document.querySelector("input[type='search']");
-const getPageOption = (page) => page <= 1 ? null : `&page=${page}`;
-const showSearchResult = () => {
+const searchSongle = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const keyword = searchParams.get("q");
   if( !keyword ) {
     return;
   }
-  searchTextElement.value = keyword;
+  document.querySelector("input[type='search']").value = keyword;
+  const resultContainer = document.getElementById("search_result_container");
+  const getPageOption = (page) => page <= 1 ? null : `&page=${page}`;
   const page = parseInt(searchParams.get("page") ?? 1);
   const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
   const statusElement = document.createElement("div");
   statusElement.textContent = "⏳ Searching...";
   resultContainer.appendChild(statusElement);
-  fetch(searchUrl).then((response) => response.json()).then((songs) => {
-    if( !Array.isArray(songs) ) {
-      statusElement.textContent = "Not found";
+  fetch(searchUrl).then((response) => {
+    if( ! response.ok ) {
+      return response;
+    }
+    return response.json();
+  }).then((result) => {
+    if( result instanceof Response ) {
+      const { status, statusText } = result;
+      if( status === 404 ) {
+        statusElement.textContent = "Not Found";
+        return;
+      }
+      const message = `HTTP error ${status}`;
+      console.error(message, result);
+      statusElement.textContent = message;
+      return;
+    }
+    if( !Array.isArray(result) ) {
+      const message = "Unexpected response format";
+      console.error(message, result);
+      statusElement.textContent = message;
       return;
     }
     statusElement.remove();
@@ -62,7 +78,7 @@ const showSearchResult = () => {
       previous.href = `?q=${keyword}${getPageOption(page - 1) ?? ""}`;
       resultContainer.appendChild(previous);
     }
-    songs.forEach((song) => {
+    result.forEach((song) => {
       const { url, title, artist } = song;
       const encordedSongUrl = url.replace("https://songle.jp/songs/", "");
       const songUrl = decodeURIComponent(encordedSongUrl);
@@ -76,10 +92,10 @@ const showSearchResult = () => {
         keySpan.textContent = "🔑";
         line.appendChild(keySpan);
       }
-      const a = document.createElement("a");
-      a.href = `${CLOCKCHORD_URL}?url=${encordedSongUrl}`;
-      a.textContent = title;
-      line.appendChild(a);
+      const songLink = document.createElement("a");
+      songLink.href = `https://kamide-akiyoshi.github.io/clockchord/?url=${encordedSongUrl}`;
+      songLink.textContent = title;
+      line.appendChild(songLink);
       const bySpan = document.createElement("span");
       bySpan.textContent = " by ";
       bySpan.classList.add("small");
@@ -96,14 +112,14 @@ const showSearchResult = () => {
       line.appendChild(songSiteSpan);
       resultContainer.appendChild(line);
     });
-    if( songs.length >= 40 ) {
+    if( result.length >= 40 ) {
       const next = document.createElement("a");
       next.textContent = "↓Next";
       next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
       resultContainer.appendChild(next);
     }
   }).catch((error) => {
-    searchingElement.remove();
+    statusElement.remove();
     console.error(error);
     alert("Search failed");
   });
