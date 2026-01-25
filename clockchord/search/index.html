@@ -50,35 +50,27 @@ const searchSongle = () => {
   resultContainer.appendChild(statusElement);
   fetch(searchUrl).then((response) => {
     if( ! response.ok ) {
-      return response;
-    }
-    return response.json();
-  }).then((result) => {
-    if( result instanceof Response ) {
-      const { status } = result;
+      const { status } = response;
       if( status === 404 ) {
-        statusElement.textContent = "Not Found";
-        return;
+        return "Not Found";
       }
       const message = `HTTP error ${status}`;
-      console.error(message, result);
-      statusElement.textContent = message;
+      console.error(message, response);
+      return message;
+    }
+    return response.json();
+  }).then((songs) => {
+    if( typeof songs === "string" ) {
+      statusElement.textContent = songs;
       return;
     }
-    if( !Array.isArray(result) ) {
-      const message = "Unexpected response format";
-      console.error(message, result);
-      statusElement.textContent = message;
-      return;
-    }
-    statusElement.remove();
     if( page > 1 ) {
       const previous = document.createElement("a");
       previous.textContent = "↑Previous";
       previous.href = `?q=${keyword}${getPageOption(page - 1) ?? ""}`;
       resultContainer.appendChild(previous);
     }
-    result.forEach((song) => {
+    songs.forEach((song) => {
       const { url, title, artist } = song;
       const encordedSongUrl = url.replace("https://songle.jp/songs/", "");
       const songUrl = decodeURIComponent(encordedSongUrl);
@@ -112,16 +104,17 @@ const searchSongle = () => {
       line.appendChild(songSiteSpan);
       resultContainer.appendChild(line);
     });
-    if( result.length >= 40 ) {
+    if( songs.length >= 40 ) {
       const next = document.createElement("a");
       next.textContent = "↓Next";
       next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
       resultContainer.appendChild(next);
     }
-  }).catch((error) => {
     statusElement.remove();
-    console.error(error);
-    alert("Search failed");
+  }).catch((error) => {
+    const message = "Unexpected error";
+    console.error(message, error);
+    statusElement.textContent = message;
   });
 };
 </script>
