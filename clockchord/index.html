@@ -786,29 +786,33 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 調号を自動選択させたい場合は、内蔵MIDIシーケンサーで再生してください。
 </p>
 <h3>Songle player</h3>
-<p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録された曲を、<a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> の埋め込みプレーヤーで再生しながら、送信されてくるコードを ClockChord で自動的に鳴らすこともできます。</p>
-<h4>Songle登録曲の検索</h4>
-<p><a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> を利用した検索もサポートしています。
-Search欄にキーワードを入力し、検索ボタンを押すと検索結果が表示されます。
+<p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲（YouTube、niconicoなどのURL）を <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> の埋め込みプレーヤーで再生しながら、コードを自動的に ClockChord のコード入力欄に入力して鳴らすこともできます。
 </p>
-<p>Songleでも楽曲検索はできますが、ClockChordから検索するとSongleにはない便利な機能（下記）が使えます。</p>
+<p>再生時は、時計の文字盤の背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、キーの指定があればそれも反映されます。
+これにより、まるでイルミネーションのようにトーンインジケーターが美しく光り輝き、曲のコード進行を視覚的に実感できます。
+</p>
+<h4>Songle登録曲の検索</h4>
+<p>Search欄にキーワードを入力して検索ボタンを押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> が実行され、検索結果が表示されます。
+</p>
+<p>Songleでも楽曲検索はできますが、ClockChordから検索した場合、Songleにはない下記の便利な機能が使えます。</p>
 <ul>
-<li>曲名リンクから直接 ClockChord を開いて再生できる</li>
-<li>キー（調）が <a href="./song_keys.js" target="_blank">song_keys.js</a> に登録されている曲を鍵マーク🔑で識別できる<ul>
-<li>曲名の先頭に鍵マーク🔑のついた曲を再生すると、Songleの音楽地図の下に「転調地図」が表示され、再生開始時や転調時、自動的に時計の文字盤にキーが設定されます。</li>
+<li>曲名リンクから直接 ClockChord を開いて再生<ul>
+  <li>Songleで検索しても、ClockChordで開くにはURLをコピペする必要がありますが、その手間が省けます。</li>
+</ul></li>
+<li>キー（調）が <a href="./song_keys.js" target="_blank">song_keys.js</a> に登録されている曲に鍵マーク🔑を表示<ul>
+  <li>鍵マーク🔑のついた曲を再生すると、Songleの音楽地図の下に「<a href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a>」が表示され、自動的に時計の文字盤にキーが設定されるようになります。</li>
+  <li>Songleの音楽地図にはキー（調）の情報がないので、代替としてClockChord側に持たせています。</li>
 </ul></li>
 </ul>
 <h4>楽曲URLを指定して開く</h4>
-<p>Songle player の枠に下記の値を入力し、[Load]ボタンをクリックします。</p>
+<p>Songleに登録されている楽曲のURLを指定して Songle Widget を開くには、Songle player の枠に下記の値を入力して[Load]ボタンをクリックします。</p>
 <ol>
-<li>Songleに登録されている楽曲のURL（YouTube、niconicoなど）<ul>
+<li>曲のURL<ul>
   <li>https://songle.jp/songs/<span class="song_url">楽曲URL</span> の形式のままでも、<span class="song_url">楽曲URL</span> の部分だけでも受け付けます。</li>
   <li>% でエンコードされたままでも自動的にデコードされます。</li>
 </ul></li>
 <li>曲のキー（例：B♭、F♯m など）<ul>
-  <li>指定がない場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかれば補完します。<ul>
-    <li>Songleにはキーを解析・保存する機能がないため、代替としてClockChord側に保存しています。</li>
-  </ul></li>
+  <li>指定がない場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかれば補完します。</li>
   <li>フラットやシャープとして使える文字<ul>
     <li>フラット：♭ b
     <li>シャープ：♯ #
@@ -820,14 +824,8 @@ Search欄にキーワードを入力し、検索ボタンを押すと検索結�
   <li>通常使われない音名表記のキー（例：G♯、D♭m）を指定した場合、異名同音のキー（例：A♭、C♯m）に正規化されます。</li>
 </ul></li>
 </ol>
-<p>→ Songle Widget の埋め込みプレーヤーが表示されます（YouTubeの広告や、niconicoの流れるコメントも表示されます）。
-</p>
-<p>文字盤の背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、キーの指定があればそれも反映されます。
-再生が始まると、Songle Widget からのコードが自動的にテキスト入力されて音が鳴ります。
-まるでイルミネーションのようにトーンインジケーターが美しく光り輝き、曲のコード進行を視覚的に実感できます。
-</p>
-<h4>転調がある場合</h4>
-<p>Key欄に入力したキーに追加で、転調位置（ミリ秒[ms]単位）、転調先のキー、この2つを交互にカンマ区切りで指定してください。
+<h4>転調がある場合のキーの指定方法</h4>
+<p>入力したキーに追加で、転調位置（ミリ秒[ms]単位）、転調先のキー、この2つを交互にカンマ区切りで指定します。
 </p>
 <p>例：Dm,123456,Bb,234567,F#m</p>
 <ul>
