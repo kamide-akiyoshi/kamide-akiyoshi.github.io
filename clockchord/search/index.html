@@ -16,6 +16,12 @@
 		color: gray;
 		margin-left: 0.5em;
 	}
+	#songs {
+		margin: 0.5em;
+	}
+	#songs > *:nth-child(odd) {
+		background-color: #FFFFCC;
+	}
 </style>
 </head>
 <body onLoad="searchSongle();">
@@ -66,10 +72,13 @@ const searchSongle = () => {
     }
     if( page > 1 ) {
       const previous = document.createElement("a");
-      previous.textContent = "↑Previous";
+      previous.id = "previous";
+      previous.textContent = "▲ Previous ▲";
       previous.href = `?q=${keyword}${getPageOption(page - 1) ?? ""}`;
       resultContainer.appendChild(previous);
     }
+    const songsElement = document.createElement("div");
+    songsElement.id = "songs";
     songs.forEach((song) => {
       const { url, title, artist } = song;
       const encordedSongUrl = url.replace("https://songle.jp/songs/", "");
@@ -102,11 +111,13 @@ const searchSongle = () => {
       songSiteSpan.classList.add("song_hostname");
       songSiteSpan.classList.add("small");
       line.appendChild(songSiteSpan);
-      resultContainer.appendChild(line);
+      songsElement.appendChild(line);
     });
+    resultContainer.appendChild(songsElement);
     if( songs.length >= 40 ) {
       const next = document.createElement("a");
-      next.textContent = "↓Next";
+      next.id = "next";
+      next.textContent = "▼ Next ▼";
       next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
       resultContainer.appendChild(next);
     }
