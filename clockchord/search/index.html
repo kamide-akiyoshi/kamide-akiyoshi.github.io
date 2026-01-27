@@ -47,14 +47,15 @@ const searchSongle = () => {
     return;
   }
   document.querySelector("input[type='search']").value = keyword;
-  const resultContainer = document.getElementById("search_result_container");
-  const getPageOption = (page) => page <= 1 ? null : `&page=${page}`;
   const page = parseInt(searchParams.get("page") ?? 1);
-  const searchUrl = `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page) ?? ""}`;
+  const resultContainer = document.getElementById("search_result_container");
   const statusElement = document.createElement("div");
   statusElement.textContent = "⏳ Searching...";
   resultContainer.appendChild(statusElement);
-  fetch(searchUrl).then((response) => {
+  const getPageOption = (page) => page <= 1 ? "" : `&page=${page}`;
+  fetch(
+    `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page)}`
+  ).then((response) => {
     if( ! response.ok ) {
       const { status } = response;
       if( status === 404 ) {
@@ -64,18 +65,12 @@ const searchSongle = () => {
       console.error(message, response);
       return message;
     }
+    statusElement.textContent = "⏳ Decoding...";
     return response.json();
   }).then((songs) => {
     if( typeof songs === "string" ) {
       statusElement.textContent = songs;
       return;
-    }
-    if( page > 1 ) {
-      const previous = document.createElement("a");
-      previous.id = "previous";
-      previous.textContent = "▲ Previous ▲";
-      previous.href = `?q=${keyword}${getPageOption(page - 1) ?? ""}`;
-      resultContainer.appendChild(previous);
     }
     const songsElement = document.createElement("div");
     songsElement.id = "songs";
@@ -113,12 +108,19 @@ const searchSongle = () => {
       line.appendChild(songSiteSpan);
       songsElement.appendChild(line);
     });
+    if( page > 1 ) {
+      const previous = document.createElement("a");
+      previous.id = "previous";
+      previous.textContent = "▲ Previous ▲";
+      previous.href = `?q=${keyword}${getPageOption(page - 1)}`;
+      resultContainer.appendChild(previous);
+    }
     resultContainer.appendChild(songsElement);
     if( songs.length >= 40 ) {
       const next = document.createElement("a");
       next.id = "next";
       next.textContent = "▼ Next ▼";
-      next.href = `?q=${keyword}${getPageOption(page + 1) ?? ""}`;
+      next.href = `?q=${keyword}${getPageOption(page + 1)}`;
       resultContainer.appendChild(next);
     }
     statusElement.remove();
