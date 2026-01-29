@@ -786,15 +786,15 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 調号を自動選択させたい場合は、内蔵MIDIシーケンサーで再生してください。
 </p>
 <h3>Songle player</h3>
-<p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲（YouTube、niconicoなどのURL）を指定して <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> で再生できる埋め込みプレーヤーです。
+<p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲を <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
 </p>
 <ul>
-<li>Songleの音楽地図に登録されたコードを、ビートに合わせて ClockChord で鳴らしながら音楽鑑賞できます。</li>
+<li>再生すると、Songleの音楽地図に登録されているコードやビートが ClockChord に自動入力されてコードが鳴ります。</li>
 <li>時計の文字盤の背景色は、自動的に🌛ダークモード/🪭Pieモードに設定されます。<ul>
-  <li>まるでイルミネーションのようにトーンインジケーターが美しく光り輝き、曲のコード進行を視覚的に実感できます。</li>
+  <li>まるでイルミネーションのようにトーンインジケーターが美しく光り輝き、視覚的に曲のコード進行を実感できます。</li>
 </ul></li>
 <li>キー（調）が <a href="./song_keys.js" target="_blank">song_keys.js</a> に登録されている曲の場合<ul>
-  <li>時計の文字盤に自動的にキーが設定され、転調にもついていきます。<ul>
+  <li>そのキーが時計の文字盤に自動設定されます（転調にもついていきます）。<ul>
     <li>これにより、キーとコードの関係性が色で視覚化されます。</li>
   </ul></li>
   <li>Songleの音楽地図の下に「<a href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a>」の表示が追加され、転調タイミングを視覚的に把握できます。</li>
@@ -802,14 +802,13 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </ul></li>
 </ul>
 <h4>Songle登録曲の検索</h4>
-<p>Search欄にキーワードを入力して検索ボタンを押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> が実行され、検索結果が表示されます。
+<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示されます。
 </p>
-<p>Songleでも楽曲検索はできますが、ClockChordから検索した場合、Songleにはない下記の便利な機能が使えます。</p>
 <ul>
-<li>リンクから直接 ClockChord を開いて再生<ul>
-  <li>Songleで検索しても、ClockChordで開くにはURLをコピペする必要がありますが、その手間が省けます。</li>
+<li>曲名からリンクをたどるだけで直接ClockChordが開きます。<ul>
+  <li>Songleで検索した場合、ClockChordで開くには楽曲URLをコピペする必要がありますが、その手間が省けます。</li>
 </ul></li>
-<li>キーが song_keys.js に登録されている曲を鍵マーク🔑で識別できます。</li>
+<li>キーが song_keys.js に登録されている曲には鍵マーク🔑が表示されます。</li>
 </ul>
 <h4>楽曲URLを指定して開く</h4>
 <p>Songleに登録されている楽曲のURLを指定して Songle Widget を開くには、Songle player の枠に下記の値を入力して[Load]ボタンをクリックします。</p>
@@ -825,11 +824,13 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
     <li>フラット：♭ b
     <li>シャープ：♯ #
   </ul></li>
-  <li>音名の代わりに、調号の♯の数（負数で♭の数）で指定することもできます。<ul>
+  <li>音名の代わりに、調号の♯の数（負数で♭の数）として指定することもできます。<ul>
     <li>例：A → 3、Am → 0m、C → 0、Cm → -3m</li>
-    <li>7 〜 -7 の範囲を外れていた場合（例：8、-8m）、範囲に収まる異名同音のキー（例：-4、4m）に正規化されます。</li>
+    <li>-7 〜 7 の範囲で指定してください。<ul>
+      <li>もし範囲を外れていた場合（例：8、-8m）、範囲に収まる異名同音のキー（例：-4、4m）に正規化されます。</li>
+    </ul></li>
   </ul></li>
-  <li>通常使われない音名表記のキー（例：G♯、D♭m）を指定した場合、異名同音のキー（例：A♭、C♯m）に正規化されます。</li>
+  <li>存在しないキー（例：G♯、D♭m）を指定した場合、存在する異名同音のキー（例：A♭、C♯m）に正規化されます。</li>
 </ul></li>
 </ol>
 <h4>転調がある場合のキーの指定方法</h4>
@@ -844,7 +845,8 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p>転調位置を把握するには、再生途中で転調した！と思った瞬間に一時停止し、埋め込みプレーヤーの上に表示されている現在の再生位置[ms]を確認してください。
 </p>
 <h4>コードやビートが合ってないなど違和感がある場合</h4>
-<p>自動解析されたあと、ユーザーによるデータメンテナンスが行き届いていない可能性がありますので、ぜひ、Songleのデータを訂正してあげてください。
+<p>Songleの自動解析は完璧ではないので、解析後に誰も訂正していなかったりすると、そういうことがありがちです。
+ぜひ、Songleのデータを訂正してあげてください。
 </p>
 <h4>手動でコード演奏したくなったら</h4>
 <p>Songleで視覚的にコード進行を覚えたので、今度は自分でコード演奏してみたい！ …と思ったら、文字盤左下にある Auto のチェックを外してみましょう。Songle Widgetによるコード演奏が止まり、自分で曲に合わせてコード演奏できるようになります。
