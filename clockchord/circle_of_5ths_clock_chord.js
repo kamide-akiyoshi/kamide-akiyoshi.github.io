@@ -2365,18 +2365,18 @@ const PianoKeyboard = class {
         return tl;
       }, [t = { position: 0 }]);
       let nextIndex = 1;
-      let nextPosition = sequence[nextIndex]?.position;
+      let nextPosition = timeline[nextIndex]?.position;
       timeline.handleBeatPlay = (newPosition) => {
         if( nextPosition > newPosition ) return;
         const t = timeline[nextIndex];
         if( t ) chord.keySignature.parse(t.key);
-        nextPosition = sequence[++nextIndex]?.position;
+        nextPosition = timeline[++nextIndex]?.position;
       };
       timeline.handleSeek = (newPosition) => {
         nextIndex = timeline.findIndex((t) => t.position > newPosition);
         if( nextIndex < 0 ) nextIndex = timeline.length;
         chord.keySignature.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
-        nextPosition = sequence[nextIndex]?.position;
+        nextPosition = timeline[nextIndex]?.position;
       };
       return timeline;
     };
