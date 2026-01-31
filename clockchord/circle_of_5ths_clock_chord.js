@@ -2355,32 +2355,30 @@ const PianoKeyboard = class {
     });
     const toSongKeyTimeline = (text) => {
       if( !text ) return;
-      const sequence = text.split(",").reduce((result, current, index) => {
+      let t;
+      const timeline = text.split(",").reduce((tl, token, index) => {
         if( index & 1 ) {
-          result.push({ position: parseInt(current) });
+          tl.push(t = { position: parseInt(token) });
         } else {
-          result[result.length - 1].keysig = current;
+          t.key = token;
         }
-        return result;
-      }, [{ position: 0 }]);
+        return tl;
+      }, [t = { position: 0 }]);
       let nextIndex = 1;
       let nextPosition = sequence[nextIndex]?.position;
-      const changeKeySig = (to) => {
-        chord.keySignature.parse(to.keysig);
-      };
-      sequence.handleBeatPlay = (newPosition) => {
+      timeline.handleBeatPlay = (newPosition) => {
         if( nextPosition > newPosition ) return;
-        const changeTo = sequence[nextIndex];
-        if( changeTo ) changeKeySig(changeTo);
+        const t = timeline[nextIndex];
+        if( t ) chord.keySignature.parse(t.key);
         nextPosition = sequence[++nextIndex]?.position;
       };
-      sequence.handleSeek = (newPosition) => {
-        nextIndex = sequence.findIndex((change) => change.position > newPosition);
-        if( nextIndex < 0 ) nextIndex = sequence.length;
-        changeKeySig(sequence[nextIndex > 0 ? nextIndex - 1 : 0]);
+      timeline.handleSeek = (newPosition) => {
+        nextIndex = timeline.findIndex((t) => t.position > newPosition);
+        if( nextIndex < 0 ) nextIndex = timeline.length;
+        chord.keySignature.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
         nextPosition = sequence[nextIndex]?.position;
       };
-      return sequence;
+      return timeline;
     };
     keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
       while( keyTimelineElement.firstChild ) {
@@ -2390,10 +2388,10 @@ const PianoKeyboard = class {
         return;
       }
       songKeyTimeline.forEach((t, i) => {
-        const { position, keysig } = t;
+        const { position, key } = t;
         const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
         const element = document.createElement("div");
-        element.textContent = i ? keysig : `🔑${keysig}`;
+        element.textContent = i ? key : `🔑${key}`;
         element.classList.add("key");
         element.style.width = `${(endPosition - position) / duration * 100}%`;
         keyTimelineElement.appendChild(element);
