@@ -142,5 +142,6 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=YapsFDcGe_s", "Ab"],
   ["www.youtube.com/watch?v=hf3DcnSByTA", "E"],
   ["www.youtube.com/watch?v=YAxNwRb93xk", "Eb"],
+  ["www.youtube.com/watch?v=COYNJQMiqz0", "G"],
 ]);
 
