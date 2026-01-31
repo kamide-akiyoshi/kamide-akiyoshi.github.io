@@ -506,12 +506,6 @@
         <div id="SongleErrorMessage"></div>
         <div id="SongleKeyTimeline"></div>
       </div>
-      <div>
-        <form id="songleSearchForm" action="search">
-          <label for="search_keyword"><a href="search">Search</a></label>
-          <input type="search" name="q" required id="search_keyword"></input> <input type="submit" value="🔍Search"></input>
-        </form>
-      </div>
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
           <label for="SongleUrl">URL</label>
@@ -522,6 +516,12 @@
           <input id="SongleKeySig" type="text" name="key" title="Song key timeline (key,millisecond,key,ms,key,ms,key,…)"/>
           <button id="LoadSongleUrl">Load</button>
         </div>
+      </div>
+      <div>
+        <form id="songleSearchForm" action="search">
+          <label for="search_keyword"><a href="search">Search</a></label>
+          <input type="search" name="q" required id="search_keyword"></input> <input type="submit" value="🔍Search"></input>
+        </form>
       </div>
     </fieldset>
     <fieldset id="midi_sequencer">
