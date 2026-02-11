@@ -787,26 +787,18 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲を <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
 </p>
 <ul>
-<li>再生すると、Songleの音楽地図に登録されているコードやビートが ClockChord に自動入力されてコードが鳴ります。<ul>
+<li>再生すると、Songleの音楽地図からビートやコードがClockChordに自動入力され、ビートに合わせてコードが鳴ります。<ul>
   <li>背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、イルミネーションのようにトーンインジケーターが美しく光り輝きます。</li>
 </ul></li>
 <li>キー（調）が <a href="./song_keys.js" target="_blank">song_keys.js</a> に登録されている曲の場合<ul>
-  <li>そのキーが時計の文字盤に自動設定されます（転調にもついていきます）。<ul>
-    <li>これにより、キーとコードの関係性が色で視覚化されます。</li>
-  </ul></li>
-  <li>Songleの音楽地図の下に「<a href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a>」の表示が追加され、転調タイミングを視覚的に把握できます。</li>
-  <li>Songleの音楽地図にはキーの情報がないため、代わりにClockChord側で song_keys.js に持たせています。</li>
+  <li>時計の文字盤にキーが自動設定されます（転調にもついていきます）。</li>
+  <li>Songleの音楽地図の下に「<a href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a>」が追加されます（転調タイミングを視覚的に把握できます）。</li>
 </ul></li>
 </ul>
 <h4>Songle登録曲の検索</h4>
-<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示されます。
+<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。鍵マーク🔑のついた曲は、song_keys.js にキーが登録されています。</p>
+<p>Songleで検索しても、ClockChordで開くには楽曲URLをコピペする必要がありますが、その手間が省けて便利です。
 </p>
-<ul>
-<li>曲名からリンクをたどるだけで直接ClockChordが開きます。<ul>
-  <li>Songleで検索した場合、ClockChordで開くには楽曲URLをコピペする必要がありますが、その手間が省けます。</li>
-</ul></li>
-<li>キーが song_keys.js に登録されている曲には鍵マーク🔑が表示されます。</li>
-</ul>
 <h4>楽曲URLを指定して開く</h4>
 <p>Songleに登録されている楽曲のURLを指定して Songle Widget を開くには、Songle player の枠に下記の値を入力して[Load]ボタンをクリックします。</p>
 <ol>
@@ -846,8 +838,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p>再生途中で「転調した！」と思った瞬間に<button title="Capture position" aria-label="Capture position">📷</button>ボタンを押すことで、転調位置をクリップボードに素早くコピーできます。
 </p>
 <h4>コードやビートが合ってないなど違和感がある場合</h4>
-<p>Songleの自動解析は完璧ではないので、解析後に誰も訂正していなかったりすると、そういうことがありがちです。
-ぜひ、Songleのデータを訂正してあげてください。
+<p>ぜひ、Songleのデータを訂正してあげてください。Songleの自動解析は完璧ではないので、自動解析後に誰も訂正していなかったりすると、そういうことがよくあります。
 </p>
 <h4>手動でコード演奏したくなったら</h4>
 <p>Songleで視覚的にコード進行を覚えたので、今度は自分でコード演奏してみたい！ …と思ったら、文字盤左下にある Auto のチェックを外してみましょう。Songle Widgetによるコード演奏が止まり、自分で曲に合わせてコード演奏できるようになります。
