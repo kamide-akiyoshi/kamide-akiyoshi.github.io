@@ -58,6 +58,7 @@ const Music = class {
     const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
+  static bpmTextOf = (bpmNumber) => `𝅘𝅥 = ${bpmNumber}`;
 }
 
 const MIDI = class {
@@ -1942,7 +1943,6 @@ const PianoKeyboard = class {
     const timeSignatureElement = document.getElementById("time_signature");
     const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
-    const bpmElement = document.getElementById("bpm");
     const titleElement = document.getElementById("song_title");
     const setMidiSequenceTitle = (title) => {
       const trimmedTitle = title?.trim() ?? "";
@@ -2096,7 +2096,7 @@ const PianoKeyboard = class {
     const INTERVAL_MILLI_SEC = 10;
     let ticksPerInterval;
     const changeTempo = (uspq) => {
-      bpmElement.textContent = Math.floor(60000000 / uspq);
+      tempoElement.textContent = Music.bpmTextOf(Math.floor(60000000 / uspq));
       ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
     };
     const sendMidiMessage = (midiMessage) => {
@@ -2346,8 +2346,6 @@ const PianoKeyboard = class {
     const keyTimelineElement = document.getElementById("SongleKeyTimeline");
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
-    tempoElement.style.display = "none";
-    const bpmElement = document.getElementById("songleBpm");
     const chordElement = document.getElementById("songleChord");
     const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
     autoChordPlayCheckbox.addEventListener("change", (event) => {
@@ -2416,12 +2414,11 @@ const PianoKeyboard = class {
       }
       keyTimelineElement.setSongKeyTimeline();
       [
-        bpmElement,
+        tempoElement,
         positionElement,
         chordElement,
         errorMessageElement
       ].forEach((element) => element.textContent = "");
-      tempoElement.style.display = "none";
       ClockChord.setSongTitleToDocument(undefined);
     };
     const loadSongle = (urlText, songKeyTimelineText) => {
@@ -2477,8 +2474,7 @@ const PianoKeyboard = class {
             chord.start();
           }
           positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`
-          tempoElement.style.display = null;
-          bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
+          tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
           songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
         });
         const handleSeek = () => {
