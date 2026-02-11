@@ -2346,6 +2346,7 @@ const PianoKeyboard = class {
     const keyTimelineElement = document.getElementById("SongleKeyTimeline");
     const positionCaptureButton = document.getElementById("songleCapturePosition");
     let currentPosition = 0;
+    let duration = 0;
     positionCaptureButton.addEventListener("click", () => {
       navigator.clipboard.writeText(`${currentPosition}`);
     });
@@ -2464,6 +2465,7 @@ const PianoKeyboard = class {
         const { song } = widget = songleWidget;
         ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
         keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
+        duration = formatTime(widget.duration);
         widget.on("chordPlay", (event) => {
           const chordSymbol = event.chord.name;
           chordElement.textContent = chordSymbol;
@@ -2481,7 +2483,7 @@ const PianoKeyboard = class {
           }
           currentPosition = formatTime(widget.position);
           positionCaptureButton.style.display = "unset";
-          positionElement.textContent = `${currentPosition}/${formatTime(widget.duration)}[ms]`
+          positionElement.textContent = `${currentPosition}/${duration}[ms]`
           tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
           songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
         });
