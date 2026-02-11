@@ -388,6 +388,9 @@
 		font-size: 150%;
 		line-height: 1;
 	}
+	#songleCapturePosition {
+		display: none;
+	}
 	.song_url {
 		font-style: italic;
 		font-weight: bold;
@@ -494,8 +497,9 @@
   <div style="width: 100%;">
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
-      <div>
+      <div id="songleCurrent">
         <span id="songleTempo"></span>
+        <button id="songleCapturePosition">📷</button>
         <span id="songlePosition"></span>
         <span id="songleChord"></span>
       </div>

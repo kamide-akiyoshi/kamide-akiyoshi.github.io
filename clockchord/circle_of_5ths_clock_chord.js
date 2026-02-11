@@ -2344,6 +2344,11 @@ const PianoKeyboard = class {
     const widgetParent = document.getElementById("EmbeddedSongle");
     const errorMessageElement = document.getElementById("SongleErrorMessage");
     const keyTimelineElement = document.getElementById("SongleKeyTimeline");
+    const positionCaptureButton = document.getElementById("songleCapturePosition");
+    let currentPosition = 0;
+    positionCaptureButton.addEventListener("click", () => {
+      songKeyInput.setRangeText(`,${currentPosition},`);
+    });
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
     const chordElement = document.getElementById("songleChord");
@@ -2405,6 +2410,7 @@ const PianoKeyboard = class {
     };
     let widgetElement, widget;
     const removeSongle = () => {
+      positionCaptureButton.style.display = "none";
       delete window.onSongleWidgetReady;
       delete window.onSongleWidgetError;
       chord.stop();
@@ -2473,7 +2479,9 @@ const PianoKeyboard = class {
           if( autoChordPlayCheckbox.checked ) {
             chord.start();
           }
-          positionElement.textContent = `${formatTime(widget.position)}/${formatTime(widget.duration)}[ms]`
+          currentPosition = formatTime(widget.position);
+          positionCaptureButton.style.display = "unset";
+          positionElement.textContent = `${currentPosition}/${formatTime(widget.duration)}[ms]`
           tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
           songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
         });
