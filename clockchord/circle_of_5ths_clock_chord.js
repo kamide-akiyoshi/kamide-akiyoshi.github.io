@@ -2347,7 +2347,9 @@ const PianoKeyboard = class {
     const positionCaptureButton = document.getElementById("songleCapturePosition");
     let currentPosition = 0;
     positionCaptureButton.addEventListener("click", () => {
-      songKeyInput.setRangeText(`,${currentPosition},`);
+      navigator.clipboard.writeText(`${currentPosition}`).then(() => {
+        console.info(`Captured position ${currentPosition} [ms]`);
+      });
     });
     const positionElement = document.getElementById("songlePosition");
     const tempoElement = document.getElementById("songleTempo");
