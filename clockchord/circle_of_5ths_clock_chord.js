@@ -2466,6 +2466,9 @@ const PianoKeyboard = class {
         ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
         keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
         duration = formatTime(widget.duration);
+        currentPosition = formatTime(widget.position);
+        positionCaptureButton.style.display = "unset";
+        positionElement.textContent = `${currentPosition}/${duration}[ms]`
         widget.on("chordPlay", (event) => {
           const chordSymbol = event.chord.name;
           chordElement.textContent = chordSymbol;
