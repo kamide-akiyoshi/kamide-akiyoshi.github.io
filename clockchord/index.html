@@ -334,6 +334,19 @@
 	#song_title {
 	  font-size: 1.2em;
 	}
+	#play_pause {
+		border-width: 1px;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+	}
+	#play_pause_icon {
+		width: 70%;
+		height: 100%;
+	}
+	#midi_timeline {
+		width: 100%;
+	}
 	#time_position {
 		width: 100%;
 	}
@@ -374,14 +387,14 @@
 	#SongleErrorMessage {
 		color: red;
 	}
-	#SongleKeyTimeline {
+	.key_timeline {
 		display: flex;
 	}
-	#SongleKeyTimeline > .key {
+	.key_timeline > .key {
 		font-size: 80%;
 		background-color: #FFFFCC;
 	}
-	#SongleKeyTimeline > .key:nth-child(even) {
+	.key_timeline > .key:nth-child(even) {
 		background-color: #FFCCCC;
 	}
 	#songleChord {
@@ -506,7 +519,7 @@
       </div>
       <div id="EmbeddedSongle">
         <div id="SongleErrorMessage"></div>
-        <div id="SongleKeyTimeline"></div>
+        <div id="SongleKeyTimeline" class="key_timeline"></div>
       </div>
       <div id="SongleUrlForm">
         <div class="SongleUrlFormLine">
@@ -532,12 +545,15 @@
         <div id="song_title"></div>
         <div class="controller">
           <button id="play_pause">
-            <img id="play_pause_icon" width="16" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+            <img id="play_pause_icon" src="image/play-button-svgrepo-com.svg" alt="Play"/>
           </button>
-          <button id="top">
-            <img width="16" src="image/skip-back-filled-svgrepo-com.svg" alt="Back to top"/>
-          </button>
-          <input type="range" id="time_position" value="0" min="0" max="1" step="1"></input>
+          <div id="midi_timeline">
+            <input type="range" id="time_position" value="0" min="0" max="1" step="1"></input>
+            <div id="midi_key_timeline" class="key_timeline">
+              <div class="key" style="width: 30%;">Xm</div>
+              <div class="key" style="width: 70%">Y</div>
+            </div>
+          </div>
         </div>
         <div>
           <span id="time_signature" class="grayout">4/4</span>

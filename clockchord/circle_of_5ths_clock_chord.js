@@ -1953,14 +1953,32 @@ const PianoKeyboard = class {
     const textElement = document.getElementById("song_text");
     let midiSequence;
     const midiSequenceElement = document.getElementById("midi_sequence");
-    document.getElementById("top")?.addEventListener('click', () => setTickPosition(0));
     document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
     const playPauseIcon = document.getElementById("play_pause_icon");
     tickPositionSlider.addEventListener?.("input", (event) => {
       !intervalId && setTickPosition(parseInt(event.target.value));
     });
+    const keyTimelineElement = document.getElementById("midi_key_timeline");
     const midiSequencerElement = midiSequenceElement.parentElement;
     midiSequencerElement.removeChild(midiSequenceElement);
+    const setSongKeyTimeline = (keySignatures, tickLength) => {
+      while( keyTimelineElement.firstChild ) {
+        keyTimelineElement.removeChild(keyTimelineElement.firstChild);
+      }
+      if( !keySignatures?.length ) {
+        return;
+      }
+      keySignatures.forEach((event, i) => {
+        const { tick, keySignature: hour, minor } = event;
+        const endTick = keySignatures[i + 1]?.tick ?? tickLength;
+        const key = Music.majorMinorTextOf(hour, minor);
+        const element = document.createElement("div");
+        element.textContent = i ? key : `🔑${key}`;
+        element.classList.add("key");
+        element.style.width = `${(endTick - tick) / tickLength * 100}%`;
+        keyTimelineElement.appendChild(element);
+      });
+    };
     const setMidiSequence = (seq) => {
       midiSequence = seq;
       textElement.textContent = "";
@@ -1984,6 +2002,7 @@ const PianoKeyboard = class {
       timeSignatureElement.textContent = "4/4";
       keyElement.textContent = `Key:${Music.majorMinorTextOf()}`;
       tickPositionSlider.max = midiSequence.tickLength;
+      setSongKeyTimeline(midiSequence.keySignatures, midiSequence.tickLength);
       setDarkPlayMode();
       setTickPosition(0);
       midiSequencerElement.prepend(midiSequenceElement);
