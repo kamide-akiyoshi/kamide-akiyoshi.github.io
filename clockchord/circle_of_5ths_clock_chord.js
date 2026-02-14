@@ -1922,8 +1922,6 @@ const PianoKeyboard = class {
             const { keySignature } = chord;
             keySignature.parse([hour, minor]);
             chord.clear(); // Unselect chord to hide key signature change button
-            keyElement.textContent = `Key:${Music.majorMinorTextOf(hour, minor)}`;
-            keyElement.classList.remove("grayout");
           }
           break;
         default:
@@ -1941,7 +1939,6 @@ const PianoKeyboard = class {
     const midiFileNameElement = document.getElementById("midi_file_name");
     const tickPositionSlider = document.getElementById("time_position") ?? {};
     const timeSignatureElement = document.getElementById("time_signature");
-    const keyElement = document.getElementById("key");
     const tempoElement = document.getElementById("tempo");
     const titleElement = document.getElementById("song_title");
     const setMidiSequenceTitle = (title) => {
@@ -1996,11 +1993,9 @@ const PianoKeyboard = class {
       changeTempo(500000);
       [
         tempoElement,
-        keyElement,
         timeSignatureElement,
       ].forEach((element) => element.classList.add("grayout"));
       timeSignatureElement.textContent = "4/4";
-      keyElement.textContent = `Key:${Music.majorMinorTextOf()}`;
       tickPositionSlider.max = midiSequence.tickLength;
       setSongKeyTimeline(midiSequence.keySignatures, midiSequence.tickLength);
       setDarkPlayMode();

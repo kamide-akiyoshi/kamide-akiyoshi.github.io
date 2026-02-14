@@ -398,6 +398,13 @@
 	.key_timeline > .key:nth-child(even) {
 		background-color: #FFCCCC;
 	}
+	#midi_key_timeline {
+		margin-left: 2px;
+	}
+	#midi_timeline_left {
+		display: flex;
+		flex-direction: column;
+	}
 	#songleChord {
 		font-size: 150%;
 		line-height: 1;
@@ -545,18 +552,19 @@
       <div id="midi_sequence">
         <div id="song_title"></div>
         <div class="controller">
-          <button id="play_pause">
-            <img id="play_pause_icon" src="image/play-button-svgrepo-com.svg" alt="Play"/>
-          </button>
+          <div id="midi_timeline_left">
+            <button id="play_pause">
+              <img id="play_pause_icon" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+            </button>
+            <span id="time_signature" class="grayout">4/4</span>
+          </div>
           <div id="midi_timeline">
             <input type="range" id="time_position" value="0" min="0" max="1" step="1"></input>
             <div id="midi_key_timeline" class="key_timeline"></div>
           </div>
         </div>
         <div>
-          <span id="time_signature" class="grayout">4/4</span>
-          <span id="key" class="grayout">Key: C</span>
-          <span id="tempo" class="grayout"></span>
+          <span id="tempo" class="grayout">𝅘𝅥 = 120</span>
           <span id="song_marker"></span>
         </div>
         <div id="song_text"></div>
