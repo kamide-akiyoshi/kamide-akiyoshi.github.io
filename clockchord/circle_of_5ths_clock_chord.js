@@ -8,52 +8,51 @@ const ClockChord = {
 
 const Music = class {
   static NATURAL = '\u{266E}';
-  static FLAT_SHARP_ARRAY = [
-    ["\u{1D12B}", "bb"], // Double flat
-    ["\u{266D}", "b"], // Flat
-    [],
-    ["\u{266F}", "#"], // Sharp
-    ["\u{1D12A}", "x", "##"], // Double sharp
-  ];
-  static CHAR_CODE_A = 'A'.charCodeAt(0);
   static {
-    const fsa = this.FLAT_SHARP_ARRAY;
-    fsa.CENTER_INDEX = 2;
-    fsa.INDEX_ENTRIES = fsa.flatMap((patterns, index) => {
-      const fsi7 = (index - fsa.CENTER_INDEX) * 7;
-      return patterns.map((pattern) => ([pattern, fsi7]));
+    const flatSharpPatternTree = [
+      ["\u{1D12B}", "bb"], // Double flat
+      ["\u{266D}", "b"], // Flat
+      [],
+      ["\u{266F}", "#"], // Sharp
+      ["\u{1D12A}", "x", "##"], // Double sharp
+    ];
+    const fsTexts = flatSharpPatternTree.map((patterns) => patterns[0]);
+    const A = 'A'.charCodeAt(0);
+    this.majorPitchNameAt = (hour) => {
+      if( hour < -15 || hour >= 20 ) return [];
+      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7);
+      const fs = fsTexts[Math.trunc((hour + 15) / 7)];
+      return fs ? [abc, fs] : [abc];
+    };
+    const fsHours = flatSharpPatternTree.flatMap((patterns, index) => {
+      const hour7 = (index - 2) * 7;
+      return patterns.map((pattern) => ([pattern, hour7]));
     }).sort(
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
-  };
-  static majorPitchNameAt = (hour) => {
-    if( hour < -15 || hour >= 20 ) return [];
-    const abc = String.fromCharCode(this.CHAR_CODE_A + (hour + 18) * 4 % 7);
-    const fs = this.FLAT_SHARP_ARRAY[Math.trunc((hour + 15) / 7)][0];
-    return fs ? [abc, fs] : [abc];
-  };
-  static parsePitchName = (text) => {
-    const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - this.CHAR_CODE_A;
-    if( abci < 0 || abci > 6 ) return undefined;
-    let rest = text.substring(1);
-    const fsi7 = this.FLAT_SHARP_ARRAY.INDEX_ENTRIES.find(([pattern]) => {
-      if( !rest.startsWith(pattern) ) return false;
-      rest = rest.replace(pattern, ""); return true;
-    })?.[1] ?? 0;
-    const majorHour = fsi7 + (abci + 2) * 2 % 7 - 1;
-    return [majorHour, rest];
+    this.parsePitchName = (text) => {
+      const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - A;
+      if( abci < 0 || abci > 6 ) return undefined;
+      let rest = text.substring(1);
+      const hour7 = fsHours.find(([pattern]) => {
+        if( !rest.startsWith(pattern) ) return false;
+        rest = rest.replace(pattern, ""); return true;
+      })?.[1] ?? 0;
+      const majorHour = hour7 + (abci + 2) * 2 % 7 - 1;
+      return [majorHour, rest];
+    };
+    this.keySignatureTextAt = (hour) => {
+      if( ! hour ) return '';
+      const n = Math.abs(hour);
+      const fs = fsTexts[2 + Math.sign(hour)];
+      return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
+    };
   };
   static togglePitchNumberAndMajorHour = (n) => n + (n & 1) * 6;
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
   static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
-  static keySignatureTextAt = (hour) => {
-    if( ! hour ) return '';
-    const n = Math.abs(hour);
-    const fs = this.FLAT_SHARP_ARRAY[this.FLAT_SHARP_ARRAY.CENTER_INDEX + Math.sign(hour)][0];
-    return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
-  };
   static majorMinorTextOf = (hour = 0, minor) => {
     const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
