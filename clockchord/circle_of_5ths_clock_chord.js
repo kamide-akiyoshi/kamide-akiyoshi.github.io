@@ -20,13 +20,13 @@ const Music = class {
     const A = 'A'.charCodeAt(0);
     this.majorPitchNameAt = (hour) => {
       if( hour < -15 || hour >= 20 ) return [];
-      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7);
+      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7); // -1...5 -> FCGDAEB
       const fs = fsTexts[Math.trunc((hour + 15) / 7)];
       return fs ? [abc, fs] : [abc];
     };
     const fsHours = flatSharpPatternTree.flatMap((patterns, index) => {
-      const hour7 = (index - 2) * 7;
-      return patterns.map((pattern) => ([pattern, hour7]));
+      const majorHourF = (index - 2) * 7 - 1;
+      return patterns.map((pattern) => ([pattern, majorHourF]));
     }).sort(
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
@@ -34,13 +34,13 @@ const Music = class {
     this.parsePitchName = (text) => {
       const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - A;
       if( abci < 0 || abci > 6 ) return undefined;
+      const fcgi = (abci + 2) * 2 % 7; // ABCDEFG -> FCGDAEB
       let rest = text.substring(1);
-      const hour7 = fsHours.find(([pattern]) => {
+      const majorHourF = fsHours.find(([pattern]) => {
         if( !rest.startsWith(pattern) ) return false;
         rest = rest.replace(pattern, ""); return true;
-      })?.[1] ?? 0;
-      const majorHour = hour7 + (abci + 2) * 2 % 7 - 1;
-      return [majorHour, rest];
+      })?.[1] ?? -1;
+      return [majorHourF + fcgi, rest];
     };
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
