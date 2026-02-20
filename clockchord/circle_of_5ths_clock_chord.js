@@ -20,7 +20,7 @@ const Music = class {
     const A = 'A'.charCodeAt(0);
     this.majorPitchNameAt = (hour) => {
       if( hour < -15 || hour >= 20 ) return [];
-      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7); // -1...5 -> FCGDAEB
+      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7);
       const fs = fsTexts[Math.trunc((hour + 15) / 7)];
       return fs ? [abc, fs] : [abc];
     };
@@ -31,16 +31,16 @@ const Music = class {
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
+    const abciToHour = Array.from({ length: 7 }, (_, abci) => (abci + 2) * 2 % 7);
     this.parsePitchName = (text) => {
       const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - A;
       if( abci < 0 || abci > 6 ) return undefined;
-      const fcgi = (abci + 2) * 2 % 7; // ABCDEFG -> FCGDAEB
       let rest = text.substring(1);
       const majorHourF = fsHours.find(([pattern]) => {
         if( !rest.startsWith(pattern) ) return false;
         rest = rest.replace(pattern, ""); return true;
       })?.[1] ?? -1;
-      return [majorHourF + fcgi, rest];
+      return [majorHourF + abciToHour[abci], rest];
     };
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
