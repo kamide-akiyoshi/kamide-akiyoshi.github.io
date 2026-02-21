@@ -16,15 +16,15 @@ const Music = class {
       ["\u{266F}", "#"], // Sharp
       ["\u{1D12A}", "x", "##"], // Double sharp
     ];
-    const fsTexts = flatSharpPatternTree.map((patterns) => patterns[0]);
     const A = 'A'.charCodeAt(0);
     this.majorPitchNameAt = (hour) => {
-      if( hour < -15 || hour >= 20 ) return [];
+      const fsPatterns = flatSharpPatternTree[Math.trunc((hour + 15) / 7)];
+      if( !fsPatterns ) return [];
+      const fs = fsPatterns[0];
       const abc = String.fromCharCode(A + (hour + 18) * 4 % 7);
-      const fs = fsTexts[Math.trunc((hour + 15) / 7)];
       return fs ? [abc, fs] : [abc];
     };
-    const fsHours = flatSharpPatternTree.flatMap((patterns, index) => {
+    const fsPatternToHour = flatSharpPatternTree.flatMap((patterns, index) => {
       const majorHourF = (index - 2) * 7 - 1;
       return patterns.map((pattern) => ([pattern, majorHourF]));
     }).sort(
@@ -33,19 +33,20 @@ const Music = class {
     );
     const abciToHour = Array.from({ length: 7 }, (_, abci) => (abci + 2) * 2 % 7);
     this.parsePitchName = (text) => {
-      const abci = text.substring(0, 1).toUpperCase().charCodeAt(0) - A;
-      if( abci < 0 || abci > 6 ) return undefined;
+      const abcHour = abciToHour[text.substring(0, 1).toUpperCase().charCodeAt(0) - A] ?? -1;
+      if( abcHour < 0 ) return undefined;
       let rest = text.substring(1);
-      const majorHourF = fsHours.find(([pattern]) => {
-        if( !rest.startsWith(pattern) ) return false;
-        rest = rest.replace(pattern, ""); return true;
+      const majorHourF = fsPatternToHour.find(([pattern]) => {
+        const found = rest.startsWith(pattern);
+        if( found ) rest = rest.replace(pattern, "");
+        return found;
       })?.[1] ?? -1;
-      return [majorHourF + abciToHour[abci], rest];
+      return [majorHourF + abcHour, rest];
     };
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
       const n = Math.abs(hour);
-      const fs = fsTexts[2 + Math.sign(hour)];
+      const fs = flatSharpPatternTree[2 + Math.sign(hour)][0];
       return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
     };
   };
