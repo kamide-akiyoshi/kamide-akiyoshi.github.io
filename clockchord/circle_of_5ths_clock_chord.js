@@ -1354,8 +1354,6 @@ const PianoKeyboard = class {
         label,
         dialCenterLabel,
         chordTextInput,
-        button,
-        keySignature,
         keySignatureSetButton,
         offset3rd,
         offset5th,
