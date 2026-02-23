@@ -2248,7 +2248,7 @@ const PianoKeyboard = class {
           element = whiteKeyElement;
         }
         if( hour == 9 ) {
-          const text = `${MIDI.FREQUENCIES[noteNumber]}Hz`;
+          const text = `${frequency}Hz`;
           if( text === originalFrequencyText ) {
             frequencyElement.style.left = element.style.left;
             keyboard.appendChild(frequencyElement);
