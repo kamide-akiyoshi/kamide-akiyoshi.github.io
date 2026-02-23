@@ -1284,8 +1284,9 @@ const PianoKeyboard = class {
       }
       suffix = suffix.replace(/\(|\)|\,/g, "");
       const eat = (str) => {
-        if( !suffix.startsWith(str) ) return false;
-        suffix = suffix.replace(str, ""); return true;
+        const found = suffix.startsWith(str);
+        if( found ) suffix = suffix.replace(str, "");
+        return found;
       };
       // dim/aug/minor
       const setMinor = () => {
