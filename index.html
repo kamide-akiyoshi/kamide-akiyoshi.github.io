@@ -1,15 +1,40 @@
 <html>
   <head>
     <title>Kamide's page on GitHub</title>
+<style type="text/css">
+	h1,h2,h3 { color:#3366CC; background-color:#99FFCC; }
+	h4 { color:#996633; background-color:#99FF99; }
+	.clock { position: relative; width: 300px; height: 300px; border-radius: 50%; }
+	.clock canvas { position: absolute; left: 0; border-radius: 50%; }
+</style>
+    <script src="https://kamide-akiyoshi.github.io/clockchord/circle_of_5ths_clock_chord.js"></script>
+    <script>new CircleOfFifthsClock()</script>
   </head>
   <body>
     <h1>Kamide's page on GitHub</h1>
     <ul>
-    <li><a href="clockchord/">五度圏時計楽器 ClockChord</a></li>
     <li><a href="https://github.com/kamide-akiyoshi/">My repositories</a></li>
     <li><a href="https://camidion.wordpress.com/">CAmiDion blog</a></li>
     <li><a href="http://www.yk.rim.or.jp/~kamide/">-CPWeb- JS1CPW Akiyoshi Kamide's page on RIMNET</a></li>
     </ul>
+    <h2>ClockChord</h2>
+    <div>
+      <a href="clockchord/" style="border-radius: 50%; display: inline-block;">
+        <div class="clock">
+          <canvas id="circleOfFifthsClockDialCanvas" width="300px" height="300px"></canvas>
+          <canvas id="circleOfFifthsClockCanvas" width="300px" height="300px"></canvas>
+        </div>
+      </a>
+    </div>
+    <div>
+      <br/>
+      <a href="clockchord/">五度圏時計楽器 ClockChord</a> - JavaScriptで実装した、音の出る五度圏時計です。
+      <ul>
+        <li>文字盤をクリックまたはタッチしてコードを鳴らせます</li>
+        <li>鳴っている音階が、五度圏時計の文字盤に視覚的に表示され、どのようなコードが鳴っているかが一目でわかります</li>
+        <li>MIDI(SMF)プレーヤー、Songle埋め込みプレーヤーで再生すると、コードを視覚化しながら音楽鑑賞を楽しめます</li>
+        <li>MIDI入出力もサポートしています</li>
+      </ul>
+    </div>
   </body>
 </html>
-
