@@ -1,11 +1,4 @@
 
-const ClockChord = {
-  initialDocumentTitle: document.title,
-  setSongTitleToDocument: (title) => {
-    document.title = title ? `${title} - ClockChord` : ClockChord.initialDocumentTitle;
-  },
-}
-
 const Music = class {
   static NATURAL = '\u{266E}';
   static {
@@ -850,6 +843,11 @@ const SimpleSynthesizer = class {
 };
 
 const PianoKeyboard = class {
+  static initialDocumentTitle = document.title;
+  static setSongTitleToDocument = (songTitle) => {
+    document.title = songTitle ? `${songTitle} - ClockChord` : this.initialDocumentTitle;
+  };
+
   noteOn = (channel, noteNumber, velocity) => {
     const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
     if( channel != MIDI.PERCUSSION_CHANNEL && isNewVoice ) {
@@ -1943,7 +1941,7 @@ const PianoKeyboard = class {
     const setMidiSequenceTitle = (title) => {
       const trimmedTitle = title?.trim() ?? "";
       titleElement.textContent = trimmedTitle;
-      ClockChord.setSongTitleToDocument(trimmedTitle);
+      PianoKeyboard.setSongTitleToDocument(trimmedTitle);
     };
     const markerElement = document.getElementById("song_marker");
     const textElement = document.getElementById("song_text");
@@ -2439,7 +2437,7 @@ const PianoKeyboard = class {
         chordElement,
         errorMessageElement
       ].forEach((element) => element.textContent = "");
-      ClockChord.setSongTitleToDocument(undefined);
+      PianoKeyboard.setSongTitleToDocument(undefined);
     };
     const loadSongle = (urlText, songKeyTimelineText) => {
       if( !widgetParent ) {
@@ -2476,7 +2474,7 @@ const PianoKeyboard = class {
       widgetParent.insertBefore(widgetElement, keyTimelineElement);
       window.onSongleWidgetReady = (apiKey, songleWidget) => {
         const { song } = widget = songleWidget;
-        ClockChord.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
+        PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
         keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
         duration = formatTime(widget.duration);
         currentPosition = formatTime(widget.position);
