@@ -3195,7 +3195,7 @@ const CircleOfFifthsClock = class {
     return beatCanvas;
   };
   constructor() {
-    const loader = event => {
+    const loader = () => {
       const canvasId = 'circleOfFifthsClockCanvas';
       const canvas = document.getElementById(canvasId);
       if( ! canvas ) {
