@@ -9,6 +9,13 @@
 		margin-top: 8px;
 		margin-bottom: 8px;
 	}
+  .songs_header {
+    display: flex;
+    gap: 0.5em;
+  }
+  .page {
+    font-weight: bold;
+  }
 	.small {
 		font-size: 90%;
 	}
@@ -58,8 +65,9 @@ const searchSongle = () => {
   statusElement.textContent = "⏳ Searching...";
   resultContainer.appendChild(statusElement);
   const getPageOption = (page) => page <= 1 ? "" : `&page=${page}`;
+  const currentSearchParams = `q=${encodeURIComponent(keyword)}${getPageOption(page)}`;
   fetch(
-    `https://widget.songle.jp/api/v1/songs/search.json?q=${encodeURIComponent(keyword)}${getPageOption(page)}`
+    `https://widget.songle.jp/api/v1/songs/search.json?${currentSearchParams}`
   ).then((response) => {
     if( ! response.ok ) {
       const { status } = response;
@@ -119,16 +127,25 @@ const searchSongle = () => {
       songsElement.appendChild(line);
     });
     const hasMore = songs.length >= MAX_SONGS_PER_PAGE;
-    const songCountElement = document.createElement("div");
-    songCountElement.textContent = `Page ${page} `;
+    const songsHeader = document.createElement("div");
+    songsHeader.classList.add("songs_header");
+    const pageSpan = document.createElement("span");
+    pageSpan.textContent = `Page ${page}`;
+    pageSpan.classList.add("page");
+    songsHeader.appendChild(pageSpan);
     if( page > 1 ) {
       const previous = document.createElement("a");
       previous.id = "previous";
       previous.textContent = `▲Previous`;
       previous.href = `?q=${keyword}${getPageOption(page - 1)}`;
-      songCountElement.appendChild(previous);
+      songsHeader.appendChild(previous);
     }
-    resultContainer.appendChild(songCountElement);
+    const searchBySongle = document.createElement("a");
+    searchBySongle.textContent = "🔍Search by Songle";
+    searchBySongle.href = `https://songle.jp/songs/search?${currentSearchParams}`;
+    searchBySongle.target = "_blank";
+    songsHeader.appendChild(searchBySongle);
+    resultContainer.appendChild(songsHeader);
     resultContainer.appendChild(songsElement);
     if( hasMore ) {
       const next = document.createElement("a");
