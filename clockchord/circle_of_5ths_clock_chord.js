@@ -759,7 +759,7 @@ const CircleOfFifthsClock = class {
     }
     window.addEventListener("load", loader);
   };
-  listen = (canvas) => {
+  listen = (buttonCanvas) => {
     if( this.pianokeyboard ) {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
@@ -772,9 +772,9 @@ const CircleOfFifthsClock = class {
       this.setDarkPlayMode,
       searchParams
     );
-    canvas.focus();
+    buttonCanvas.focus();
     chord.keySignature = keySignature;
-    chord.buttonCanvas = canvas;
+    chord.buttonCanvas = buttonCanvas;
     dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
     keySignature.setup(chord, dial);
@@ -912,44 +912,43 @@ const CircleOfFifthsClock = class {
         [...eventTypes.disable, eventTypes.move].forEach(t => button.addEventListener(t, e => e.preventDefault()));
       });
       shiftKeyDescription?.remove();
-      canvas.title = "Touch the chord symbol to sound";
+      buttonCanvas.title = "Touch the chord symbol to sound";
     } else {
       shiftButtonContainer?.remove();
-      canvas.title = "Click the chord symbol to sound";
+      buttonCanvas.title = "Click the chord symbol to sound";
     }
-    eventTypes.disable.forEach(t => canvas.addEventListener(t, handleEvent));
-    eventTypes.start.forEach(t => canvas.addEventListener(t, e => handleEvent(e, chord)));
-    eventTypes.end.forEach(t => canvas.addEventListener(t, chord.stop));
+    eventTypes.disable.forEach(t => buttonCanvas.addEventListener(t, handleEvent));
+    eventTypes.start.forEach(t => buttonCanvas.addEventListener(t, e => handleEvent(e, chord)));
+    eventTypes.end.forEach(t => buttonCanvas.addEventListener(t, chord.stop));
     const handleMouseLeave = (event) => {
       event.buttons && chord.stop();
     };
-    canvas.addEventListener("mouseleave", handleMouseLeave);
+    buttonCanvas.addEventListener("mouseleave", handleMouseLeave);
     if( chord.dialCenterLabel ) {
       const { element } = chord.dialCenterLabel;
       element.addEventListener('pointerdown', e => {
         chord.start();
       });
       element.addEventListener('pointerup', e => {
-        canvas.focus();
+        buttonCanvas.focus();
         chord.stop();
       });
       element.addEventListener('mouseleave', handleMouseLeave);
     }
-    canvas.clearChord = () => {
-      const context = canvas.getContext("2d");
-      const { width, height } = canvas;
+    buttonCanvas.setChord = (chord) => {
+      const context = buttonCanvas.getContext("2d");
+      const { width, height } = buttonCanvas;
       context.clearRect(0, 0, width, height);
-    };
-    canvas.selectChord = () => {
-      canvas.clearChord();
+      if( !chord ) {
+        return;
+      }
       const { hour, offset3rd = 0 } = chord;
       const centerXY = [
         dial.center.x,
         dial.center.y,
       ];
-      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[offset3rd + i] * canvas.width);
+      const [innerRadius, outerRadius] = [1, 2].map(i => dial.borderRadius[offset3rd + i] * width);
       const [startAngle, endAngle] = [3.5, 2.5].map(dh => (hour - dh) / 6 * Math.PI);
-      const context = canvas.getContext("2d");
       context.beginPath();
       context.fillStyle = "#80808080";
       context.arc(...centerXY, innerRadius, startAngle, endAngle);
@@ -975,8 +974,8 @@ const CircleOfFifthsClock = class {
       canvas.lastHourAngle = hourAngle;
       chord.strum(diffHourAngle < 0 ? -1 : 1);
     };
-    canvas.enableStrum = () => canvas.addEventListener(eventTypes.move, handleMouseMove);
-    canvas.disableStrum = () => canvas.removeEventListener(eventTypes.move, handleMouseMove);
+    buttonCanvas.enableStrum = () => buttonCanvas.addEventListener(eventTypes.move, handleMouseMove);
+    buttonCanvas.disableStrum = () => buttonCanvas.removeEventListener(eventTypes.move, handleMouseMove);
     if( chord.chordTextInput ) {
       const { chordTextInput } = chord;
       const handleEnterPress = (event) => {

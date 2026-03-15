@@ -540,7 +540,7 @@ const PianoKeyboard = class {
       delete chord.offset7th;
       delete chord.add9th;
       keyOrChordChanged();
-      buttonCanvas.clearChord();
+      buttonCanvas.setChord();
       chordTextInput.value = "";
       pianoKeyElementClassLists.clear();
     },
@@ -674,7 +674,7 @@ const PianoKeyboard = class {
       add9th && noteOn(rootPitchNumber + 14);
       noteOn(bassPitchNumber, true);
       chord.notes = Array.from(this.pianoKeyPressedChannnel.keys());
-      buttonCanvas.selectChord();
+      buttonCanvas.setChord(chord);
       buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
