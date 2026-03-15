@@ -138,13 +138,13 @@ const PianoKeyboard = class {
 
   noteOn = (channel, noteNumber, velocity) => {
     const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
-    if( channel != MIDI.PERCUSSION_CHANNEL && isNewVoice ) {
+    if( channel != SimpleSynthesizer.PERCUSSION_CHANNEL && isNewVoice ) {
       this.toneIndicatorCanvas.noteOn(noteNumber);
     }
   };
   noteOff = (channel, noteNumber) => {
     this.synth.midiChannels[channel].noteOff(noteNumber);
-    if( channel != MIDI.PERCUSSION_CHANNEL ) {
+    if( channel != SimpleSynthesizer.PERCUSSION_CHANNEL ) {
       this.toneIndicatorCanvas.noteOff(noteNumber);
     }
   };
@@ -413,7 +413,7 @@ const PianoKeyboard = class {
   createMidiChannelSelector = () => {
     const selector = document.getElementById('midi_channel');
     Array.from(
-      {length: MIDI.NUMBER_OF_CHANNELS},
+      {length: this.synth.midiChannels.length},
       (_, ch) => {
         const option = document.createElement("option");
         option.value = ch;
@@ -1518,7 +1518,7 @@ const PianoKeyboard = class {
     const originalFrequencyText = frequencyElement.querySelector("a").textContent;
     frequencyElement.remove();
     let [whiteKeyLeft, hour] = [0, 6];
-    const pianoKeyElements = this.pianoKeyElements = MIDI.FREQUENCIES.map((frequency, noteNumber) => {
+    const pianoKeyElements = this.pianoKeyElements = SimpleSynthesizer.FREQUENCIES.map((frequency, noteNumber) => {
       let element;
       //  1 3    0 2 4
       // 6 8 10 5 7 9 11

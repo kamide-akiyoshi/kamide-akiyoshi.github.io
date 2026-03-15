@@ -1,14 +1,4 @@
 
-const MIDI = class {
-  static PERCUSSION_CHANNEL = 9;
-  static NUMBER_OF_CHANNELS = 16;
-  static FREQUENCIES = Array.from(
-    {length: 128},
-    (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
-  );
-  static pitchBendToCent(value, sensitivity) { return 100 * sensitivity * value / (1 << 13); };
-};
-
 const GENERIC_INSTRUMENT = ({
   name: "Generic tone instrument",
   wave: "sawtooth",
@@ -397,7 +387,12 @@ const INSTRUMENTS = [
 ];
 
 const SimpleSynthesizer = class {
-  static audioContext;
+  static pitchBendToCent(value, sensitivity) { return 100 * sensitivity * value / (1 << 13); };
+  static PERCUSSION_CHANNEL = 9;
+  static FREQUENCIES = Array.from(
+    {length: 128},
+    (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
+  );
   static {
     try {
       const AudioContext = window.AudioContext ?? window.webkitAudioContext;
@@ -519,17 +514,18 @@ const SimpleSynthesizer = class {
         detune: cent => {
           if( source instanceof OscillatorNode ) source.detune.value = cent;
         },
-        changeModulation: gainValue => {
+        changeModulation: (gainValue) => {
           if( modulatorGain ) modulatorGain.gain.value = gainValue;
         },
       };
       return voice;
     };
+    const { PERCUSSION_CHANNEL, pitchBendToCent } = SimpleSynthesizer;
     this.midiChannels = Array.from(
-      {length: MIDI.NUMBER_OF_CHANNELS},
+      {length: 16},
       (_, channelNumber) => {
         const channel = {
-          isForPercussion: channelNumber == MIDI.PERCUSSION_CHANNEL,
+          isForPercussion: channelNumber == PERCUSSION_CHANNEL,
           voices: new Map(),
           setParameterNumber(control, value) {
             // Control#
@@ -557,16 +553,15 @@ const SimpleSynthesizer = class {
           pitchBendCent: 0,
           _pitchBendValue: 0,
           set pitchBendValue(value) {
-            const cent = this.pitchBendCent = MIDI.pitchBendToCent(
+            const cent = this.pitchBendCent = pitchBendToCent(
               this._pitchBendValue = value,
               this._pitchBendSensitivity
             );
             this.voices.forEach((voice) => voice.detune(cent));
           },
           set modulationDepth(value) {
-            this.voices.forEach(
-              (voice, noteNumber) => voice.changeModulation(value / 32)
-            );
+            const gainValue = value / 32;
+            this.voices.forEach((voice) => voice.changeModulation(gainValue));
           },
           _volume: 100,
           _expression: 0x7F,
@@ -606,7 +601,7 @@ const SimpleSynthesizer = class {
           },
           _pitchBendSensitivity: 2,
           set pitchBendSensitivity(value) {
-            this.pitchBendCent = MIDI.pitchBendToCent(
+            this.pitchBendCent = pitchBendToCent(
               this._pitchBendValue,
               this._pitchBendSensitivity = value
             );
@@ -637,7 +632,7 @@ const SimpleSynthesizer = class {
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
               const cent = this.pitchBendCent
-              voice = createVoice(this, MIDI.FREQUENCIES[noteNumber]);
+              voice = createVoice(this, SimpleSynthesizer.FREQUENCIES[noteNumber]);
               cent && voice.detune(cent);
               voices.set(noteNumber, voice);
             }
