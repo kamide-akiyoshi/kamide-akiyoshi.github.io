@@ -870,10 +870,6 @@ const PianoKeyboard = class {
     }
   };
   setupMidiSequencer = (beatCanvas, setDarkPlayMode) => {
-    const {
-      chord,
-      selectedMidiOutputPorts,
-    } = this;
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
     const hasValidChunkId = (byteArray, validChunk) => {
@@ -1204,8 +1200,8 @@ const PianoKeyboard = class {
         case 0x59:
           {
             const { keySignature: hour, minor } = event;
-            const { keySignature } = chord;
-            keySignature.parse([hour, minor]);
+            const { chord } = this;
+            chord.keySignature.parse([hour, minor]);
             chord.clear(); // Unselect chord to hide key signature change button
           }
           break;
@@ -1402,7 +1398,7 @@ const PianoKeyboard = class {
       this.handleMidiMessage(midiMessage);
       this.sendWebMidiLinkMessage?.(midiMessage);
       try {
-        selectedMidiOutputPorts?.send(midiMessage);
+        this.selectedMidiOutputPorts?.send(midiMessage);
       } catch(e) {
         console.error(midiMessage, e);
       }
