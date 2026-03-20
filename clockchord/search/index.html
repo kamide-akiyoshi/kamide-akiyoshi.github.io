@@ -5,10 +5,6 @@
 <title>ClockChord Songle Search</title>
 <style>
 	h1,h2,h3 { color:#FF6633; background-color:#FFFF99; }
-	#search_result_container {
-		margin-top: 8px;
-		margin-bottom: 8px;
-	}
   .songs_header {
     display: flex;
     gap: 0.5em;
@@ -61,11 +57,16 @@ const searchSongle = () => {
   document.querySelector("input[type='search']").value = keyword;
   const page = parseInt(searchParams.get("page") ?? 1);
   const resultContainer = document.getElementById("search_result_container");
+  const getPageOption = (page) => page <= 1 ? "" : `&page=${page}`;
+  const currentSearchParams = `q=${encodeURIComponent(keyword)}${getPageOption(page)}`;
+  const searchBySongle = document.createElement("a");
+  searchBySongle.textContent = "🔍Search by Songle";
+  searchBySongle.href = `https://songle.jp/songs/search?${currentSearchParams}`;
+  searchBySongle.target = "_blank";
+  resultContainer.appendChild(searchBySongle);
   const statusElement = document.createElement("div");
   statusElement.textContent = "⏳ Searching...";
   resultContainer.appendChild(statusElement);
-  const getPageOption = (page) => page <= 1 ? "" : `&page=${page}`;
-  const currentSearchParams = `q=${encodeURIComponent(keyword)}${getPageOption(page)}`;
   fetch(
     `https://widget.songle.jp/api/v1/songs/search.json?${currentSearchParams}`
   ).then((response) => {
@@ -140,11 +141,6 @@ const searchSongle = () => {
       previous.href = `?q=${keyword}${getPageOption(page - 1)}`;
       songsHeader.appendChild(previous);
     }
-    const searchBySongle = document.createElement("a");
-    searchBySongle.textContent = "🔍Search by Songle";
-    searchBySongle.href = `https://songle.jp/songs/search?${currentSearchParams}`;
-    searchBySongle.target = "_blank";
-    songsHeader.appendChild(searchBySongle);
     resultContainer.appendChild(songsHeader);
     resultContainer.appendChild(songsElement);
     if( hasMore ) {
