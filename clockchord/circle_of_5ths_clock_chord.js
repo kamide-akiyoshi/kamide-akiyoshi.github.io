@@ -127,8 +127,8 @@ const CircleOfFifthsClock = class {
       if( !themeColor ) return;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const selectedKeyHour = keySignature.numberOfSharps;
-      const isMinorKey = keySignature.minor;
+      const selectedKeyHour = keySignature?.numberOfSharps;
+      const isMinorKey = keySignature?.minor;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
@@ -345,79 +345,83 @@ const CircleOfFifthsClock = class {
     },
     get moving() { return this._isMoving; }
   };
-  keySignature = {
-    setup(chord, dial) {
-      this.chord = chord;
-      const draw = this.draw = () => {
-        chord.keyOrChordChanged();
+  setupKeySignature = (dial) => {
+    const selectElement = document.getElementById('keyselect') || {};
+    const minorElement = document.getElementById('minor') || {};
+    const keySignature = {
+      draw() {
+        this.chord?.keyOrChordChanged();
         dial.draw();
-      }
-      const selectElement = this.selectElement = document.getElementById('keyselect') || {};
-      if( selectElement.addEventListener ) {
-        const option0 = selectElement.querySelector("option");
-        for( let hour = -7; hour <= 7; hour++ ) {
-          const option = hour === 0 ? option0 : option0.cloneNode();
-          option.value = hour;
-          option.textContent = Music.keySignatureTextAt(hour) || Music.NATURAL;
-          selectElement.appendChild(option);
-        }
-        option0.defaultSelected = true;
-        selectElement.addEventListener('change', event => this.numberOfSharps = event.target.value);
-        (this.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
-          'click', event => {
-            const { enharmonicHour } = this;
-            if( ! enharmonicHour || this.numberOfSharps === enharmonicHour ) return;
-            this.numberOfSharps = enharmonicHour;
+      },
+      get numberOfSharps() { 
+        return parseInt(selectElement?.value);
+      },
+      set numberOfSharps(hour) {
+        const { enharmonicButton } = this;
+        hour = Music.normalizeHourAsKey(hour);
+        if( selectElement ) selectElement.value = hour;
+        if( enharmonicButton ) {
+          const { style } = enharmonicButton;
+          const enharmonicHour = Music.enharmonicKeyOf(hour);
+          if( enharmonicHour ) {
+            enharmonicButton.textContent = Music.keySignatureTextAt(this.enharmonicHour = enharmonicHour);
+            style.visibility = 'visible';
+          } else {
+            delete this.enharmonicHour;
+            style.visibility = 'hidden';
           }
-        );
-      }
-      (this.minorElement = document.getElementById('minor') || {}).addEventListener?.('change', draw);
-      this.numberOfSharps = 0;
-    },
-    get numberOfSharps() { return parseInt(this.selectElement?.value); },
-    set numberOfSharps(hour) {
-      const { selectElement, enharmonicButton, draw } = this;
-      selectElement.value = hour = Music.normalizeHourAsKey(hour);
-      if( enharmonicButton ) {
-        const { style } = enharmonicButton;
-        const enharmonicHour = Music.enharmonicKeyOf(hour);
-        if( enharmonicHour ) {
-          enharmonicButton.textContent = Music.keySignatureTextAt(this.enharmonicHour = enharmonicHour);
-          style.visibility = 'visible';
-        } else {
-          delete this.enharmonicHour;
-          style.visibility = 'hidden';
         }
+        this.draw();
+      },
+      get minor() { return minorElement?.checked; },
+      set minor(isMinor) {
+        minorElement.checked = isMinor;
+        this.draw();
+      },
+      parse(value) {
+        if( Array.isArray(value) ) {
+          const [hour, minor] = value;
+          minorElement.checked = minor; // Without this.draw()
+          this.numberOfSharps = hour; // With this.draw()
+          return;
+        }
+        if( value === this.chord ) {
+          if( value.hasValue ) this.parse([value.hour, value.isMinor]);
+          return;
+        }
+        if( !value.split ) return;
+        const splitStrings = value.split("m", 2);
+        const [root, minor] = [splitStrings[0], splitStrings.length > 1];
+        let hour = parseInt(root);
+        if( isNaN(hour) ) {
+          const parsedRoot = Music.parsePitchName(root);
+          if( !parsedRoot ) return;
+          [hour] = parsedRoot; if( minor ) hour -= 3;
+        }
+        this.parse([hour, minor]);
+      },
+    };
+    if( selectElement.addEventListener ) {
+      const option0 = selectElement.querySelector("option");
+      for( let hour = -7; hour <= 7; hour++ ) {
+        const option = hour === 0 ? option0 : option0.cloneNode();
+        option.value = hour;
+        option.textContent = Music.keySignatureTextAt(hour) || Music.NATURAL;
+        selectElement.appendChild(option);
       }
-      draw();
-    },
-    get minor() { return this.minorElement?.checked; },
-    set minor(isMinor) {
-      this.minorElement.checked = isMinor;
-      this.draw();
-    },
-    parse(value) {
-      if( Array.isArray(value) ) {
-        const [hour, minor] = value;
-        this.minorElement.checked = minor; // Without this.draw()
-        this.numberOfSharps = hour; // With this.draw()
-        return;
-      }
-      if( value === this.chord ) {
-        if( value.hasValue ) this.parse([value.hour, value.isMinor]);
-        return;
-      }
-      if( !value.split ) return;
-      const splitStrings = value.split("m", 2);
-      const [root, minor] = [splitStrings[0], splitStrings.length > 1];
-      let hour = parseInt(root);
-      if( isNaN(hour) ) {
-        const parsedRoot = Music.parsePitchName(root);
-        if( !parsedRoot ) return;
-        [hour] = parsedRoot; if( minor ) hour -= 3;
-      }
-      this.parse([hour, minor]);
-    },
+      option0.defaultSelected = true;
+      selectElement.addEventListener('change', event => keySignature.numberOfSharps = event.target.value);
+      (keySignature.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
+        'click', () => {
+          const { enharmonicHour } = keySignature;
+          if( ! enharmonicHour || keySignature.numberOfSharps === enharmonicHour ) return;
+          keySignature.numberOfSharps = enharmonicHour;
+        }
+      );
+    }
+    minorElement?.addEventListener?.('change', () => keySignature.draw());
+    keySignature.numberOfSharps = 0;
+    return keySignature;
   };
   setupToneIndicatorCanvas = (dial, keySignature) => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
@@ -764,7 +768,8 @@ const CircleOfFifthsClock = class {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
-    const { keySignature, dial } = this;
+    const { dial } = this;
+    const keySignature = this.keySignature = this.setupKeySignature(dial);
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       this.setupToneIndicatorCanvas(dial, keySignature),
@@ -773,11 +778,9 @@ const CircleOfFifthsClock = class {
       searchParams
     );
     buttonCanvas.focus();
-    chord.keySignature = keySignature;
+    (chord.keySignature = keySignature).chord = dial.chord = chord;
     chord.buttonCanvas = buttonCanvas;
-    dial.chord = chord;
     dial.keySignatureTextAt0 = 'key/sus4';
-    keySignature.setup(chord, dial);
     const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
     if( initialKeySig ) keySignature.parse(initialKeySig);
     //
