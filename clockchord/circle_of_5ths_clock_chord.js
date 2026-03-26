@@ -348,18 +348,17 @@ const CircleOfFifthsClock = class {
   setupKeySignature = (dial) => {
     const selectElement = document.getElementById('keyselect') || {};
     const minorElement = document.getElementById('minor') || {};
+    const enharmonicButton = document.getElementById('enharmonic');
     const keySignature = {
       draw() {
         this.chord?.keyOrChordChanged();
         dial.draw();
       },
       get numberOfSharps() { 
-        return parseInt(selectElement?.value);
+        return parseInt(selectElement.value);
       },
       set numberOfSharps(hour) {
-        const { enharmonicButton } = this;
-        hour = Music.normalizeHourAsKey(hour);
-        if( selectElement ) selectElement.value = hour;
+        selectElement.value = hour = Music.normalizeHourAsKey(hour);
         if( enharmonicButton ) {
           const { style } = enharmonicButton;
           const enharmonicHour = Music.enharmonicKeyOf(hour);
@@ -373,7 +372,7 @@ const CircleOfFifthsClock = class {
         }
         this.draw();
       },
-      get minor() { return minorElement?.checked; },
+      get minor() { return minorElement.checked; },
       set minor(isMinor) {
         minorElement.checked = isMinor;
         this.draw();
@@ -411,15 +410,15 @@ const CircleOfFifthsClock = class {
       }
       option0.defaultSelected = true;
       selectElement.addEventListener('change', event => keySignature.numberOfSharps = event.target.value);
-      (keySignature.enharmonicButton = document.getElementById('enharmonic'))?.addEventListener(
-        'click', () => {
-          const { enharmonicHour } = keySignature;
-          if( ! enharmonicHour || keySignature.numberOfSharps === enharmonicHour ) return;
-          keySignature.numberOfSharps = enharmonicHour;
-        }
-      );
     }
-    minorElement?.addEventListener?.('change', () => keySignature.draw());
+    enharmonicButton?.addEventListener(
+      'click', () => {
+        const { enharmonicHour } = keySignature;
+        if( ! enharmonicHour || keySignature.numberOfSharps === enharmonicHour ) return;
+        keySignature.numberOfSharps = enharmonicHour;
+      }
+    );
+    minorElement.addEventListener?.('change', () => keySignature.draw());
     keySignature.numberOfSharps = 0;
     return keySignature;
   };
