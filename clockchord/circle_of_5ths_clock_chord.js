@@ -756,18 +756,17 @@ const CircleOfFifthsClock = class {
         backgroundModeSelect.value = "pie";
       };
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
-      chordButtonCanvas && this.listen(chordButtonCanvas);
+      chordButtonCanvas && this.listen(chordButtonCanvas, dial);
       setSystemTheme();
       hands.moving = true;
     }
     window.addEventListener("load", loader);
   };
-  listen = (buttonCanvas) => {
+  listen = (buttonCanvas, dial) => {
     if( this.pianokeyboard ) {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
-    const { dial } = this;
     const keySignature = this.keySignature = this.setupKeySignature(dial);
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
@@ -855,7 +854,7 @@ const CircleOfFifthsClock = class {
       const relativeHour = chord.hour - keySignature.numberOfSharps;
       if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
       chord.offset5th = 0;
-      const { shiftButtonStatus } = this;
+      let shiftButtonStatus;
       if( event.altKey || shiftButtonStatus?.button_flat5 ) {
         if( chord.isSus4 ) {
           chord.offset3rd = 0; chord.offset5th = 1; // replace sus4 to augumented
@@ -894,7 +893,7 @@ const CircleOfFifthsClock = class {
     const shiftButtonContainer = document.getElementById('shift_button_container');
     const shiftKeyDescription = document.getElementById('shift_key_description');
     if( isTouchDevice ) {
-      const status = this.shiftButtonStatus = {};
+      shiftButtonStatus = {};
       [
         "button_7th",
         "button_major7th",
@@ -904,11 +903,11 @@ const CircleOfFifthsClock = class {
         const button = document.getElementById(id);
         if( ! button ) return;
         button.addEventListener('touchstart', event => {
-          status[id] = true;
+          shiftButtonStatus[id] = true;
           event.changedTouches[0].target.classList.add('pressed');
         });
         button.addEventListener('touchend', event => {
-          delete status[id];
+          delete shiftButtonStatus[id];
           event.changedTouches[0].target.classList.remove('pressed');
         });
         [...eventTypes.disable, eventTypes.move].forEach(t => button.addEventListener(t, e => e.preventDefault()));
