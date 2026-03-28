@@ -800,6 +800,7 @@ const CircleOfFifthsClock = class {
       )
     );
     const shiftLikeKeyCodes = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(createLeftRightKeyCodes);
+    let shiftButtonStatus;
     const handleEvent = (event, chord) => {
       switch( event.type ) {
         case 'keydown':
@@ -854,7 +855,6 @@ const CircleOfFifthsClock = class {
       const relativeHour = chord.hour - keySignature.numberOfSharps;
       if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
       chord.offset5th = 0;
-      let shiftButtonStatus;
       if( event.altKey || shiftButtonStatus?.button_flat5 ) {
         if( chord.isSus4 ) {
           chord.offset3rd = 0; chord.offset5th = 1; // replace sus4 to augumented
