@@ -751,18 +751,23 @@ const CircleOfFifthsClock = class {
           backgroundModeSelect && redrawBackgroundMode(backgroundModeSelect.value);
         });
       }
-      this.setDarkPlayMode = () => {
-        darkModeSelect.value = "dark";
-        backgroundModeSelect.value = "pie";
-      };
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
-      chordButtonCanvas && this.listen(chordButtonCanvas, dial);
+      if( chordButtonCanvas ) {
+        this.listen(
+          chordButtonCanvas,
+          dial,
+          () => {
+            darkModeSelect.value = "dark";
+            backgroundModeSelect.value = "pie";
+          }
+        );
+      }
       setSystemTheme();
       hands.moving = true;
     }
     window.addEventListener("load", loader);
   };
-  listen = (buttonCanvas, dial) => {
+  listen = (buttonCanvas, dial, setDarkPlayMode) => {
     if( this.pianokeyboard ) {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
@@ -772,7 +777,7 @@ const CircleOfFifthsClock = class {
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       this.setupToneIndicatorCanvas(dial, keySignature),
       this.setupBeatCanvas(dial, keySignature),
-      this.setDarkPlayMode,
+      setDarkPlayMode,
       searchParams
     );
     buttonCanvas.focus();
