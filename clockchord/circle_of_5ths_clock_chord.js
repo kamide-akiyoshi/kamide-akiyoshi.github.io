@@ -94,15 +94,16 @@ const CircleOfFifthsClock = class {
     },
   };
   dial = {
-    borderRadius: [0.14, 0.29, 0.42, 0.5],
-    has: r => 
-      r <= this.dial.borderRadius[3] &&
-      r >= this.dial.borderRadius[0],
-    toOffset3rd: r =>
-      r < this.dial.borderRadius[1] ? -1 : // minor
-      r > this.dial.borderRadius[2] ?  1 : // sus4
-      0, // Major
     keySignatureTextAt0: 'key',
+    borderRadius: [0.14, 0.29, 0.42, 0.5],
+    has(r) {
+      const br = this.borderRadius;
+      return r <= br[3] && r >= br[0];
+    },
+    toOffset3rd(r) {
+      const br = this.borderRadius;
+      return r < br[1] ? -1 : r > br[2] ?  1 : 0;
+    },
     set theme(value) {
       const isDark = value === 'dark';
       [
@@ -116,8 +117,9 @@ const CircleOfFifthsClock = class {
       this.themeColor = CircleOfFifthsClock.themeColors[value];
       this.draw();
     },
-    draw: () => {
-      const { dial, keySignature } = this;
+    draw() {
+      const dial = this;
+      const { keySignatureSelector } = dial;
       const {
         canvas,
         center,
@@ -127,8 +129,8 @@ const CircleOfFifthsClock = class {
       if( !themeColor ) return;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
-      const selectedKeyHour = keySignature?.numberOfSharps;
-      const isMinorKey = keySignature?.minor;
+      const selectedKeyHour = keySignatureSelector?.numberOfSharps;
+      const isMinorKey = keySignatureSelector?.minor;
       // Background
       const arcRadius = dial.borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
@@ -345,11 +347,11 @@ const CircleOfFifthsClock = class {
     },
     get moving() { return this._isMoving; }
   };
-  setupKeySignature = (dial) => {
+  setupKeySignatureSelector = (dial) => {
     const selectElement = document.getElementById('keyselect') || {};
     const minorElement = document.getElementById('minor') || {};
     const enharmonicButton = document.getElementById('enharmonic');
-    const keySignature = {
+    const keySignatureSelector = {
       draw() {
         this.chord?.keyOrChordChanged();
         dial.draw();
@@ -409,20 +411,20 @@ const CircleOfFifthsClock = class {
         selectElement.appendChild(option);
       }
       option0.defaultSelected = true;
-      selectElement.addEventListener('change', event => keySignature.numberOfSharps = event.target.value);
+      selectElement.addEventListener('change', event => keySignatureSelector.numberOfSharps = event.target.value);
     }
     enharmonicButton?.addEventListener(
       'click', () => {
-        const { enharmonicHour } = keySignature;
-        if( ! enharmonicHour || keySignature.numberOfSharps === enharmonicHour ) return;
-        keySignature.numberOfSharps = enharmonicHour;
+        const { enharmonicHour } = keySignatureSelector;
+        if( ! enharmonicHour || keySignatureSelector.numberOfSharps === enharmonicHour ) return;
+        keySignatureSelector.numberOfSharps = enharmonicHour;
       }
     );
-    minorElement.addEventListener?.('change', () => keySignature.draw());
-    keySignature.numberOfSharps = 0;
-    return keySignature;
+    minorElement.addEventListener?.('change', () => keySignatureSelector.draw());
+    keySignatureSelector.numberOfSharps = 0;
+    return keySignatureSelector;
   };
-  setupToneIndicatorCanvas = (dial, keySignature) => {
+  setupToneIndicatorCanvas = (dial, keySignatureSelector) => {
     const canvas = document.getElementById('circleOfFifthsClockToneIndicatorCanvas');
     const BASS_MAX_NOTE_NUMBER = 48;
     const { width, height } = canvas;
@@ -430,7 +432,7 @@ const CircleOfFifthsClock = class {
     const toneIndicating = Array.from({ length: 12 }, () => 0);
     const bassToneIndicating = [...toneIndicating];
     const getColorOf = (hour, flatThreshold) => {
-      let offset = hour - keySignature?.numberOfSharps + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
+      let offset = hour - keySignatureSelector?.numberOfSharps + 1; // min:-6, max:19 (when hour:0...11, keySignature:-7...7)
       if( offset < 0 ) offset += 12; else if ( offset >= 12 ) offset -= 12;
       return dial.themeColor.indicator[offset < 7 ? 1 : offset < flatThreshold ? 2 : 0];
     };
@@ -660,7 +662,7 @@ const CircleOfFifthsClock = class {
     };
     return canvas;
   };
-  setupBeatCanvas = (dial, keySignature) => {
+  setupBeatCanvas = (dial, keySignatureSelector) => {
     const beatCanvas = document.getElementById("circleOfFifthsClockBeatCanvas");
     const radianPerHour = Math.PI / 6;
     const context = beatCanvas.getContext("2d");
@@ -670,9 +672,9 @@ const CircleOfFifthsClock = class {
       context.clearRect(0, 0, width, height);
       if( beat === undefined ) return;
       const ratio = numerator - beat < 2 ? 0 : 1 / (2 ** beat);
-      const outer = dial.borderRadius[keySignature.minor ? 1 : 2];
-      const inner = outer - ratio * (outer - dial.borderRadius[keySignature.minor ? 0 : 1]);
-      const startAngle = (keySignature.numberOfSharps - 3.5) * radianPerHour;
+      const outer = dial.borderRadius[keySignatureSelector.minor ? 1 : 2];
+      const inner = outer - ratio * (outer - dial.borderRadius[keySignatureSelector.minor ? 0 : 1]);
+      const startAngle = (keySignatureSelector.numberOfSharps - 3.5) * radianPerHour;
       const endAngle = startAngle + radianPerHour;
       context.fillStyle = `color-mix(in srgb, ${dial.themeColor.indicator[1]} 15%, transparent)`;
       context.beginPath();
@@ -772,20 +774,20 @@ const CircleOfFifthsClock = class {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
-    const keySignature = this.keySignature = this.setupKeySignature(dial);
+    const keySignatureSelector = dial.keySignatureSelector = this.setupKeySignatureSelector(dial);
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
-      this.setupToneIndicatorCanvas(dial, keySignature),
-      this.setupBeatCanvas(dial, keySignature),
+      this.setupToneIndicatorCanvas(dial, keySignatureSelector),
+      this.setupBeatCanvas(dial, keySignatureSelector),
       setDarkPlayMode,
       searchParams
     );
     buttonCanvas.focus();
-    (chord.keySignature = keySignature).chord = dial.chord = chord;
+    (chord.keySignatureSelector = keySignatureSelector).chord = dial.chord = chord;
     chord.buttonCanvas = buttonCanvas;
     dial.keySignatureTextAt0 = 'key/sus4';
     const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
-    if( initialKeySig ) keySignature.parse(initialKeySig);
+    if( initialKeySig ) keySignatureSelector.parse(initialKeySig);
     //
     // PC keyboard bindings
     const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
@@ -815,7 +817,7 @@ const CircleOfFifthsClock = class {
           }
           if( pcKeyBindMap.has(event.code) ) {
             [chord.hour, chord.offset3rd] = pcKeyBindMap.get(event.code);
-            chord.hour += keySignature.numberOfSharps;
+            chord.hour += keySignatureSelector.numberOfSharps;
           } else {
             switch(event.code) {
               case 'Space':
@@ -827,10 +829,10 @@ const CircleOfFifthsClock = class {
               case 'Tab':
                 // Move focus (Keep default action)
                 return;
-              case 'ArrowLeft': keySignature.numberOfSharps-- ; event.preventDefault(); return;
-              case 'ArrowRight': keySignature.numberOfSharps++ ; event.preventDefault(); return;
-              case 'ArrowUp': keySignature.numberOfSharps -= 5 ; event.preventDefault(); return;
-              case 'ArrowDown': keySignature.numberOfSharps += 5 ; event.preventDefault(); return;
+              case 'ArrowLeft': keySignatureSelector.numberOfSharps-- ; event.preventDefault(); return;
+              case 'ArrowRight': keySignatureSelector.numberOfSharps++ ; event.preventDefault(); return;
+              case 'ArrowUp': keySignatureSelector.numberOfSharps -= 5 ; event.preventDefault(); return;
+              case 'ArrowDown': keySignatureSelector.numberOfSharps += 5 ; event.preventDefault(); return;
               default: event.preventDefault(); return;
             }
           }
@@ -857,7 +859,7 @@ const CircleOfFifthsClock = class {
           }
           break;
       }
-      const relativeHour = chord.hour - keySignature.numberOfSharps;
+      const relativeHour = chord.hour - keySignatureSelector.numberOfSharps;
       if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
       chord.offset5th = 0;
       if( event.altKey || shiftButtonStatus?.button_flat5 ) {

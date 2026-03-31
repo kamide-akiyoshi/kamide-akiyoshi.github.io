@@ -508,7 +508,7 @@ const PianoKeyboard = class {
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignature.parse(chord));
+      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignatureSelector.parse(chord));
       const cls = chord.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
@@ -711,14 +711,14 @@ const PianoKeyboard = class {
     keyOrChordChanged: () => {
       const { chord } = this;
       const {
-        keySignature,
+        keySignatureSelector,
         keySignatureSetButton: { style },
       } = chord;
       style.visibility = (
         chord.hasValue &&
         ! (
-          chord.isMinor === keySignature.minor &&
-          Music.enharmonicallyEquals(chord.hour, keySignature.numberOfSharps)
+          chord.isMinor === keySignatureSelector.minor &&
+          Music.enharmonicallyEquals(chord.hour, keySignatureSelector.numberOfSharps)
         )
       ) ? 'visible' : 'hidden';
     },
@@ -1668,13 +1668,13 @@ const PianoKeyboard = class {
       timeline.handleBeatPlay = (newPosition) => {
         if( nextPosition > newPosition ) return;
         const t = timeline[nextIndex];
-        if( t ) chord.keySignature.parse(t.key);
+        if( t ) chord.keySignatureSelector.parse(t.key);
         nextPosition = timeline[++nextIndex]?.position;
       };
       timeline.handleSeek = (newPosition) => {
         nextIndex = timeline.findIndex((t) => t.position > newPosition);
         if( nextIndex < 0 ) nextIndex = timeline.length;
-        chord.keySignature.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
+        chord.keySignatureSelector.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
         nextPosition = timeline[nextIndex]?.position;
       };
       return timeline;
