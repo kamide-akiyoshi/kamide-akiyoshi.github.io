@@ -1201,7 +1201,7 @@ const PianoKeyboard = class {
           {
             const { keySignature: hour, minor } = event;
             const { chord } = this;
-            chord.keySignature.parse([hour, minor]);
+            chord.keySignatureSelector.parse([hour, minor]);
             chord.clear(); // Unselect chord to hide key signature change button
           }
           break;
