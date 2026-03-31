@@ -487,7 +487,7 @@ const PianoKeyboard = class {
   };
   chord = {
     pianoKeyElementClassLists: [],
-    setup() {
+    setup(keySignatureSelector) {
       const createDetachableElementEntry = id => {
         const element = document.getElementById(id);
         if( !element ) return undefined;
@@ -504,11 +504,12 @@ const PianoKeyboard = class {
         };
       };
       const chord = this;
+      chord.keySignatureSelector = keySignatureSelector;
       chord.label = createDetachableElementEntry('chord');
       chord.dialCenterLabel = createDetachableElementEntry('center_chord');
       chord.chordTextInput = document.getElementById('chord_text');
       chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', event => chord.keySignatureSelector.parse(chord));
+      chord.keySignatureSetButton.addEventListener('click', () => keySignatureSelector.parse(chord));
       const cls = chord.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
@@ -869,7 +870,7 @@ const PianoKeyboard = class {
       });
     }
   };
-  setupMidiSequencer = (beatCanvas, setDarkPlayMode) => {
+  setupMidiSequencer = (keySignatureSelector, beatCanvas, setDarkPlayMode) => {
     const textDecoders = {};
     const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
     const hasValidChunkId = (byteArray, validChunk) => {
@@ -1201,7 +1202,7 @@ const PianoKeyboard = class {
           {
             const { keySignature: hour, minor } = event;
             const { chord } = this;
-            chord.keySignatureSelector.parse([hour, minor]);
+            keySignatureSelector.parse([hour, minor]);
             chord.clear(); // Unselect chord to hide key signature change button
           }
           break;
@@ -1630,7 +1631,7 @@ const PianoKeyboard = class {
     keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
-  setupSongle = (chord, beatCanvas, setDarkPlayMode, searchParams) => {
+  setupSongle = (chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams) => {
     const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
     const HTTPS_URL_PREFIX = "https://";
     const urlInput = document.getElementById("SongleUrl");
@@ -1668,13 +1669,13 @@ const PianoKeyboard = class {
       timeline.handleBeatPlay = (newPosition) => {
         if( nextPosition > newPosition ) return;
         const t = timeline[nextIndex];
-        if( t ) chord.keySignatureSelector.parse(t.key);
+        if( t ) keySignatureSelector.parse(t.key);
         nextPosition = timeline[++nextIndex]?.position;
       };
       timeline.handleSeek = (newPosition) => {
         nextIndex = timeline.findIndex((t) => t.position > newPosition);
         if( nextIndex < 0 ) nextIndex = timeline.length;
-        chord.keySignatureSelector.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
+        keySignatureSelector.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
         nextPosition = timeline[nextIndex]?.position;
       };
       return timeline;
@@ -1827,7 +1828,7 @@ const PianoKeyboard = class {
       loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"));
     }
   };
-  constructor(toneIndicatorCanvas, beatCanvas, setDarkPlayMode, searchParams) {
+  constructor(keySignatureSelector, toneIndicatorCanvas, beatCanvas, setDarkPlayMode, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -1840,13 +1841,13 @@ const PianoKeyboard = class {
       setupPianoKeyboard,
       setupSongle,
     } = this;
-    chord.setup();
+    chord.setup(keySignatureSelector);
     this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = createMidiChannelSelector();
     setupMidiPorts();
     setupWebMidiLink();
-    setupMidiSequencer(beatCanvas, setDarkPlayMode);
+    setupMidiSequencer(keySignatureSelector, beatCanvas, setDarkPlayMode);
     setupPianoKeyboard();
-    setupSongle(chord, beatCanvas, setDarkPlayMode, searchParams);
+    setupSongle(chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams);
   }
 }

@@ -777,14 +777,14 @@ const CircleOfFifthsClock = class {
     const keySignatureSelector = dial.keySignatureSelector = this.setupKeySignatureSelector(dial);
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
+      keySignatureSelector,
       this.setupToneIndicatorCanvas(dial, keySignatureSelector),
       this.setupBeatCanvas(dial, keySignatureSelector),
       setDarkPlayMode,
       searchParams
     );
-    buttonCanvas.focus();
-    (chord.keySignatureSelector = keySignatureSelector).chord = dial.chord = chord;
-    chord.buttonCanvas = buttonCanvas;
+    keySignatureSelector.chord = dial.chord = chord;
+    (chord.buttonCanvas = buttonCanvas).focus();
     dial.keySignatureTextAt0 = 'key/sus4';
     const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
     if( initialKeySig ) keySignatureSelector.parse(initialKeySig);
