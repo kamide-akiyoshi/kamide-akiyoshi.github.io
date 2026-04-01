@@ -774,6 +774,7 @@ const CircleOfFifthsClock = class {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
     }
+    dial.keySignatureTextAt0 = 'key/sus4';
     const keySignatureSelector = dial.keySignatureSelector = this.setupKeySignatureSelector(dial);
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
@@ -785,28 +786,27 @@ const CircleOfFifthsClock = class {
     );
     keySignatureSelector.chord = dial.chord = chord;
     (chord.buttonCanvas = buttonCanvas).focus();
-    dial.keySignatureTextAt0 = 'key/sus4';
     const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
     if( initialKeySig ) keySignatureSelector.parse(initialKeySig);
-    //
-    // PC keyboard bindings
-    const createLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
-    const createKeyCodes = (arrayLike) => Array.from(arrayLike, c => `Key${c}`);
-    const createDigitKeyCodes = () => {
-      const keyCodes = Array.from({ length: 10 }, (_, d) => `Digit${d}`);
-      keyCodes.push(keyCodes.shift());
-      return keyCodes;
-    };
-    const pcKeyBindMap = new Map(
-      [
-        [...createDigitKeyCodes(), 'Minus', 'Equal'],
-        [...createKeyCodes('QWERTYUIOP'), ...createLeftRightKeyCodes('Bracket')],
-        [...createKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
-      ].flatMap(
-        (row, y) => row.map((code, x) => [code, [x-5, 1-y]])
-      )
-    );
-    const shiftLikeKeyCodes = ['Shift', 'Alt', 'Control', 'Meta'].flatMap(createLeftRightKeyCodes);
+    const createPcKeyboardBindings = () => {
+      const toLeftRightKeyCodes = (key) => ["Left", "Right"].map((lr) => `${key}${lr}`);
+      const toKeyCodes = (chars) => Array.from(chars, c => `Key${c}`);
+      const digitKeyCodes = Array.from({ length: 10 }, (_, d) => `Digit${d}`);
+      digitKeyCodes.push(digitKeyCodes.shift());
+      return [
+        new Map(
+          [
+            [...digitKeyCodes, 'Minus', 'Equal'],
+            [...toKeyCodes('QWERTYUIOP'), ...toLeftRightKeyCodes('Bracket')],
+            [...toKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
+          ].flatMap(
+            (codes, columnIndex) => codes.map((code, rowIndex) => [code, [columnIndex - 5, 1 - rowIndex]])
+          )
+        ),
+        ['Shift', 'Alt', 'Control', 'Meta'].flatMap(toLeftRightKeyCodes),
+      ];
+    }
+    const [pcKeyBindMap, shiftLikeKeyCodes] = createPcKeyboardBindings();
     let shiftButtonStatus;
     const handleEvent = (event, chord) => {
       switch( event.type ) {
