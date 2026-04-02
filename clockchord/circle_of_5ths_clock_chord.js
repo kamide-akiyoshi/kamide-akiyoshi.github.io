@@ -347,15 +347,11 @@ const CircleOfFifthsClock = class {
     },
     get moving() { return this._isMoving; }
   };
-  setupKeySignatureSelector = (dial) => {
+  setupKeySignatureSelector = () => {
     const selectElement = document.getElementById('keyselect') || {};
     const minorElement = document.getElementById('minor') || {};
     const enharmonicButton = document.getElementById('enharmonic');
     const keySignatureSelector = {
-      draw() {
-        this.chord?.keyOrChordChanged();
-        dial.draw();
-      },
       get numberOfSharps() { 
         return parseInt(selectElement.value);
       },
@@ -372,22 +368,22 @@ const CircleOfFifthsClock = class {
             style.visibility = 'hidden';
           }
         }
-        this.draw();
+        this.onChange?.();
       },
       get minor() { return minorElement.checked; },
-      set minor(isMinor) {
-        minorElement.checked = isMinor;
-        this.draw();
+      set minor(value) {
+        minorElement.checked = value;
+        this.onChange?.();
       },
       parse(value) {
         if( Array.isArray(value) ) {
           const [hour, minor] = value;
-          minorElement.checked = minor; // Without this.draw()
-          this.numberOfSharps = hour; // With this.draw()
+          minorElement.checked = minor;
+          this.numberOfSharps = hour;
           return;
         }
-        if( value === this.chord ) {
-          if( value.hasValue ) this.parse([value.hour, value.isMinor]);
+        if( value.hasValue ) { // Chord
+          this.parse([value.hour, value.isMinor]);
           return;
         }
         if( !value.split ) return;
@@ -402,6 +398,7 @@ const CircleOfFifthsClock = class {
         this.parse([hour, minor]);
       },
     };
+    minorElement.addEventListener?.('change', () => keySignatureSelector.onChange?.());
     if( selectElement.addEventListener ) {
       const option0 = selectElement.querySelector("option");
       for( let hour = -7; hour <= 7; hour++ ) {
@@ -420,7 +417,6 @@ const CircleOfFifthsClock = class {
         keySignatureSelector.numberOfSharps = enharmonicHour;
       }
     );
-    minorElement.addEventListener?.('change', () => keySignatureSelector.draw());
     keySignatureSelector.numberOfSharps = 0;
     return keySignatureSelector;
   };
@@ -775,7 +771,7 @@ const CircleOfFifthsClock = class {
       return;
     }
     dial.keySignatureTextAt0 = 'key/sus4';
-    const keySignatureSelector = dial.keySignatureSelector = this.setupKeySignatureSelector(dial);
+    const keySignatureSelector = this.setupKeySignatureSelector();
     const searchParams = new URLSearchParams(window.location.search);
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       keySignatureSelector,
@@ -784,7 +780,12 @@ const CircleOfFifthsClock = class {
       setDarkPlayMode,
       searchParams
     );
-    keySignatureSelector.chord = dial.chord = chord;
+    dial.chord = chord;
+    dial.keySignatureSelector = keySignatureSelector;
+    keySignatureSelector.onChange = () => {
+      chord.keyOrChordChanged();
+      dial.draw();
+    };
     (chord.buttonCanvas = buttonCanvas).focus();
     const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
     if( initialKeySig ) keySignatureSelector.parse(initialKeySig);
