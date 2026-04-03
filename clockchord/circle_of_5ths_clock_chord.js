@@ -110,9 +110,7 @@ const CircleOfFifthsClock = class {
         this.canvas.parentElement,
         this.chord?.dialCenterLabel.element,
       ].forEach((element) => {
-        if( !element ) return;
-        const cl = element.classList;
-        isDark ? cl.add('dark') : cl.remove('dark');
+        element?.classList[isDark ? 'add' : 'remove']('dark');
       });
       this.themeColor = CircleOfFifthsClock.themeColors[value];
       this.draw();
