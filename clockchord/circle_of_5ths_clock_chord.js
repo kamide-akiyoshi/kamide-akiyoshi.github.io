@@ -105,6 +105,10 @@ const CircleOfFifthsClock = class {
       this.themeColor = CircleOfFifthsClock.themeColors[value];
       this.draw();
     },
+    set backgroundMode(value) {
+      if( value === 'pie' ) this.isPieMode = true; else delete this.isPieMode;
+      this.draw();
+    },
     draw() {
       const { themeColor } = this;
       if( !themeColor ) return;
@@ -112,7 +116,7 @@ const CircleOfFifthsClock = class {
         canvas,
         center,
         borderRadius,
-        backgroundMode,
+        isPieMode,
         keySignatureSelector,
         keySignatureTextAt0,
       } = this;
@@ -123,7 +127,7 @@ const CircleOfFifthsClock = class {
       // Background
       const arcRadius = borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
-      if( backgroundMode === 'pie' ) {
+      if( isPieMode ) {
         themeColor.background.pie.map(
           (color, index) => {
             const relativeHour = 3 * index;
@@ -691,14 +695,6 @@ const CircleOfFifthsClock = class {
         osdc.width = width;
         osdc.height = height;
       }
-      const redrawTheme = (theme) => {
-        dial.theme = theme;
-        hands.draw();
-      };
-      const redrawBackgroundMode = (mode) => {
-        dial.backgroundMode = mode;
-        dial.draw();
-      };
       const darkModeSelect = document.getElementById('theme_select');
       if( darkModeSelect ) {
         Object.defineProperty(darkModeSelect, 'value', {
@@ -707,26 +703,30 @@ const CircleOfFifthsClock = class {
           },
           get: () => darkModeSelect.querySelector('input:checked')?.value,
         });
-        // Let the darkModeSelect (<div> element) detect the change event bubbled from child radio button
-        darkModeSelect.addEventListener('change', (event) => redrawTheme(event.target.value));
+        darkModeSelect.addEventListener('change', (event) => {
+          dial.theme = event.target.value;
+          hands.draw();
+        });
       }
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const setSystemTheme = () => {
         const systemTheme = darkModeMediaQuery.matches ? 'dark' : 'light';
         darkModeSelect && (darkModeSelect.value = systemTheme);
-        redrawTheme(systemTheme);
+        dial.theme = systemTheme;
+        hands.draw();
       };
       darkModeMediaQuery.addEventListener('change', setSystemTheme);
       const backgroundModeSelect = document.getElementById('background_mode_select');
       if( backgroundModeSelect ) {
-        dial.backgroundModeSelect = backgroundModeSelect;
         Object.defineProperty(backgroundModeSelect, 'value', {
           set: (value) => {
             backgroundModeSelect.querySelector(`input[value="${value}"]:not(:checked)`)?.click();
           },
           get: () => backgroundModeSelect.querySelector('input:checked')?.value,
         });
-        backgroundModeSelect.addEventListener('change', e => redrawBackgroundMode(e.target.value));
+        backgroundModeSelect.addEventListener('change', (event) => {
+          dial.backgroundMode = event.target.value;
+        });
         dial.backgroundMode = backgroundModeSelect.value;
       } else {
         dial.backgroundMode = "donut";
@@ -734,8 +734,13 @@ const CircleOfFifthsClock = class {
       if( darkModeSelect || backgroundModeSelect ) {
         // Restore the currently selected theme display when page back
         window.addEventListener("pageshow", () => {
-          darkModeSelect && redrawTheme(darkModeSelect.value);
-          backgroundModeSelect && redrawBackgroundMode(backgroundModeSelect.value);
+          if( darkModeSelect ) {
+            dial.theme = darkModeSelect.value;
+            hands.draw();
+          }
+          if( backgroundModeSelect ) {
+            dial.backgroundMode = backgroundModeSelect.value;
+          }
         });
       }
       const chordButtonCanvas = document.getElementById('circleOfFifthsClockChordButtonCanvas');
