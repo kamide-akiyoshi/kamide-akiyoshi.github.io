@@ -96,14 +96,6 @@ const CircleOfFifthsClock = class {
   dial = {
     keySignatureTextAt0: 'key',
     borderRadius: [0.14, 0.29, 0.42, 0.5],
-    has(r) {
-      const br = this.borderRadius;
-      return r <= br[3] && r >= br[0];
-    },
-    toOffset3rd(r) {
-      const br = this.borderRadius;
-      return r < br[1] ? -1 : r > br[2] ?  1 : 0;
-    },
     set theme(value) {
       const addOrRemove = value === 'dark' ? 'add' : 'remove';
       [
@@ -848,9 +840,10 @@ const CircleOfFifthsClock = class {
             const x = ( clientX - (left + right) / 2 ) / canvas.width;
             const y = ( clientY - (top + bottom) / 2 ) / canvas.height;
             const r = Math.sqrt( x ** 2 + y ** 2 );
-            if( ! dial.has(r) ) return;
+            const br = dial.borderRadius;
+            if( r > br[3] || r < br[0] ) return;
             canvas.focus();
-            chord.offset3rd = dial.toOffset3rd(r);
+            chord.offset3rd = r < br[1] ? -1 : r > br[2] ? 1 : 0;
             chord.hour = Math.round( (canvas.lastHourAngle = Math.atan2(x, -y)) * 6 / Math.PI );
             delete chord.majorBassHour;
           }
