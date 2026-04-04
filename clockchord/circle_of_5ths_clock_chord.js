@@ -106,21 +106,22 @@ const CircleOfFifthsClock = class {
       this.draw();
     },
     draw() {
-      const dial = this;
-      const { keySignatureSelector } = dial;
+      const { themeColor } = this;
+      if( !themeColor ) return;
       const {
         canvas,
         center,
-        themeColor,
+        borderRadius,
         backgroundMode,
-      } = dial;
-      if( !themeColor ) return;
+        keySignatureSelector,
+        keySignatureTextAt0,
+      } = this;
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const selectedKeyHour = keySignatureSelector?.numberOfSharps;
       const isMinorKey = keySignatureSelector?.minor;
       // Background
-      const arcRadius = dial.borderRadius.map(r => r * width);
+      const arcRadius = borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
       if( backgroundMode === 'pie' ) {
         themeColor.background.pie.map(
@@ -174,8 +175,8 @@ const CircleOfFifthsClock = class {
         let tt = t + Math.PI / 12;
         let xx = center.dx(tt);
         let yy = center.dy(tt);
-        let r0 = dial.borderRadius[0];
-        let r1 = dial.borderRadius[3];
+        let r0 = borderRadius[0];
+        let r1 = borderRadius[3];
         context.strokeStyle = themeColor.hourBorder[(relativeHour + 24) % 3 == 1 ? 'coarse' : 'fine'];
         context.beginPath();
         context.moveTo( center.x + r0*xx, center.y + r0*yy );
@@ -183,7 +184,7 @@ const CircleOfFifthsClock = class {
         context.stroke();
         // Dot
         context.fillStyle = themeColor.grayoutForeground;
-        r0 = dial.borderRadius[2];
+        r0 = borderRadius[2];
         xx = x; yy = y;
         for( let i = 0; i < 5; i++ ) {
           if( i ) {
@@ -197,7 +198,7 @@ const CircleOfFifthsClock = class {
         }
         // Text
         const drawText = (text, r) => context.fillText(text, center.x + r*x, center.y + r*y);
-        const keySignatureText = hour ? Music.keySignatureTextAt(hour) : dial.keySignatureTextAt0 ;
+        const keySignatureText = hour ? Music.keySignatureTextAt(hour) : keySignatureTextAt0 ;
         const majorText = Music.majorMinorTextOf(hour);
         const minorText = Music.majorMinorTextOf(hour, true);
         context.fillStyle = textColorAt(relativeHour);
