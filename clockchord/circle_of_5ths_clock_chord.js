@@ -728,8 +728,6 @@ const CircleOfFifthsClock = class {
           dial.backgroundMode = event.target.value;
         });
         dial.backgroundMode = backgroundModeSelect.value;
-      } else {
-        dial.backgroundMode = "donut";
       }
       if( darkModeSelect || backgroundModeSelect ) {
         // Restore the currently selected theme display when page back
