@@ -742,28 +742,27 @@ const PianoKeyboard = class {
       manualNoteOn(noteNumber, currentIndex + 1);
     },
   };
-  createSelectedMidiOutputPorts = () => {
-    const ports = [];
-    ports.addPort = port => ports.push(port);
-    ports.removePort = port => {
-      const i = ports.findIndex(p => p.id === port.id);
-      i < 0 || ports.splice(i, 1);
-    };
-    ports.send = (message) => ports.forEach(port => port.send(message));
-    ports.noteOn = (channel, noteNumber, velocity = 64) => ports.send([0x90 + channel, noteNumber, velocity]);
-    ports.noteOff = (channel, noteNumber) => ports.send([0x90 + channel, noteNumber, 0]);
-    ports.programChange = (channel, programNumber) => ports.send([0xC0 + channel, programNumber]);
-    return ports;
-  };
-  setupMidiPorts = () => {
+  setupMidiPorts = (midiMessageListener) => {
     const midiElement = document.getElementById('midi');
     if( ! midiElement ) return;
     if( ! window.isSecureContext ) {
       console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
     }
     // MIDI port selector
-    const midiMessageListener = msg => this.handleMidiMessage(msg.data);
-    const selectedMidiOutputPorts = this.selectedMidiOutputPorts = this.createSelectedMidiOutputPorts();
+    const createSelectedMidiOutputPorts = () => {
+      const ports = [];
+      ports.addPort = port => ports.push(port);
+      ports.removePort = port => {
+        const i = ports.findIndex(p => p.id === port.id);
+        i < 0 || ports.splice(i, 1);
+      };
+      ports.send = (message) => ports.forEach(port => port.send(message));
+      ports.noteOn = (channel, noteNumber, velocity = 64) => ports.send([0x90 + channel, noteNumber, velocity]);
+      ports.noteOff = (channel, noteNumber) => ports.send([0x90 + channel, noteNumber, 0]);
+      ports.programChange = (channel, programNumber) => ports.send([0xC0 + channel, programNumber]);
+      return ports;
+    };
+    const selectedMidiOutputPorts = createSelectedMidiOutputPorts();
     const checkboxes = {
       eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
       get: port => midiElement.querySelector(`input[value="${port.id}"]`),
@@ -822,8 +821,9 @@ const PianoKeyboard = class {
     }).catch(msg => {
       alert(msg);
     });
+    return selectedMidiOutputPorts;
   };
-  setupWebMidiLink = () => {
+  setupWebMidiLink = (handleMidiMessage) => {
     window.addEventListener('message', event => {
       if( ! event.data.split ) {
         // Ignore the message from the other message source (Such as Songle)
@@ -833,41 +833,35 @@ const PianoKeyboard = class {
       const msgType = msg.shift();
       switch(msgType) {
         case 'midi':
-          this.handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+          handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
           break;
       }
     });
     const urlElement = document.getElementById('WebMidiLinkUrl');
     const loadButton = document.getElementById('LoadWebMidiLinkUrl');
-    loadButton.disabled = true;
-    urlElement.addEventListener("input", (event) => {
-      loadButton.disabled = !event.target.value;
-    });
     const iFrame = document.getElementById('WebMidiLinkSynth');
     if( urlElement && loadButton && iFrame ) {
       const parent = iFrame.parentNode;
       const attach = () => parent.contains(iFrame) || parent.appendChild(iFrame);
       const detach = () => parent.contains(iFrame) && parent.removeChild(iFrame);
       const send = (msg) => {
+        const { contentWindow } = iFrame;
+        if( !contentWindow ) return;
         const str = msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi");
-        iFrame.contentWindow.postMessage(str, "*");
+        contentWindow.postMessage(str, "*");
       };
       detach();
       loadButton.addEventListener('click', () => {
         const url = urlElement.value;
         if( url ) {
           attach();
-          iFrame.onload = () => {
-            this.sendWebMidiLinkMessage = send;
-          };
           iFrame.src = url;
         } else {
-          delete this.sendWebMidiLinkMessage;
-          iFrame.onload = undefined;
           iFrame.src = undefined;
           detach();
         }
       });
+      return send;
     }
   };
   setupMidiSequencer = (keySignatureSelector, beatCanvas, setDarkPlayMode) => {
@@ -1201,9 +1195,7 @@ const PianoKeyboard = class {
         case 0x59:
           {
             const { keySignature: hour, minor } = event;
-            const { chord } = this;
             keySignatureSelector.parse([hour, minor]);
-            chord.clear(); // Unselect chord to hide key signature change button
           }
           break;
         default:
@@ -1833,6 +1825,7 @@ const PianoKeyboard = class {
     this.synth = new SimpleSynthesizer();
     const {
       chord,
+      handleMidiMessage,
       createVelocitySlider,
       createMidiChannelSelector,
       setupMidiPorts,
@@ -1844,8 +1837,8 @@ const PianoKeyboard = class {
     chord.setup(keySignatureSelector);
     this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = createMidiChannelSelector();
-    setupMidiPorts();
-    setupWebMidiLink();
+    this.selectedMidiOutputPorts = setupMidiPorts((msg) => handleMidiMessage(msg.data));
+    this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     setupMidiSequencer(keySignatureSelector, beatCanvas, setDarkPlayMode);
     setupPianoKeyboard();
     setupSongle(chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams);
