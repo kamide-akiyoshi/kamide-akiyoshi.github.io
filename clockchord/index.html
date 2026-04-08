@@ -318,7 +318,7 @@
 		border-radius: 4px;
 	}
 	#midi_sequencer > *, #midi_sequence > * {
-		margin-top: 8px;
+		margin-top: 4px;
 	}
 	#midi_sequencer > *:last-child {
 		margin-top: 8px;
@@ -330,8 +330,10 @@
 	.grayout {
 		color: #808080;
 	}
-	#midi_sequence > .controller {
+	#midi_sequence .song_title_row {
 		display: flex;
+		align-items: center;
+		gap: 8px;
 	}
 	#song_title {
 	  font-size: 1.2em;
@@ -552,20 +554,18 @@
     <fieldset id="midi_sequencer">
       <legend>MIDI player</legend>
       <div id="midi_sequence">
-        <div id="song_title"></div>
-        <div class="controller">
-          <div id="midi_timeline_left">
-            <button id="play_pause">
-              <img id="play_pause_icon" src="image/play-button-svgrepo-com.svg" alt="Play"/>
-            </button>
-            <span id="time_signature" class="grayout">4/4</span>
-          </div>
-          <div id="midi_timeline">
-            <input type="range" id="time_position" value="0" min="0" max="1" step="1"></input>
-            <div id="midi_key_timeline" class="key_timeline"></div>
-          </div>
+		<div class="song_title_row">
+		  <button id="play_pause">
+		    <img id="play_pause_icon" src="image/play-button-svgrepo-com.svg" alt="Play"/>
+		  </button>
+          <div id="song_title"></div>
+		</div>
+		<div id="midi_timeline">
+		  <input type="range" id="time_position" value="0" min="0" max="1" step="1"></input>
+		  <div id="midi_key_timeline" class="key_timeline"></div>
         </div>
         <div>
+		  <span id="time_signature" class="grayout">4/4</span>
           <span id="tempo" class="grayout">𝅘𝅥 = 120</span>
           <span id="song_marker"></span>
         </div>
