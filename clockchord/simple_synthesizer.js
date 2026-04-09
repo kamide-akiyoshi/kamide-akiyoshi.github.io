@@ -393,6 +393,7 @@ const SimpleSynthesizer = class {
     {length: 128},
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
+  static NUMBER_OF_CHANNELS = 16;
   static {
     try {
       const AudioContext = window.AudioContext ?? window.webkitAudioContext;
@@ -522,7 +523,7 @@ const SimpleSynthesizer = class {
     };
     const { PERCUSSION_CHANNEL, pitchBendToCent } = SimpleSynthesizer;
     this.midiChannels = Array.from(
-      {length: 16},
+      {length: this.constructor.NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
         const channel = {
           isForPercussion: channelNumber == PERCUSSION_CHANNEL,

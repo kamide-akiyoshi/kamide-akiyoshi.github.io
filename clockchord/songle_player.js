@@ -1,0 +1,198 @@
+
+const setupSongle = (chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams) => {
+  const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
+  const HTTPS_URL_PREFIX = "https://";
+  const urlInput = document.getElementById("SongleUrl");
+  const songKeyInput = document.getElementById("SongleKeySig");
+  const loadButton = document.getElementById("LoadSongleUrl");
+  const widgetParent = document.getElementById("EmbeddedSongle");
+  const errorMessageElement = document.getElementById("SongleErrorMessage");
+  const keyTimelineElement = document.getElementById("SongleKeyTimeline");
+  const positionCaptureButton = document.getElementById("songleCapturePosition");
+  let currentPosition = 0;
+  let duration = 0;
+  positionCaptureButton.addEventListener("click", () => {
+    navigator.clipboard.writeText(`${currentPosition}`);
+  });
+  const positionElement = document.getElementById("songlePosition");
+  const tempoElement = document.getElementById("songleTempo");
+  const chordElement = document.getElementById("songleChord");
+  const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
+  autoChordPlayCheckbox.addEventListener("change", (event) => {
+    event.target.checked ? chord.clear() : chord.stop();
+  });
+  const toSongKeyTimeline = (text) => {
+    if (!text) return;
+    let t;
+    const timeline = text.split(",").reduce((tl, token, index) => {
+      if (index & 1) {
+        tl.push(t = { position: parseInt(token) });
+      } else {
+        t.key = token;
+      }
+      return tl;
+    }, [t = { position: 0 }]);
+    let nextIndex = 1;
+    let nextPosition = timeline[nextIndex]?.position;
+    timeline.handleBeatPlay = (newPosition) => {
+      if (nextPosition > newPosition) return;
+      const t = timeline[nextIndex];
+      if (t) keySignatureSelector.parse(t.key);
+      nextPosition = timeline[++nextIndex]?.position;
+    };
+    timeline.handleSeek = (newPosition) => {
+      nextIndex = timeline.findIndex((t) => t.position > newPosition);
+      if (nextIndex < 0) nextIndex = timeline.length;
+      keySignatureSelector.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
+      nextPosition = timeline[nextIndex]?.position;
+    };
+    return timeline;
+  };
+  keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
+    while (keyTimelineElement.firstChild) {
+      keyTimelineElement.removeChild(keyTimelineElement.firstChild);
+    }
+    if (!songKeyTimeline) {
+      return;
+    }
+    songKeyTimeline.forEach((t, i) => {
+      const { position, key } = t;
+      const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
+      const element = document.createElement("div");
+      element.textContent = i ? key : `🔑${key}`;
+      element.classList.add("key");
+      element.style.width = `${(endPosition - position) / duration * 100}%`;
+      keyTimelineElement.appendChild(element);
+    });
+  };
+  const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
+  const errorMessages = {
+    100: "Could not embed: Song deleted",
+    101: "Could not embed: Not permitted",
+    200: "Music map loading aborted",
+    201: "Music map loading failed",
+    300: "Sound file (mp3) download failed",
+  };
+  let widgetElement, widget;
+  const removeSongle = () => {
+    positionCaptureButton.style.display = "none";
+    delete window.onSongleWidgetReady;
+    delete window.onSongleWidgetError;
+    chord.stop();
+    if (widgetElement) {
+      widgetElement.remove();
+      widgetElement = undefined;
+    }
+    keyTimelineElement.setSongKeyTimeline();
+    [
+      tempoElement,
+      positionElement,
+      chordElement,
+      errorMessageElement
+    ].forEach((element) => element.textContent = "");
+    PianoKeyboard.setSongTitleToDocument(undefined);
+  };
+  const loadSongle = (urlText, songKeyTimelineText) => {
+    if (!widgetParent) {
+      alert("Parent element not found to embed the Songle Widget");
+      return;
+    }
+    if (widget) {
+      const { remove } = widget;
+      if (remove) {
+        remove();
+      } else {
+        console.warn("Function widget.remove() undefined, so skipped");
+      }
+      widget = undefined;
+      removeSongle();
+    }
+    urlInput.value = urlText;
+    songKeyInput.value = songKeyTimelineText;
+    if (!urlText) {
+      return;
+    }
+    if (!songKeyTimelineText && typeof SONG_KEYS !== "undefined") {
+      songKeyInput.value = SONG_KEYS.get(urlText) ?? "";
+    }
+    const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
+    widgetElement = SongleWidgetAPI.createSongleWidgetElement({
+      api: "songle-link",
+      url: urlText,
+      songAutoPlay: true,
+      videoPlayerSizeW: "auto",
+      videoPlayerSizeH: "auto",
+      songleWidgetSizeW: "auto",
+    });
+    widgetParent.insertBefore(widgetElement, keyTimelineElement);
+    window.onSongleWidgetReady = (apiKey, songleWidget) => {
+      const { song } = widget = songleWidget;
+      PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
+      keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
+      duration = formatTime(widget.duration);
+      currentPosition = formatTime(widget.position);
+      positionCaptureButton.style.display = "unset";
+      positionElement.textContent = `${currentPosition}/${duration}[ms]`
+      widget.on("chordPlay", (event) => {
+        const chordSymbol = event.chord.name;
+        chordElement.textContent = chordSymbol;
+        if (autoChordPlayCheckbox.checked) {
+          chord.parseText(chordSymbol);
+          chord.start();
+        }
+      });
+      widget.on("beatPlay", (event) => {
+        const numerator = event.bar.beats.length || 4;
+        const position = event.beat.position;
+        beatCanvas?.drawBeat(position - 1, numerator);
+        if (autoChordPlayCheckbox.checked) {
+          chord.start();
+        }
+        currentPosition = formatTime(widget.position);
+        positionCaptureButton.style.display = "unset";
+        positionElement.textContent = `${currentPosition}/${duration}[ms]`
+        tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
+        songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
+      });
+      const handleSeek = () => {
+        songKeyTimeline && setTimeout(() => songKeyTimeline.handleSeek(widget.position.milliseconds), 0);
+      };
+      widget.on("seek", handleSeek);
+      widget.on("play", handleSeek);
+      widget.on("pause", () => { chord.stop(); });
+      widget.on("finish", () => {
+        chord.stop();
+        chordElement.textContext = "";
+      });
+      setDarkPlayMode();
+    };
+    window.onSongleWidgetError = (apiKey, songleWidget) => {
+      const { status } = widget = songleWidget;
+      const formattedMessage = `Songle error ${status} : ${errorMessages[status] ?? "Unknown error"}`;
+      if (errorMessageElement) {
+        errorMessageElement.textContent = formattedMessage;
+      } else {
+        alert(formattedMessage);
+      }
+    };
+  };
+  loadButton?.addEventListener("click", () => {
+    let url = urlInput.value;
+    try {
+      // Decode if percent-encoded URL entered (such as the content URL copied from Songle URL)
+      url = decodeURIComponent(url);
+      if (url.startsWith(SONGLE_SONG_URL_PREFIX)) {
+        url = url.replace(SONGLE_SONG_URL_PREFIX, "");
+      } else if (url.startsWith(HTTPS_URL_PREFIX)) {
+        url = url.replace(HTTPS_URL_PREFIX, "");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    loadSongle(url, songKeyInput.value);
+  });
+  const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
+  if (initialUrlText) {
+    loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"));
+  }
+};
