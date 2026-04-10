@@ -1,5 +1,5 @@
 
-const setupMidiSequencer = (sendMidiMessage, keySignatureSelector, beatCanvas, setDarkPlayMode) => {
+const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, setDarkPlayMode) => {
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
   const hasValidChunkId = (byteArray, validChunk) => {
@@ -328,10 +328,7 @@ const setupMidiSequencer = (sendMidiMessage, keySignatureSelector, beatCanvas, s
         }
         break;
       case 0x59:
-        {
-          const { keySignature: hour, minor } = event;
-          keySignatureSelector.parse([hour, minor]);
-        }
+        onChangeKey?.([event.keySignature, event.minor]);
         break;
       default:
         if( "text" in event ) {
@@ -514,7 +511,7 @@ const setupMidiSequencer = (sendMidiMessage, keySignatureSelector, beatCanvas, s
     } = lastTimeSignatureEvent;
     const newBeat = tick ? Math.floor((tick - startTick) / ticksPerBeat) % numerator : undefined;
     if( beat === newBeat ) return;
-    beatCanvas?.drawBeat(beat = newBeat, numerator);
+    onChangeBeat?.(beat = newBeat, numerator);
   };
   const INTERVAL_MILLI_SEC = 10;
   let ticksPerInterval;

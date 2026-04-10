@@ -1,5 +1,5 @@
 
-const setupSongle = (chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams) => {
+const setupSongle = (chord, onChangeKey, onChangeBeat, setDarkPlayMode, searchParams) => {
   const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
   const HTTPS_URL_PREFIX = "https://";
   const urlInput = document.getElementById("SongleUrl");
@@ -37,13 +37,13 @@ const setupSongle = (chord, keySignatureSelector, beatCanvas, setDarkPlayMode, s
     timeline.handleBeatPlay = (newPosition) => {
       if (nextPosition > newPosition) return;
       const t = timeline[nextIndex];
-      if (t) keySignatureSelector.parse(t.key);
+      if (t) onChangeKey?.(t.key);
       nextPosition = timeline[++nextIndex]?.position;
     };
     timeline.handleSeek = (newPosition) => {
       nextIndex = timeline.findIndex((t) => t.position > newPosition);
       if (nextIndex < 0) nextIndex = timeline.length;
-      keySignatureSelector.parse(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
+      onChangeKey?.(timeline[nextIndex > 0 ? nextIndex - 1 : 0].key);
       nextPosition = timeline[nextIndex]?.position;
     };
     return timeline;
@@ -144,7 +144,7 @@ const setupSongle = (chord, keySignatureSelector, beatCanvas, setDarkPlayMode, s
       widget.on("beatPlay", (event) => {
         const numerator = event.bar.beats.length || 4;
         const position = event.beat.position;
-        beatCanvas?.drawBeat(position - 1, numerator);
+        onChangeBeat?.(position - 1, numerator);
         if (autoChordPlayCheckbox.checked) {
           chord.start();
         }

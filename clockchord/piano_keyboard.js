@@ -787,9 +787,16 @@ const PianoKeyboard = class {
           console.error(midiMessage, e);
         }
       },
-      keySignatureSelector, beatCanvas, setDarkPlayMode
+      (hourAndMinor) => keySignatureSelector.parse(hourAndMinor),
+      beatCanvas?.drawBeat,
+      setDarkPlayMode
     );
-    setupSongle(chord, keySignatureSelector, beatCanvas, setDarkPlayMode, searchParams);
+    setupSongle(
+      chord,
+      (key) => keySignatureSelector.parse(key),
+      beatCanvas?.drawBeat,
+      setDarkPlayMode, searchParams
+    );
     setupPianoKeyboard();
   }
 }
