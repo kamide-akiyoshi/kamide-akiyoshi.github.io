@@ -269,16 +269,6 @@ const PianoKeyboard = class {
       this.envelopeView.envelope = m.envelope;
     },
   };
-  createVelocitySlider = () => {
-    const velocitySlider = document.getElementById('velocity') ?? { value: 64 };
-    const velocityValue = document.getElementById('velocityValue');
-    if( velocityValue ) {
-      const handleInput = () => velocityValue.textContent = velocitySlider.value;
-      handleInput();
-      velocitySlider.addEventListener?.("input", handleInput);
-    }
-    return velocitySlider;
-  }
   createMidiChannelSelector = () => {
     const selector = document.getElementById('midi_channel');
     Array.from(
@@ -768,13 +758,20 @@ const PianoKeyboard = class {
     const {
       chord,
       handleMidiMessage,
-      createVelocitySlider,
-      createMidiChannelSelector,
-      setupPianoKeyboard,
     } = this;
     chord.setup(keySignatureSelector);
+    const createVelocitySlider = () => {
+      const velocitySlider = document.getElementById('velocity') ?? { value: 64 };
+      const velocityValue = document.getElementById('velocityValue');
+      if( velocityValue ) {
+        const handleInput = () => velocityValue.textContent = velocitySlider.value;
+        handleInput();
+        velocitySlider.addEventListener?.("input", handleInput);
+      }
+      return velocitySlider;
+    };
     this.velocitySlider = createVelocitySlider();
-    this.midiChannelSelector = createMidiChannelSelector();
+    this.midiChannelSelector = this.createMidiChannelSelector();
     this.selectedMidiOutputPorts = setupMidiPorts(
       (msg) => {
         const { data } = msg;
@@ -803,6 +800,6 @@ const PianoKeyboard = class {
       beatCanvas?.drawBeat,
       setDarkPlayMode, searchParams
     );
-    setupPianoKeyboard();
+    this.setupPianoKeyboard();
   }
 }
