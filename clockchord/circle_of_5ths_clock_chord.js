@@ -508,7 +508,7 @@ const CircleOfFifthsClock = class {
     const { chord } = this.pianokeyboard = new PianoKeyboard(
       keySignatureSelector,
       setupToneIndicatorCanvas(dial, keySignatureSelector),
-      setupBeatCanvas(dial, keySignatureSelector),
+      setupBeatCanvas(dial, keySignatureSelector)?.drawBeat,
       setDarkPlayMode,
       searchParams
     );

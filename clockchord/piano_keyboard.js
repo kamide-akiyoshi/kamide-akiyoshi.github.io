@@ -752,7 +752,7 @@ const PianoKeyboard = class {
     keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
-  constructor(keySignatureSelector, toneIndicatorCanvas, beatCanvas, setDarkPlayMode, searchParams) {
+  constructor(keySignatureSelector, toneIndicatorCanvas, onChangeBeat, setDarkPlayMode, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
     const {
@@ -791,14 +791,15 @@ const PianoKeyboard = class {
         }
       },
       (hourAndMinor) => keySignatureSelector.parse(hourAndMinor),
-      beatCanvas?.drawBeat,
+      onChangeBeat,
       setDarkPlayMode
     );
     setupSongle(
       chord,
       (key) => keySignatureSelector.parse(key),
-      beatCanvas?.drawBeat,
-      setDarkPlayMode, searchParams
+      onChangeBeat,
+      setDarkPlayMode,
+      searchParams
     );
     this.setupPianoKeyboard();
   }
