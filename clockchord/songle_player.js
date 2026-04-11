@@ -1,5 +1,5 @@
 
-const setupSongle = (chord, onChangeKey, onChangeBeat, setDarkPlayMode, searchParams) => {
+const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) => {
   const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
   const HTTPS_URL_PREFIX = "https://";
   const urlInput = document.getElementById("SongleUrl");
@@ -164,7 +164,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, setDarkPlayMode, searchPa
         chord.stop();
         chordElement.textContext = "";
       });
-      setDarkPlayMode();
+      onReady?.();
     };
     window.onSongleWidgetError = (apiKey, songleWidget) => {
       const { status } = widget = songleWidget;

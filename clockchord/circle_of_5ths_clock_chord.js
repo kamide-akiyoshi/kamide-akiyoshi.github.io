@@ -497,7 +497,7 @@ const CircleOfFifthsClock = class {
     }
     window.addEventListener("load", loader);
   };
-  listen = (buttonCanvas, dial, setDarkPlayMode) => {
+  listen = (buttonCanvas, dial, onSongReady) => {
     if( this.pianokeyboard ) {
       console.warn('CircleOfFifthsClock: listen(): Already listening');
       return;
@@ -509,7 +509,7 @@ const CircleOfFifthsClock = class {
       keySignatureSelector,
       setupToneIndicatorCanvas(dial, keySignatureSelector),
       setupBeatCanvas(dial, keySignatureSelector)?.drawBeat,
-      setDarkPlayMode,
+      onSongReady,
       searchParams
     );
     dial.chord = chord;

@@ -1,5 +1,5 @@
 
-const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, setDarkPlayMode) => {
+const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, onReady) => {
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
   const hasValidChunkId = (byteArray, validChunk) => {
@@ -404,9 +404,9 @@ const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, setDarkP
     timeSignatureElement.textContent = "4/4";
     tickPositionSlider.max = midiSequence.tickLength;
     setSongKeyTimeline(midiSequence.keySignatures, midiSequence.tickLength);
-    setDarkPlayMode();
     setTickPosition(0);
     midiSequencerElement.prepend(midiSequenceElement);
+    onReady?.();
   };
   const loadMidiUrl = (url) => {
     fetch(url).then((response) => {
