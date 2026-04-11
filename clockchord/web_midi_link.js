@@ -1,5 +1,5 @@
 
-const setupWebMidiLink = (handleMidiMessage) => {
+const setupWebMidiLink = (receiveMidiMessage) => {
   window.addEventListener('message', event => {
     if( ! event.data.split ) {
       // Ignore the message from the other message source (Such as Songle)
@@ -9,7 +9,7 @@ const setupWebMidiLink = (handleMidiMessage) => {
     const msgType = msg.shift();
     switch(msgType) {
       case 'midi':
-        handleMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+        receiveMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
         break;
     }
   });
@@ -20,7 +20,7 @@ const setupWebMidiLink = (handleMidiMessage) => {
     const parent = iFrame.parentNode;
     const attach = () => parent.contains(iFrame) || parent.appendChild(iFrame);
     const detach = () => parent.contains(iFrame) && parent.removeChild(iFrame);
-    const send = (msg) => {
+    const sendMidiMessage = (msg) => {
       const { contentWindow } = iFrame;
       if( !contentWindow ) return;
       const str = msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi");
@@ -37,6 +37,6 @@ const setupWebMidiLink = (handleMidiMessage) => {
         detach();
       }
     });
-    return send;
+    return sendMidiMessage;
   }
 };

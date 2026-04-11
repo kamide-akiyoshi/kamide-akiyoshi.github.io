@@ -775,11 +775,17 @@ const PianoKeyboard = class {
     chord.setup(keySignatureSelector);
     this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = createMidiChannelSelector();
-    this.selectedMidiOutputPorts = setupMidiPorts((msg) => handleMidiMessage(msg.data));
+    this.selectedMidiOutputPorts = setupMidiPorts(
+      (msg) => {
+        const { data } = msg;
+        handleMidiMessage(data);
+        this.sendWebMidiLinkMessage?.(data);
+      }
+    );
     this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     setupMidiSequencer(
       (midiMessage) => {
-        this.handleMidiMessage(midiMessage);
+        handleMidiMessage(midiMessage);
         this.sendWebMidiLinkMessage?.(midiMessage);
         try {
           this.selectedMidiOutputPorts?.send(midiMessage);
