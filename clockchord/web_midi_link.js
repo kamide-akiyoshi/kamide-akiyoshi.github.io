@@ -1,15 +1,16 @@
 
-const setupWebMidiLink = (receiveMidiMessage) => {
+const setupWebMidiLink = (onMessage) => {
+  const ID_MIDI = "midi";
   window.addEventListener('message', event => {
-    if( ! event.data.split ) {
-      // Ignore the message from the other message source (Such as Songle)
+    const msg = event.data.split?.(",");
+    if( ! msg ) {
+      // Ignore non-string message from other source (such as Songle)
       return;
     }
-    const msg = event.data.split(",");
-    const msgType = msg.shift();
-    switch(msgType) {
-      case 'midi':
-        receiveMidiMessage(msg.map(hexStr => parseInt(hexStr, 16)));
+    const id = msg.shift();
+    switch(id) {
+      case ID_MIDI:
+        onMessage?.(msg.map(hexStr => parseInt(hexStr, 16)));
         break;
     }
   });
@@ -20,12 +21,6 @@ const setupWebMidiLink = (receiveMidiMessage) => {
     const parent = iFrame.parentNode;
     const attach = () => parent.contains(iFrame) || parent.appendChild(iFrame);
     const detach = () => parent.contains(iFrame) && parent.removeChild(iFrame);
-    const sendMidiMessage = (msg) => {
-      const { contentWindow } = iFrame;
-      if( !contentWindow ) return;
-      const str = msg.reduce((str, num) => `${str},${(num).toString(16)}`, "midi");
-      contentWindow.postMessage(str, "*");
-    };
     detach();
     loadButton.addEventListener('click', () => {
       const url = urlElement.value;
@@ -37,6 +32,11 @@ const setupWebMidiLink = (receiveMidiMessage) => {
         detach();
       }
     });
-    return sendMidiMessage;
+    return (msg) => {
+      iFrame.contentWindow?.postMessage(
+        msg.reduce((str, num) => `${str},${(num).toString(16)}`, ID_MIDI),
+        "*"
+      );
+    };
   }
 };
