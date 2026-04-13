@@ -408,23 +408,6 @@ const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, onReady)
     midiSequencerElement.prepend(midiSequenceElement);
     onReady?.();
   };
-  const loadMidiUrl = (url) => {
-    fetch(url).then((response) => {
-      if( response.status && !response.ok ) {
-        throw `HTTP error: status = ${response.status}`;
-      }
-      return response.arrayBuffer();
-    }).then((ab) => {
-      if( !ab.byteLength ) throw "Empty";
-      const seq = parseMidiSequence(new Uint8Array(ab))
-      midiFileNameElement.textContent = url.split("/").pop();
-      setMidiSequence(seq);
-      play();
-    }).catch((error) => {
-      console.error(`Could not load URL: ${url}:`, error);
-      alert(error);
-    });
-  };
   const loadMidiFile = (file) => {
     if( !file ) return;
     file.arrayBuffer().then((ab) => {
