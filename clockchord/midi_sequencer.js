@@ -1,5 +1,5 @@
 
-const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, onReady) => {
+const setupMidiSequenceParser = () => {
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
   const hasValidChunkId = (byteArray, validChunk) => {
@@ -282,6 +282,10 @@ const setupMidiSequencer = (sendMidiMessage, onChangeKey, onChangeBeat, onReady)
     if( title ) sequence.title = title;
     return sequence;
   };
+  return parseMidiSequence;
+};
+
+const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onChangeBeat, onReady) => {
   let lastTimeSignatureEvent;
   const currentLyrics = {
     element: document.getElementById("lyrics"),

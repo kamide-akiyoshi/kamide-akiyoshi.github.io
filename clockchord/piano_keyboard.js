@@ -781,6 +781,7 @@ const PianoKeyboard = class {
     );
     this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     setupMidiSequencer(
+      setupMidiSequenceParser(),
       (midiMessage) => {
         handleMidiMessage(midiMessage);
         this.sendWebMidiLinkMessage?.(midiMessage);
