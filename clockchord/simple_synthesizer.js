@@ -387,7 +387,6 @@ const INSTRUMENTS = [
 ];
 
 const SimpleSynthesizer = class {
-  static pitchBendToCent(value, sensitivity) { return 100 * sensitivity * value / (1 << 13); };
   static PERCUSSION_CHANNEL = 9;
   static FREQUENCIES = Array.from(
     {length: 128},
@@ -521,7 +520,8 @@ const SimpleSynthesizer = class {
       };
       return voice;
     };
-    const { PERCUSSION_CHANNEL, pitchBendToCent } = SimpleSynthesizer;
+    const pitchBendToCent = (value, sensitivity) => 100 * sensitivity * value / (1 << 13);
+    const { PERCUSSION_CHANNEL } = SimpleSynthesizer;
     this.midiChannels = Array.from(
       {length: this.constructor.NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
