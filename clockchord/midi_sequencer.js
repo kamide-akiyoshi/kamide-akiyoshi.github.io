@@ -1,5 +1,5 @@
 
-const setupMidiSequenceParser = () => {
+const createMidiSequenceParser = () => {
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
   const hasValidChunkId = (byteArray, validChunk) => {
