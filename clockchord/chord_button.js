@@ -4,15 +4,15 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
   const keySignatureSelector = setupKeySignatureSelector();
   const searchParams = new URLSearchParams(window.location.search);
   const pianokeyboard = new PianoKeyboard(
-    keySignatureSelector,
     setupToneIndicatorCanvas(dial, keySignatureSelector),
+    (key) => keySignatureSelector.parse(key),
     setupBeatCanvas(dial, keySignatureSelector)?.drawBeat,
     onSongReady,
     searchParams
   );
-  const { chord } = pianokeyboard
+  const { chord } = pianokeyboard;
   dial.chord = chord;
-  dial.keySignatureSelector = keySignatureSelector;
+  chord.setup(dial.keySignatureSelector = keySignatureSelector);
   keySignatureSelector.onChange = () => {
     chord.keyOrChordChanged();
     dial.draw();

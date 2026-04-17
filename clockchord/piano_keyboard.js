@@ -752,14 +752,10 @@ const PianoKeyboard = class {
     keyboard.addEventListener('focus', () => pcKey.showBindings(leftEnd.noteC, true));
     keyboard.addEventListener('blur', () => pcKey.showBindings(leftEnd.noteC, false));
   };
-  constructor(keySignatureSelector, toneIndicatorCanvas, onChangeBeat, onReady, searchParams) {
+  constructor(toneIndicatorCanvas, onChangeKey, onChangeBeat, onReady, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
     this.synth = new SimpleSynthesizer();
-    const {
-      chord,
-      handleMidiMessage,
-    } = this;
-    chord.setup(keySignatureSelector);
+    const { chord, handleMidiMessage } = this;
     const createVelocitySlider = () => {
       const velocitySlider = document.getElementById('velocity') ?? { value: 64 };
       const velocityValue = document.getElementById('velocityValue');
@@ -776,28 +772,28 @@ const PianoKeyboard = class {
       (msg) => {
         const { data } = msg;
         handleMidiMessage(data);
-        this.sendWebMidiLinkMessage?.(data);
+        sendWebMidiLinkMessage?.(data);
       }
     );
-    this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
+    const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     setupMidiSequencer(
       createMidiSequenceParser(),
       (midiMessage) => {
         handleMidiMessage(midiMessage);
-        this.sendWebMidiLinkMessage?.(midiMessage);
+        sendWebMidiLinkMessage?.(midiMessage);
         try {
           this.selectedMidiOutputPorts?.send(midiMessage);
         } catch(e) {
           console.error(midiMessage, e);
         }
       },
-      (hourAndMinor) => keySignatureSelector.parse(hourAndMinor),
+      onChangeKey,
       onChangeBeat,
       onReady
     );
     setupSongle(
       chord,
-      (key) => keySignatureSelector.parse(key),
+      onChangeKey,
       onChangeBeat,
       onReady,
       searchParams
