@@ -534,6 +534,9 @@ const SimpleSynthesizer = class {
         let pitchBendCent = 0;
         let _pitchBendValue = 0;
         let pitchBendSensitivity = 2;
+        const updatePitches = (cent) => {
+          voices.forEach((voice) => voice.detune?.(cent));
+        };
         let _volume = 100;
         let _expression = 0x7F;
         const getGainValueToSet = () => (_volume / 0x7F) * (_expression / 0x7F);
@@ -549,6 +552,15 @@ const SimpleSynthesizer = class {
             _ampan = { amplifier, panner };
           }
           return _ampan;
+        };
+        const updateAmpGainValue = () => {
+          getAmpan().amplifier.gain.value = getGainValueToSet();
+        };
+        const setPan = (value) => {
+          const context = SimpleSynthesizer.audioContext;
+          // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+          // Web Audio API's panner value: -1(L) ... 1(R)
+          getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
         };
         let _program, _instrument;
         let parameterNumber;
@@ -579,43 +591,32 @@ const SimpleSynthesizer = class {
             }
           },
           set pitchBendValue(value) {
-            pitchBendCent = pitchBendToCent(
+            updatePitches(pitchBendCent = pitchBendToCent(
               _pitchBendValue = value,
               pitchBendSensitivity
-            );
-            voices.forEach((voice) => voice.detune?.(pitchBendCent));
+            ));
           },
           set modulationDepth(value) {
             const gainValue = value / 32;
             voices.forEach((voice) => voice.changeModulation?.(gainValue));
           },
-          set volume(value) {
-            _volume = value;
-            getAmpan().amplifier.gain.value = getGainValueToSet();
-          },
-          set expression(value) {
-            _expression = value;
-            getAmpan().amplifier.gain.value = getGainValueToSet();
-          },
-          set pan(value) {
-            const context = SimpleSynthesizer.audioContext;
-            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-            // Web Audio API's panner value: -1(L) ... 1(R)
-            getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
-          },
-          get instrument() { return _instrument; },
-          get program() { return _program; },
+          set volume(value) { _volume = value; updateAmpGainValue(); },
+          set expression(value) { _expression = value; updateAmpGainValue(); },
+          set pan(value) { setPan(value); },
           set program(value) {
             if( channelNumber == PERCUSSION_CHANNEL ) return;
             _instrument = INSTRUMENTS[_program = value];
           },
+          get program() { return _program; },
+          get instrument() { return _instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            pitchBendSensitivity = 2;
-            _pitchBendValue = pitchBendCent = 0;
-            this.volume = 100;
-            this.expression = 0x7F;
-            this.pan = 0x40;
+            updatePitches(pitchBendCent = pitchBendToCent(
+              _pitchBendValue = 0,
+              pitchBendSensitivity = 2
+            ));
+            _volume = 100; _expression = 0x7F; updateAmpGainValue();
+            setPan(0x40);
           },
           allSoundOff() {
             voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
