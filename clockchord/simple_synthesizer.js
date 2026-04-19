@@ -403,21 +403,19 @@ const SimpleSynthesizer = class {
     }
   };
   constructor() {
-    const getMixer = () => {
-      if( !this.mixer ) {
-        const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
-        const context = SimpleSynthesizer.audioContext;
-        const mixer = this.mixer = context.createGain();
-        const { gain } = mixer;
-        const changeVolume = () => gain.value = volumeSlider.value ** 2;
-        volumeSlider.addEventListener?.('input', changeVolume);
-        changeVolume();
-        mixer.connect(context.destination);
-      }
-      return this.mixer;
+    const context = this.constructor.audioContext;
+    const createMixer = () => {
+      const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
+      const mixer = context.createGain();
+      const { gain } = mixer;
+      const changeVolume = () => gain.value = volumeSlider.value ** 2;
+      volumeSlider.addEventListener?.('input', changeVolume);
+      changeVolume();
+      mixer.connect(context.destination);
+      return mixer;
     }
     const createNoiseBuffer = () => {
-      const { sampleRate } = SimpleSynthesizer.audioContext;
+      const { sampleRate } = context;
       const [, , , releaseTime] = GENERIC_PERCUSSION.envelope;
       const length = sampleRate * releaseTime;
       const noiseBuffer = new AudioBuffer({ length, sampleRate });
@@ -427,8 +425,8 @@ const SimpleSynthesizer = class {
       }
       return noiseBuffer;
     };
+    let noiseBuffer;
     const createVoice = (amplifier, instrument, frequency) => {
-      const context = SimpleSynthesizer.audioContext;
       const velocityGain = context.createGain();
       velocityGain.gain.value = 0;
       velocityGain.connect(amplifier);
@@ -439,7 +437,7 @@ const SimpleSynthesizer = class {
       const { wave } = instrument;
       if( !frequency || wave === 'noise' ) {
         source = context.createBufferSource();
-        source.buffer = this.noiseBuffer ??= createNoiseBuffer();
+        source.buffer = noiseBuffer ??= createNoiseBuffer();
         source.loop = true;
       } else {
         source = context.createOscillator();
@@ -527,6 +525,7 @@ const SimpleSynthesizer = class {
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
     } = this.constructor;
+    let mixer;
     this.midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
@@ -543,9 +542,8 @@ const SimpleSynthesizer = class {
         let _ampan;
         const getAmpan = () => {
           if( !_ampan ) {
-            const context = SimpleSynthesizer.audioContext;
             const panner = context.createStereoPanner();
-            panner.connect(getMixer());
+            panner.connect(mixer ??= createMixer());
             const amplifier = context.createGain();
             amplifier.gain.value = getGainValueToSet();
             amplifier.connect(panner);
@@ -557,7 +555,6 @@ const SimpleSynthesizer = class {
           getAmpan().amplifier.gain.value = getGainValueToSet();
         };
         const setPan = (value) => {
-          const context = SimpleSynthesizer.audioContext;
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
           getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
