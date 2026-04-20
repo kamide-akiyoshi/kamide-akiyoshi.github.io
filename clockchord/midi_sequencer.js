@@ -28,27 +28,25 @@ const createMidiSequenceParser = () => {
   const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
   const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
   const parseVariableLengthValue = (byteArray) => {
-    let value = 0;
-    let valueLength = 0;
+    let value = 0, valueLength = 0;
     while(valueLength < 4) {
       const b = byteArray[valueLength++];
-      value <<= 7;
-      value += (b & 0x7F);
-      if( (b & 0x80) == 0 ) break;
+      value <<= 7; value += (b & 0x7F);
+      if( (b & 0x80) == 0 ) break; // MSB=0 (0...0x7F) indicates final byte of the value
     }
     return [value, byteArray.subarray(valueLength)];
   };
   const parseVariableLengthData = (byteArray) => {
-    const [length, valuesByteArray] = parseVariableLengthValue(byteArray);
-    const out = [valuesByteArray.subarray(0, length)];
-    length < valuesByteArray.length && out.push(valuesByteArray.subarray(length));
+    const [length, rest] = parseVariableLengthValue(byteArray);
+    const out = [rest.subarray(0, length)];
+    length < rest.length && out.push(rest.subarray(length));
     return out;
   };
   const parseMetaEvent = (byteArray, event) => {
     if( (event.metaType = byteArray[0]) == 0x2F ) {
       return undefined; // End Of Track
     }
-    const [data, nextByteArray] = parseVariableLengthData(byteArray.subarray(1));
+    const [data, rest] = parseVariableLengthData(byteArray.subarray(1));
     switch(event.metaType) {
       case 0x51:
         event.tempo = { microsecondsPerQuarter: parseBigEndian(data) };
@@ -73,12 +71,12 @@ const createMidiSequenceParser = () => {
         event.metaData = data;
         break;
     }
-    return nextByteArray;
+    return rest;
   };
   const parseSystemExclusive = (byteArray, event) => {
-    const [data, nextByteArray] = parseVariableLengthData(byteArray);
+    const [data, rest] = parseVariableLengthData(byteArray);
     event.systemExclusive = data;
-    return nextByteArray;
+    return rest;
   };
   const parseFixedLengthEvent = (byteArray, event, length) => {
     event.data = byteArray.subarray(0, length);
@@ -133,9 +131,9 @@ const createMidiSequenceParser = () => {
         break;
     }
     if( statusOmitted ) {
-      const nextByteArray = parseFixedLengthEvent(byteArray, event, dataLength - 1);
+      const rest = parseFixedLengthEvent(byteArray, event, dataLength - 1);
       event.data = [runningStatus, ...event.data];
-      return nextByteArray;
+      return rest;
     }
     return parseFixedLengthEvent(byteArray, event, dataLength);
   };
