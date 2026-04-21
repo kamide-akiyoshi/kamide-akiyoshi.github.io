@@ -4,9 +4,9 @@ const createMidiSequenceParser = () => {
   const TRACK_CHUNK_ID = "MTrk";
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
-  const invalidChunkId = (byteArray, validChunk) => {
-    const chunk = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length));
-    return chunk === validChunk ? undefined : chunk; 
+  const detectInvalidChunkId = (byteArray, validChunkId) => {
+    const chunkId = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunkId.length));
+    return chunkId === validChunkId ? undefined : chunkId; 
   };
   const parseText = (byteArray) => {
     let text;
@@ -141,7 +141,7 @@ const createMidiSequenceParser = () => {
     events.splice((index < 0 ? 0 : index) + 1, 0, event);
   };
   const parseMidiSequence = (sequenceByteArray) => {
-    const invalidHeaderChunkId = invalidChunkId(sequenceByteArray, HEADER_CHUNK_ID);
+    const invalidHeaderChunkId = detectInvalidChunkId(sequenceByteArray, HEADER_CHUNK_ID);
     if( invalidHeaderChunkId ) {
       console.error(`Invalid MIDI header chunk ID "${invalidHeaderChunkId}" (Valid ID is "${HEADER_CHUNK_ID}")`);
       throw new Error("Invalid MIDI file format");
@@ -173,7 +173,7 @@ const createMidiSequenceParser = () => {
         if( !tracksByteArray ) { // No more track
           return undefined;
         }
-        const invalidTrackChunkId = invalidChunkId(tracksByteArray, TRACK_CHUNK_ID);
+        const invalidTrackChunkId = detectInvalidChunkId(tracksByteArray, TRACK_CHUNK_ID);
         if( invalidTrackChunkId ) {
           console.warn(`Invalid MIDI track chunk ID "${invalidTrackChunkId}" (Valid ID is "${TRACK_CHUNK_ID}")`);
         }
