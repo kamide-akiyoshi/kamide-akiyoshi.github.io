@@ -6,7 +6,7 @@ const createMidiSequenceParser = () => {
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
   const detectInvalidChunkId = (byteArray, validChunkId) => {
     const chunkId = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunkId.length));
-    return chunkId === validChunkId ? undefined : chunkId; 
+    return chunkId === validChunkId ? undefined : chunkId;
   };
   const parseText = (byteArray) => {
     let text;
