@@ -32,7 +32,7 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
           [...toKeyCodes('QWERTYUIOP'), ...toLeftRightKeyCodes('Bracket')],
           [...toKeyCodes('ASDFGHJKL'), 'Semicolon', 'Quote', 'Backslash'],
         ].flatMap(
-          (codes, columnIndex) => codes.map((code, rowIndex) => [code, [columnIndex - 5, 1 - rowIndex]])
+          (codes, row) => codes.map((code, column) => [code, [column - 5, 1 - row]])
         )
       ),
       ['Shift', 'Alt', 'Control', 'Meta'].flatMap(toLeftRightKeyCodes),
