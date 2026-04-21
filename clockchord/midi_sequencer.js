@@ -411,16 +411,14 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     onReady?.();
   };
   const loadMidiFile = (file) => {
-    if( !file ) return;
     file.arrayBuffer().then((ab) => {
-      if( !ab.byteLength ) throw "Empty";
+      if( !ab.byteLength ) throw new Error("Empty file");
       const seq = parseMidiSequence(new Uint8Array(ab))
       midiFileNameElement.textContent = file.name;
       setMidiSequence(seq);
       play();
     }).catch((error) => {
-      console.error(`Could not load MIDI file ${file.name}:`, error);
-      alert(error);
+      alert(`${file.name}: ${error}`);
     });
   };
   const midiFileInput = document.getElementById("midi_file");
@@ -440,7 +438,12 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   midiFileDropZone.addEventListener("drop", (event) => {
     event.stopPropagation();
     event.preventDefault();
-    loadMidiFile(event.dataTransfer.files[0]);
+    const file = event.dataTransfer.files[0];
+    if( !file ) {
+      alert("Dropped object is not a file");
+      return;
+    }
+    loadMidiFile(file);
   });
   let tickPosition = 0;
   const setTickPosition = (tick) => {
