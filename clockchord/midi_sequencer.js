@@ -1,14 +1,12 @@
 
 const createMidiSequenceParser = () => {
+  const HEADER_CHUNK_ID = "MThd";
+  const TRACK_CHUNK_ID = "MTrk";
   const textDecoders = {};
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
-  const hasValidChunkId = (byteArray, validChunk) => {
+  const invalidChunkId = (byteArray, validChunk) => {
     const chunk = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunk.length));
-    if( chunk != validChunk ) {
-      console.error(`Invalid chunk '${chunk}' - Valid chunk is: '${validChunk}'`);
-      return false;
-    }
-    return true;
+    return chunk === validChunk ? undefined : chunk; 
   };
   const parseText = (byteArray) => {
     let text;
@@ -143,8 +141,10 @@ const createMidiSequenceParser = () => {
     events.splice((index < 0 ? 0 : index) + 1, 0, event);
   };
   const parseMidiSequence = (sequenceByteArray) => {
-    if( !hasValidChunkId(sequenceByteArray, "MThd") ) {
-      throw new Error(`Invalid MIDI file format`);
+    const invalidHeaderChunkId = invalidChunkId(sequenceByteArray, HEADER_CHUNK_ID);
+    if( invalidHeaderChunkId ) {
+      console.error(`Invalid MIDI header chunk ID "${invalidHeaderChunkId}" (Valid ID is "${HEADER_CHUNK_ID}")`);
+      throw new Error("Invalid MIDI file format");
     }
     const headerChunkSize = parseBigEndian(sequenceByteArray.subarray(4, 8));
     const sequence = {
@@ -173,8 +173,9 @@ const createMidiSequenceParser = () => {
         if( !tracksByteArray ) { // No more track
           return undefined;
         }
-        if( !hasValidChunkId(tracksByteArray, "MTrk") ) {
-          console.warn(`Invalid MIDI track chunk`);
+        const invalidTrackChunkId = invalidChunkId(tracksByteArray, TRACK_CHUNK_ID);
+        if( invalidTrackChunkId ) {
+          console.warn(`Invalid MIDI track chunk ID "${invalidTrackChunkId}" (Valid ID is "${TRACK_CHUNK_ID}")`);
         }
         const trackChunkSize = parseBigEndian(tracksByteArray.subarray(4, 8));
         const nextTrackTop = 8 + trackChunkSize;
