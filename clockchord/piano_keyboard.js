@@ -481,8 +481,9 @@ const PianoKeyboard = class {
         chord.offset3rd = -2;
         delete chord.add9th; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
       }
-      // -5/b5
+      // -5/b5, +5/#5
       if( eat("-5") || eat("b5") ) chord.offset5th = -1;
+      else if( eat("+5") || eat("#5") ) chord.offset5th = 1;
       return;
     },
     pitchNameToHtml: ([abc, fs]) => fs ? `${abc}<sup>${fs}</sup>` : abc,
