@@ -531,36 +531,30 @@ const SimpleSynthesizer = class {
       (_, channelNumber) => {
         const voices = new Map();
         let pitchBendCent = 0;
-        let _pitchBendValue = 0;
-        let pitchBendSensitivity = 2;
-        const updatePitches = (cent) => {
+        voices.detune = (cent) => {
+          pitchBendCent = cent;
           voices.forEach((voice) => voice.detune?.(cent));
         };
-        let _volume = 100;
-        let _expression = 0x7F;
-        const getGainValueToSet = () => (_volume / 0x7F) * (_expression / 0x7F);
-        let _ampan;
+        let _ampan, _volume = 100, _expression = 0x7F;
         const getAmpan = () => {
           if( !_ampan ) {
-            const panner = context.createStereoPanner();
-            panner.connect(mixer ??= createMixer());
             const amplifier = context.createGain();
-            amplifier.gain.value = getGainValueToSet();
+            const updateGain = () => amplifier.gain.value = (_volume / 0x7F) * (_expression / 0x7F);
+            updateGain();
+            const panner = context.createStereoPanner();
             amplifier.connect(panner);
-            _ampan = { amplifier, panner };
+            panner.connect(mixer ??= createMixer());
+            _ampan = { amplifier, panner, updateGain };
           }
           return _ampan;
-        };
-        const updateAmpGainValue = () => {
-          getAmpan().amplifier.gain.value = getGainValueToSet();
         };
         const setPan = (value) => {
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
           getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
         };
-        let _program, _instrument;
-        let parameterNumber;
+        let _program, _instrument, parameterNumber;
+        let _pitchBendValue = 0, pitchBendSensitivity = 2;
         const channel = {
           setParameterNumber(control, value) {
             // Control#
@@ -588,7 +582,7 @@ const SimpleSynthesizer = class {
             }
           },
           set pitchBendValue(value) {
-            updatePitches(pitchBendCent = pitchBendToCent(
+            voices.detune(pitchBendToCent(
               _pitchBendValue = value,
               pitchBendSensitivity
             ));
@@ -597,8 +591,8 @@ const SimpleSynthesizer = class {
             const gainValue = value / 32;
             voices.forEach((voice) => voice.changeModulation?.(gainValue));
           },
-          set volume(value) { _volume = value; updateAmpGainValue(); },
-          set expression(value) { _expression = value; updateAmpGainValue(); },
+          set volume(value) { _volume = value; getAmpan().updateGain(); },
+          set expression(value) { _expression = value; getAmpan().updateGain(); },
           set pan(value) { setPan(value); },
           set program(value) {
             if( channelNumber == PERCUSSION_CHANNEL ) return;
@@ -608,11 +602,11 @@ const SimpleSynthesizer = class {
           get instrument() { return _instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            updatePitches(pitchBendCent = pitchBendToCent(
+            voices.detune(pitchBendToCent(
               _pitchBendValue = 0,
               pitchBendSensitivity = 2
             ));
-            _volume = 100; _expression = 0x7F; updateAmpGainValue();
+            _volume = 100; _expression = 0x7F; getAmpan().updateGain();
             setPan(0x40);
           },
           allSoundOff() {
