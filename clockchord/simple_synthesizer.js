@@ -531,9 +531,14 @@ const SimpleSynthesizer = class {
       (_, channelNumber) => {
         const voices = new Map();
         let pitchBendCent = 0;
-        voices.detune = (cent) => {
-          pitchBendCent = cent;
-          voices.forEach((voice) => voice.detune?.(cent));
+        voices.applyPitchBend = (value, sensitivity) => {
+          pitchBendCent = pitchBendToCent(value, sensitivity);
+          voices.forEach((voice) => voice.detune?.(pitchBendCent));
+        };
+        voices.releaseAll = (immediately) => {
+          voices.forEach(
+            (voice, noteNumber) => voice.release(() => voices.delete(noteNumber), immediately)
+          );
         };
         let _ampan, _volume = 100, _expression = 0x7F;
         const getAmpan = () => {
@@ -582,10 +587,10 @@ const SimpleSynthesizer = class {
             }
           },
           set pitchBendValue(value) {
-            voices.detune(pitchBendToCent(
+            voices.applyPitchBend(
               _pitchBendValue = value,
               pitchBendSensitivity
-            ));
+            );
           },
           set modulationDepth(value) {
             const gainValue = value / 32;
@@ -602,19 +607,15 @@ const SimpleSynthesizer = class {
           get instrument() { return _instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            voices.detune(pitchBendToCent(
+            voices.applyPitchBend(
               _pitchBendValue = 0,
               pitchBendSensitivity = 2
-            ));
+            );
             _volume = 100; _expression = 0x7F; getAmpan().updateGain();
             setPan(0x40);
           },
-          allSoundOff() {
-            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
-          },
-          allNotesOff() {
-            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
-          },
+          allSoundOff() { voices.releaseAll(true); },
+          allNotesOff() { voices.releaseAll(); },
           noteOff(noteNumber) {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
           },
