@@ -498,11 +498,11 @@ const SimpleSynthesizer = class {
           }
           if( timeoutIdToStop ) return;
           delete voice.isPressing;
-          const gainValueToStop = 0.01;
-          if( gain.value <= gainValueToStop ) { stop(); return; }
+          const minGainValue = 0.01;
+          if( gain.value <= minGainValue ) { stop(); return; }
           const [, , , releaseTime] = instrument.envelope;
           if( !releaseTime ) { stop(); return; }
-          const delay = Math.log(gain.value / gainValueToStop) * releaseTime;
+          const delay = Math.log(gain.value / minGainValue) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(context.currentTime);
           gain.setTargetAtTime(0, context.currentTime, releaseTime);
