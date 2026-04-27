@@ -430,11 +430,11 @@ const SimpleSynthesizer = class {
       const velocityGain = context.createGain();
       velocityGain.gain.value = 0;
       velocityGain.connect(amplifier);
-      const envelope = context.createGain();
-      envelope.gain.value = 0;
-      envelope.connect(velocityGain);
+      const envelopeGain = context.createGain();
+      envelopeGain.gain.value = 0;
+      envelopeGain.connect(velocityGain);
       let source, modulator, modulatorGain;
-      const { wave } = instrument;
+      const { wave, envelope } = instrument;
       if( !frequency || wave === 'noise' ) {
         source = context.createBufferSource();
         source.buffer = noiseBuffer ??= createNoiseBuffer();
@@ -455,7 +455,7 @@ const SimpleSynthesizer = class {
         modulator.connect(modulatorGain);
         modulatorGain.connect(source.frequency);
       }
-      source.connect(envelope);
+      source.connect(envelopeGain);
       source.start();
       modulator?.start();
       let timeoutIdToStop;
@@ -464,9 +464,9 @@ const SimpleSynthesizer = class {
           voice.isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
-          const { gain } = envelope;
+          const { gain } = envelopeGain;
           gain.cancelScheduledValues(context.currentTime);
-          const [attackTime, decayTime, sustainLevel] = instrument.envelope;
+          const [attackTime, decayTime, sustainLevel] = envelope;
           velocityGain.gain.value = velocity / 0x7F;
           const t1 = context.currentTime + attackTime;
           if( attackTime ) {
@@ -479,7 +479,7 @@ const SimpleSynthesizer = class {
           }
         },
         release: (stopped, immediately) => {
-          const { gain } = envelope;
+          const { gain } = envelopeGain;
           const stop = () => {
             if( timeoutIdToStop ) {
               clearTimeout(timeoutIdToStop);
@@ -500,7 +500,7 @@ const SimpleSynthesizer = class {
           delete voice.isPressing;
           const minGainValue = 0.01;
           if( gain.value <= minGainValue ) { stop(); return; }
-          const [, , , releaseTime] = instrument.envelope;
+          const [, , , releaseTime] = envelope;
           if( !releaseTime ) { stop(); return; }
           const delay = Math.log(gain.value / minGainValue) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
