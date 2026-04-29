@@ -316,7 +316,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
         }
         break;
       case 6:
-        markerElement.textContent = event.text ? `Marker: ${event.text}` : "";
+        markerElement.textContent = event.text ? `🏷️${event.text}` : "";
         break;
       case 0x51:
         changeTempo(event.tempo.microsecondsPerQuarter);
