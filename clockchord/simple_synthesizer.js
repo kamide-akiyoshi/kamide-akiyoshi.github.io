@@ -404,6 +404,8 @@ const SimpleSynthesizer = class {
   };
   constructor() {
     const context = this.constructor.audioContext;
+    const minEnvelopeGainValue = 0.01;
+    let mixer, noiseBuffer;
     const createMixer = () => {
       const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
       const mixer = context.createGain();
@@ -418,23 +420,32 @@ const SimpleSynthesizer = class {
       const { sampleRate } = context;
       const [, , , releaseTime] = GENERIC_PERCUSSION.envelope;
       const length = sampleRate * releaseTime;
-      const noiseBuffer = new AudioBuffer({ length, sampleRate });
-      const data = noiseBuffer.getChannelData(0);
+      const buffer = new AudioBuffer({ length, sampleRate });
+      const data = buffer.getChannelData(0);
       for( let i = 0; i < length; i++ ) {
         data[i] = Math.random() * 2 - 1;
       }
-      return noiseBuffer;
+      return buffer;
     };
-    let noiseBuffer;
-    const createVoice = (amplifier, instrument, frequency) => {
-      const velocityGain = context.createGain();
-      velocityGain.gain.value = 0;
-      velocityGain.connect(amplifier);
-      const envelopeGain = context.createGain();
-      envelopeGain.gain.value = 0;
-      envelopeGain.connect(velocityGain);
-      let source, modulator, modulatorGain;
+    const createModulator = (frequency) => {
+      const oscillator = context.createOscillator();
+      oscillator.frequency.value = 6;
+      const amplifier = context.createGain();
+      amplifier.gain.value = 0;
+      oscillator.connect(amplifier);
+      amplifier.connect(frequency);
+      oscillator?.start();
+      return { oscillator, amplifier };
+    }
+    const createVoice = (destination, instrument, frequency) => {
       const { wave, envelope } = instrument;
+      let source, timeoutIdToStop, modulator;
+      const velocityAmp = context.createGain();
+      velocityAmp.gain.value = 0;
+      velocityAmp.connect(destination);
+      const envelopeAmp = context.createGain();
+      envelopeAmp.gain.value = 0;
+      envelopeAmp.connect(velocityAmp);
       if( !frequency || wave === 'noise' ) {
         source = context.createBufferSource();
         source.buffer = noiseBuffer ??= createNoiseBuffer();
@@ -448,26 +459,18 @@ const SimpleSynthesizer = class {
         } else {
           source.type = wave;
         }
-        modulator = context.createOscillator();
-        modulator.frequency.value = 6;
-        modulatorGain = context.createGain();
-        modulatorGain.gain.value = 0;
-        modulator.connect(modulatorGain);
-        modulatorGain.connect(source.frequency);
       }
-      source.connect(envelopeGain);
+      source.connect(envelopeAmp);
       source.start();
-      modulator?.start();
-      let timeoutIdToStop;
       const voice = {
         attack: (velocity) => {
           voice.isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
-          const { gain } = envelopeGain;
+          const { gain } = envelopeAmp;
           gain.cancelScheduledValues(context.currentTime);
           const [attackTime, decayTime, sustainLevel] = envelope;
-          velocityGain.gain.value = velocity / 0x7F;
+          velocityAmp.gain.value = velocity / 0x7F;
           const t1 = context.currentTime + attackTime;
           if( attackTime ) {
             gain.linearRampToValueAtTime(1, t1);
@@ -479,7 +482,7 @@ const SimpleSynthesizer = class {
           }
         },
         release: (stopped, immediately) => {
-          const { gain } = envelopeGain;
+          const { gain } = envelopeAmp;
           const stop = () => {
             if( timeoutIdToStop ) {
               clearTimeout(timeoutIdToStop);
@@ -488,7 +491,7 @@ const SimpleSynthesizer = class {
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
             source.stop();
-            modulator?.stop();
+            modulator?.oscillator.stop();
             stopped?.();
           };
           if( immediately ) {
@@ -498,24 +501,21 @@ const SimpleSynthesizer = class {
           }
           if( timeoutIdToStop ) return;
           delete voice.isPressing;
-          const minGainValue = 0.01;
-          if( gain.value <= minGainValue ) { stop(); return; }
+          if( gain.value <= minEnvelopeGainValue ) { stop(); return; }
           const [, , , releaseTime] = envelope;
           if( !releaseTime ) { stop(); return; }
-          const delay = Math.log(gain.value / minGainValue) * releaseTime;
+          const delay = Math.log(gain.value / minEnvelopeGainValue) * releaseTime;
           if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(context.currentTime);
           gain.setTargetAtTime(0, context.currentTime, releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
       };
-      if( modulatorGain ) {
-        voice.changeModulation = (gainValue) => {
-          modulatorGain.gain.value = gainValue;
-        };
-      }
       if( source instanceof OscillatorNode ) {
         voice.detune = (cent) => { source.detune.value = cent; };
+        voice.changeModulation = (value) => {
+          (modulator ??= createModulator(source.frequency)).amplifier.gain.value = value;
+        };
       }
       return voice;
     };
@@ -525,7 +525,6 @@ const SimpleSynthesizer = class {
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
     } = this.constructor;
-    let mixer;
     this.midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
