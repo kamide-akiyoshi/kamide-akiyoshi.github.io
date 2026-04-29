@@ -434,7 +434,7 @@ const SimpleSynthesizer = class {
       amplifier.gain.value = 0;
       oscillator.connect(amplifier);
       amplifier.connect(frequency);
-      oscillator?.start();
+      oscillator.start();
       return { oscillator, amplifier };
     }
     const createVoice = (destination, instrument, frequency) => {
