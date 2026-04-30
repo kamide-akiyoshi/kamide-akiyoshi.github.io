@@ -32,7 +32,8 @@ const createMidiSequenceParser = () => {
       value <<= 7; value += (b & 0x7F);
       if( (b & 0x80) == 0 ) break; // MSB=0 (0...0x7F) indicates final byte of the value
     }
-    return [value, byteArray.subarray(valueLength)];
+    const rest = byteArray.subarray(valueLength);
+    return [value, rest];
   };
   const parseVariableLengthData = (byteArray) => {
     const [length, rest] = parseVariableLengthValue(byteArray);
@@ -71,7 +72,7 @@ const createMidiSequenceParser = () => {
     }
     return rest;
   };
-  const parseSystemExclusive = (byteArray, event) => {
+  const parseSystemExclusiveEvent = (byteArray, event) => {
     const [data, rest] = parseVariableLengthData(byteArray);
     event.systemExclusive = data;
     return rest;
@@ -82,8 +83,8 @@ const createMidiSequenceParser = () => {
   };
   const parseMidiEvent = (byteArray, event, runningStatus) => {
     const topByte = byteArray[0];
-    const statusOmitted = !(topByte & 0x80);
-    const status = statusOmitted ? runningStatus : topByte;
+    const hasNewStatus = topByte & 0x80;
+    const status = hasNewStatus ? topByte : runningStatus;
     let dataLength;
     switch(status & 0xF0) {
       case 0xF0:
@@ -95,7 +96,7 @@ const createMidiSequenceParser = () => {
           // System Common Message
           case 0xF7: // System Exclusive (splited)
           case 0xF0: // System Exclusive
-            return parseSystemExclusive(byteArray.subarray(1), event);
+            return parseSystemExclusiveEvent(byteArray.subarray(1), event);
           case 0xF2: // Song Position (0xF2, LSB, MSB)
             dataLength = 3;
             break;
@@ -128,7 +129,7 @@ const createMidiSequenceParser = () => {
         dataLength = 3;
         break;
     }
-    if( statusOmitted ) {
+    if( !hasNewStatus ) {
       const rest = parseFixedLengthEvent(byteArray, event, dataLength - 1);
       event.data = [runningStatus, ...event.data];
       return rest;
