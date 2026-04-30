@@ -362,8 +362,9 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   const midiSequenceElement = document.getElementById("midi_sequence");
   document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
   const playPauseIcon = document.getElementById("play_pause_icon");
-  tickPositionSlider.addEventListener?.("input", (event) => {
-    !intervalId && setTickPosition(parseInt(event.target.value));
+  tickPositionSlider.addEventListener?.("input", async (event) => {
+    await pause();
+    setTickPosition(parseInt(event.target.value));
   });
   const keyTimelineElement = document.getElementById("midi_key_timeline");
   const midiSequencerElement = midiSequenceElement.parentElement;
