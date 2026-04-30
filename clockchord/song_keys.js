@@ -34,7 +34,6 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=HS1aw5WjWTc", "Ab,17550,Bm,70650,Cm,113900,D,149300,Cm,184700,Am,196500,D,210300,Cm,250600,C,262400,Cm"],
   ["www.nicovideo.jp/watch/sm3730407", "Ab,17550,Bm,70650,Cm,113900,D,149300,Cm,184700,Am,196500,D,210300,Cm,250600,C,262400,Cm"],
   ["www.nicovideo.jp/watch/sm18483898", "A"],
-  ["www.nicovideo.jp/watch/sm34942560", "C,42600,E,88600,C,113000,E,159000,C"],
   ["www.youtube.com/watch?v=0-EF60neguk", "F"],
   ["www.nicovideo.jp/watch/sm14949992", "Db"],
   ["www.youtube.com/watch?v=Q_LPJllaogU", "Ab"],
@@ -46,7 +45,6 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=L0MK7qz13bU", "Ab,224800,G"],
   ["www.youtube.com/watch?v=GC_mV1IpjWA", "Bb"],
   ["www.youtube.com/watch?v=TZ3wc74Ps-E", "F,102000,Ab,113400,F"],
-  ["www.youtube.com/watch?v=_4DJkOUU648", "G"],
   ["www.nicovideo.jp/watch/sm30139252", "F,177500,Ab,186500,F,213500,Gb"],
   ["www.youtube.com/watch?v=btPJPFnesV4", "Cm"],
   ["www.youtube.com/watch?v=UM9XNpgrqVk", "D"],
@@ -221,5 +219,8 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=t3M4jqdoJMc", "F,53000,Ab,71900,F,93000,Ab,111500,F,132900,Ab,151700,F,163500,Ab,175200,E"],
   ["www.youtube.com/watch?v=fWNaR-rxAic", "G"],
   ["www.youtube.com/watch?v=RFFzHTHEiq8", "D"],
-  ["www.youtube.com/watch?v=gixbnMuquhA", "D"]
+  ["www.youtube.com/watch?v=gixbnMuquhA", "D"],
+  ["www.nicovideo.jp/watch/sm34942560", "C,42600,E,88600,C,113000,E,159000,C"],
+  ["www.youtube.com/watch?v=_4DJkOUU648", "G"],
+  ["www.youtube.com/watch?v=HUTbH6ywrXk", "G,164700,Ab"],
 ]);
