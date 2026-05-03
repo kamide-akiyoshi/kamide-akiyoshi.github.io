@@ -520,14 +520,17 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       console.warn(error);
     }
   };
-  document.addEventListener("visibilitychange", async () => {
-    // After wake lock released automatically by hiding document,
-    // Reacquire the wake lock when get visible
+  const releaseWakeLock = async () => {
+    await sentinel?.release(); // No try-catch required, because exception not thrown
+    sentinel = undefined; // To prevent reacquiring wake lock when get visible
+  };
+  document.addEventListener("visibilitychange", () => {
     if( sentinel && document.visibilityState === "visible" ) {
-      await requestWakeLock();
+      // After document hidden, wake lock released automatically, so reacquire it here
+      requestWakeLock();
     }
   });
-  const pause = async () => {
+  const pause = () => {
     if( !intervalId ) return;
     clearInterval(intervalId);
     intervalId = undefined;
@@ -535,14 +538,13 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
       sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
     };
-    await sentinel?.release(); // No try-catch required, because exception not thrown
-    sentinel = undefined; // To prevent reacquiring wake lock when get visible
     if( playPauseIcon ) {
       playPauseIcon.src = "image/play-button-svgrepo-com.svg";
       playPauseIcon.alt = "Play";
     }
+    releaseWakeLock();
   };
-  const play = async () => {
+  const play = () => {
     if( !midiSequence || intervalId ) return;
     if( tickPosition === 0 ) {
       for( let ch = 0; ch < SimpleSynthesizer.NUMBER_OF_CHANNELS; ch++ ) {
@@ -579,10 +581,10 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       },
       INTERVAL_MILLI_SEC
     );
-    await requestWakeLock();
     if( playPauseIcon ) {
       playPauseIcon.src = "image/pause-button-svgrepo-com.svg";
       playPauseIcon.alt = "Pause";
     }
+    requestWakeLock();
   };
 };
