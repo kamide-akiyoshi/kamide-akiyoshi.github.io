@@ -481,33 +481,24 @@ const SimpleSynthesizer = class {
             gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
         },
-        release: (stopped, immediately) => {
+        release: (onStop, immediately) => {
+          if( timeoutIdToStop && !immediately ) return;
           const { gain } = envelopeAmp;
           const stop = () => {
-            if( timeoutIdToStop ) {
-              clearTimeout(timeoutIdToStop);
-              timeoutIdToStop = undefined;
-            }
+            clearTimeout(timeoutIdToStop);
+            timeoutIdToStop = undefined;
             gain.cancelScheduledValues(context.currentTime);
             gain.value = 0;
             source.stop();
             modulator?.oscillator.stop();
-            stopped?.();
+            onStop?.();
           };
-          if( immediately ) {
-            delete voice.isPressing;
-            stop();
-            return;
-          }
-          if( timeoutIdToStop ) return;
           delete voice.isPressing;
-          if( gain.value <= minEnvelopeGainValue ) { stop(); return; }
-          const [, , , releaseTime] = envelope;
-          if( !releaseTime ) { stop(); return; }
-          const delay = Math.log(gain.value / minEnvelopeGainValue) * releaseTime;
+          if( immediately || !envelope.releaseTime || gain.value <= minEnvelopeGainValue ) { stop(); return; }
+          const delay = envelope.releaseTime * Math.log(gain.value / minEnvelopeGainValue);
           if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(context.currentTime);
-          gain.setTargetAtTime(0, context.currentTime, releaseTime);
+          gain.setTargetAtTime(0, context.currentTime, envelope.releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
       };
