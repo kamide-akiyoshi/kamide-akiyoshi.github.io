@@ -494,11 +494,13 @@ const SimpleSynthesizer = class {
             onStop?.();
           };
           delete voice.isPressing;
-          if( immediately || !envelope.releaseTime || gain.value <= minEnvelopeGainValue ) { stop(); return; }
-          const delay = envelope.releaseTime * Math.log(gain.value / minEnvelopeGainValue);
+          if( immediately || gain.value <= minEnvelopeGainValue ) { stop(); return; }
+          const [, , , releaseTime] = envelope;
+          if( !releaseTime ) { stop(); return; }
+          const delay = releaseTime * Math.log(gain.value / minEnvelopeGainValue);
           if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(context.currentTime);
-          gain.setTargetAtTime(0, context.currentTime, envelope.releaseTime);
+          gain.setTargetAtTime(0, context.currentTime, releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
       };
