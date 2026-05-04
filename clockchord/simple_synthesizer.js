@@ -403,21 +403,26 @@ const SimpleSynthesizer = class {
     }
   };
   constructor() {
-    const context = this.constructor.audioContext;
+    const {
+      PERCUSSION_CHANNEL,
+      NUMBER_OF_CHANNELS,
+      FREQUENCIES,
+      audioContext,
+    } = this.constructor;
     const minEnvelopeGainValue = 0.01;
     let mixer, noiseBuffer;
     const createMixer = () => {
       const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
-      const mixer = context.createGain();
+      const mixer = audioContext.createGain();
       const { gain } = mixer;
       const changeVolume = () => gain.value = volumeSlider.value ** 2;
       volumeSlider.addEventListener?.('input', changeVolume);
       changeVolume();
-      mixer.connect(context.destination);
+      mixer.connect(audioContext.destination);
       return mixer;
     }
     const createNoiseBuffer = () => {
-      const { sampleRate } = context;
+      const { sampleRate } = audioContext;
       const [, , , releaseTime] = GENERIC_PERCUSSION.envelope;
       const length = sampleRate * releaseTime;
       const buffer = new AudioBuffer({ length, sampleRate });
@@ -428,9 +433,9 @@ const SimpleSynthesizer = class {
       return buffer;
     };
     const createModulator = (frequency) => {
-      const oscillator = context.createOscillator();
+      const oscillator = audioContext.createOscillator();
       oscillator.frequency.value = 6;
-      const amplifier = context.createGain();
+      const amplifier = audioContext.createGain();
       amplifier.gain.value = 0;
       oscillator.connect(amplifier);
       amplifier.connect(frequency);
@@ -440,22 +445,22 @@ const SimpleSynthesizer = class {
     const createVoice = (destination, instrument, frequency) => {
       const { wave, envelope } = instrument;
       let source, timeoutIdToStop, modulator;
-      const velocityAmp = context.createGain();
+      const velocityAmp = audioContext.createGain();
       velocityAmp.gain.value = 0;
       velocityAmp.connect(destination);
-      const envelopeAmp = context.createGain();
+      const envelopeAmp = audioContext.createGain();
       envelopeAmp.gain.value = 0;
       envelopeAmp.connect(velocityAmp);
       if( !frequency || wave === 'noise' ) {
-        source = context.createBufferSource();
+        source = audioContext.createBufferSource();
         source.buffer = noiseBuffer ??= createNoiseBuffer();
         source.loop = true;
       } else {
-        source = context.createOscillator();
+        source = audioContext.createOscillator();
         source.frequency.value = frequency;
         if( wave === 'custom' ) {
           const terms = instrument.terms ??= [[0, 0],[0, 0]];
-          source.setPeriodicWave(context.createPeriodicWave(...terms));
+          source.setPeriodicWave(audioContext.createPeriodicWave(...terms));
         } else {
           source.type = wave;
         }
@@ -468,10 +473,10 @@ const SimpleSynthesizer = class {
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
           const { gain } = envelopeAmp;
-          gain.cancelScheduledValues(context.currentTime);
+          gain.cancelScheduledValues(audioContext.currentTime);
           const [attackTime, decayTime, sustainLevel] = envelope;
           velocityAmp.gain.value = velocity / 0x7F;
-          const t1 = context.currentTime + attackTime;
+          const t1 = audioContext.currentTime + attackTime;
           if( attackTime ) {
             gain.linearRampToValueAtTime(1, t1);
           } else {
@@ -487,7 +492,7 @@ const SimpleSynthesizer = class {
           const stop = () => {
             clearTimeout(timeoutIdToStop);
             timeoutIdToStop = undefined;
-            gain.cancelScheduledValues(context.currentTime);
+            gain.cancelScheduledValues(audioContext.currentTime);
             gain.value = 0;
             source.stop();
             modulator?.oscillator.stop();
@@ -499,8 +504,8 @@ const SimpleSynthesizer = class {
           if( !releaseTime ) { stop(); return; }
           const delay = releaseTime * Math.log(gain.value / minEnvelopeGainValue);
           if( delay <= 0 ) { stop(); return; }
-          gain.cancelScheduledValues(context.currentTime);
-          gain.setTargetAtTime(0, context.currentTime, releaseTime);
+          gain.cancelScheduledValues(audioContext.currentTime);
+          gain.setTargetAtTime(0, audioContext.currentTime, releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
       };
@@ -513,11 +518,6 @@ const SimpleSynthesizer = class {
       return voice;
     };
     const pitchBendToCent = (value, sensitivity) => 100 * sensitivity * value / (1 << 13);
-    const {
-      PERCUSSION_CHANNEL,
-      NUMBER_OF_CHANNELS,
-      FREQUENCIES,
-    } = this.constructor;
     this.midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
@@ -535,10 +535,10 @@ const SimpleSynthesizer = class {
         let _ampan, _volume = 100, _expression = 0x7F;
         const getAmpan = () => {
           if( !_ampan ) {
-            const amplifier = context.createGain();
+            const amplifier = audioContext.createGain();
             const updateGain = () => amplifier.gain.value = (_volume / 0x7F) * (_expression / 0x7F);
             updateGain();
-            const panner = context.createStereoPanner();
+            const panner = audioContext.createStereoPanner();
             amplifier.connect(panner);
             panner.connect(mixer ??= createMixer());
             _ampan = { amplifier, panner, updateGain };
@@ -548,7 +548,7 @@ const SimpleSynthesizer = class {
         const setPan = (value) => {
           // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
           // Web Audio API's panner value: -1(L) ... 1(R)
-          getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, context.currentTime);
+          getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, audioContext.currentTime);
         };
         let _program, _instrument, parameterNumber;
         let _pitchBendValue = 0, pitchBendSensitivity = 2;
