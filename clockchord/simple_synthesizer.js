@@ -395,7 +395,8 @@ const SimpleSynthesizer = class {
   static NUMBER_OF_CHANNELS = 16;
   static {
     try {
-      const AudioContext = window.AudioContext ?? window.webkitAudioContext;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      /** @type AudioContext | undefined */
       this.audioContext = new AudioContext();
     }
     catch(e) {
@@ -408,7 +409,7 @@ const SimpleSynthesizer = class {
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
       audioContext,
-    } = this.constructor;
+    } = SimpleSynthesizer;
     const minEnvelopeGainValue = 0.01;
     let mixer, noiseBuffer;
     const createMixer = () => {
