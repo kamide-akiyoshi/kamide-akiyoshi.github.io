@@ -444,7 +444,7 @@ const SimpleSynthesizer = class {
     }
     const createVoice = (destination, instrument, frequency) => {
       const { wave, envelope } = instrument;
-      let source, timeoutIdToStop, modulator;
+      let source, modulator, isPressing, timeoutIdToStop;
       const velocityAmp = audioContext.createGain();
       velocityAmp.gain.value = 0;
       velocityAmp.connect(destination);
@@ -468,8 +468,9 @@ const SimpleSynthesizer = class {
       source.connect(envelopeAmp);
       source.start();
       const voice = {
+        get isPressing() { return isPressing; },
         attack: (velocity) => {
-          voice.isPressing = true;
+          isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
           const { gain } = envelopeAmp;
@@ -488,6 +489,7 @@ const SimpleSynthesizer = class {
         },
         release: (onStop, immediately) => {
           if( timeoutIdToStop && !immediately ) return;
+          isPressing = false;
           const { gain } = envelopeAmp;
           const stop = () => {
             clearTimeout(timeoutIdToStop);
@@ -498,7 +500,6 @@ const SimpleSynthesizer = class {
             modulator?.oscillator.stop();
             onStop?.();
           };
-          delete voice.isPressing;
           if( immediately || gain.value <= minEnvelopeGainValue ) { stop(); return; }
           const [, , , releaseTime] = envelope;
           if( !releaseTime ) { stop(); return; }
