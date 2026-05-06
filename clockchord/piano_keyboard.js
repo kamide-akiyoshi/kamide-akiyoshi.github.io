@@ -1,6 +1,7 @@
 
 const PianoKeyboard = class {
   static initialDocumentTitle = document.title;
+  /** @param {string} songTitle */
   static setSongTitleToDocument = (songTitle) => {
     document.title = songTitle ? `${songTitle} - ClockChord` : this.initialDocumentTitle;
   };
