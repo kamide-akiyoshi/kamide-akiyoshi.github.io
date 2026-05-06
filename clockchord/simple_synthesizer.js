@@ -36,7 +36,7 @@ const GENERIC_PERCUSSION = ({
   envelope: [0, 0.1, 0, 0.1],
 });
 
-/** @type Instrument[] */
+/** @type {Instrument[]} */
 const INSTRUMENTS = [
   // Piano
   GENERIC_INSTRUMENT, // "Acoustic Grand Piano",
@@ -409,7 +409,7 @@ const SimpleSynthesizer = class {
   static NUMBER_OF_CHANNELS = 16;
   static {
     try {
-      /** @type typeof window.AudioContext */
+      /** @type {typeof window.AudioContext} */
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContext();
     }
@@ -425,7 +425,7 @@ const SimpleSynthesizer = class {
       audioContext,
     } = SimpleSynthesizer;
     const minEnvelopeGainValue = 0.01;
-    /** @type ReturnType<typeof createMixer> | undefined */
+    /** @type {ReturnType<typeof createMixer> | undefined} */
     let mixer;
     const createMixer = () => {
       const volumeSlider = document.getElementById('volume') ?? { value: 0.5 };
@@ -437,7 +437,7 @@ const SimpleSynthesizer = class {
       mixer.connect(audioContext.destination);
       return mixer;
     }
-    /** @type ReturnType<typeof createNoiseBuffer> | undefined */
+    /** @type {ReturnType<typeof createNoiseBuffer> | undefined} */
     let noiseBuffer;
     const createNoiseBuffer = () => {
       const sampleRate = audioContext?.sampleRate;
@@ -450,14 +450,14 @@ const SimpleSynthesizer = class {
       }
       return buffer;
     };
-    /** @param {AudioParam} frequency */
-    const createModulator = (frequency) => {
-      const oscillator = audioContext.createOscillator();
-      oscillator.frequency.value = 6;
+    /** @param {AudioParam} destinationFrequency */
+    const createModulator = (destinationFrequency) => {
       const amplifier = audioContext.createGain();
       amplifier.gain.value = 0;
+      amplifier.connect(destinationFrequency);
+      const oscillator = audioContext.createOscillator();
+      oscillator.frequency.value = 6;
       oscillator.connect(amplifier);
-      amplifier.connect(frequency);
       oscillator.start();
       return { oscillator, amplifier };
     };
@@ -507,9 +507,9 @@ const SimpleSynthesizer = class {
       const source = createVoiceSource(instrument, frequency);
       source.connect(envelopeAmp);
       source.start();
-      /** @type ReturnType<typeof createModulator> | undefined */
+      /** @type {ReturnType<typeof createModulator> | undefined} */
       let modulator;
-      /** @type ReturnType<typeof setTimeout> | undefined */
+      /** @type {ReturnType<typeof setTimeout> | undefined} */
       let timeoutIdToStop;
       const { envelope } = instrument;
       /** @type {Voice} */
@@ -599,7 +599,7 @@ const SimpleSynthesizer = class {
           panner.connect(mixer ??= createMixer());
           return { amplifier, panner, updateGain };
         };
-        /** @type {ReturnType<typeof createAmpan>} */
+        /** @type {ReturnType<typeof createAmpan> | undefined} */
         let ampan;
         const getAmpan = () => ampan ??= createAmpan();
         /** @param {number} value */
@@ -609,7 +609,7 @@ const SimpleSynthesizer = class {
           getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, audioContext.currentTime);
         };
         let programNumber = 0;
-        /** @type Instrument */
+        /** @type {Instrument | undefined} */
         let instrument;
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number}} */
         let parameterNumber;
