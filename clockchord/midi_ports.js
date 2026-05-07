@@ -1,4 +1,5 @@
 
+/** @param {EventListenerOrEventListenerObject} midiMessageListener */
 const setupMidiPorts = (midiMessageListener) => {
   const midiElement = document.getElementById('midi');
   if( ! midiElement ) return;
@@ -7,9 +8,21 @@ const setupMidiPorts = (midiMessageListener) => {
   }
   // MIDI port selector
   const createSelectedMidiOutputPorts = () => {
+    /**
+     * @type {MIDIOutput[] & {
+     *  addPort: (port: MIDIOutput) => void,
+     *  removePort: (port: MIDIOutput) => void,
+     *  send: (message: Iterable<number>) => void,
+     *  noteOn: (channel: number, noteNumber: number, velocity: number) => void,
+     *  noteOff: (channel: number, noteNumber: number) => void,
+     *  programChange: (channel: number, programNumber: number) => void
+     * }}
+     */
     const ports = [];
-    ports.addPort = port => ports.push(port);
-    ports.removePort = port => {
+    ports.addPort = (port) => {
+      ports.push(port);
+    };
+    ports.removePort = (port) => {
       const i = ports.findIndex(p => p.id === port.id);
       i < 0 || ports.splice(i, 1);
     };
@@ -20,9 +33,15 @@ const setupMidiPorts = (midiMessageListener) => {
     return ports;
   };
   const selectedMidiOutputPorts = createSelectedMidiOutputPorts();
+  /** @param {Event & { target: HTMLInputElement }} event */
+  const eventToAddOrRemove = (event) => event.target.checked ? "add" : "remove";
   const checkboxes = {
-    eventToAddOrRemove: event => event.target.checked ? "add" : "remove",
+    /**
+     * @param {MIDIPort} port
+     * @returns {HTMLInputElement | null}
+     */
     get: port => midiElement.querySelector(`input[value="${port.id}"]`),
+    /** @param {MIDIPort} port */
     add: port => {
       if( checkboxes.get(port) ) return;
       const cb = document.createElement("input");
@@ -37,16 +56,17 @@ const setupMidiPorts = (midiMessageListener) => {
       switch(port.type) {
         case "input":
           cb.addEventListener("change", event => {
-            port[`${checkboxes.eventToAddOrRemove(event)}EventListener`]("midimessage", midiMessageListener);
+            port[`${eventToAddOrRemove(event)}EventListener`]("midimessage", midiMessageListener);
           });
           break;
         case "output":
           cb.addEventListener("change", event => {
-            selectedMidiOutputPorts[`${checkboxes.eventToAddOrRemove(event)}Port`](port);
+            selectedMidiOutputPorts[`${eventToAddOrRemove(event)}Port`](port);
           });
           break;
       };
     },
+    /** @param {MIDIPort} port */
     remove: port => {
       switch(port.type) {
         case "input":

@@ -771,6 +771,7 @@ const PianoKeyboard = class {
     const { handleMidiMessage } = this;
     const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     this.selectedMidiOutputPorts = setupMidiPorts(
+      /** @param {MIDIMessageEvent} msg */
       (msg) => {
         const { data } = msg;
         handleMidiMessage(data);
