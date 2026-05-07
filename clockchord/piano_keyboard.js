@@ -5,7 +5,7 @@ const PianoKeyboard = class {
   static setSongTitleToDocument = (songTitle) => {
     document.title = songTitle ? `${songTitle} - ClockChord` : this.initialDocumentTitle;
   };
-
+  synth = new SimpleSynthesizer();
   noteOn = (channel, noteNumber, velocity) => {
     const isNewVoice = this.synth.midiChannels[channel].noteOn(noteNumber, velocity);
     if( channel != SimpleSynthesizer.PERCUSSION_CHANNEL && isNewVoice ) {
@@ -756,8 +756,6 @@ const PianoKeyboard = class {
   };
   constructor(toneIndicatorCanvas, onChangeKey, onChangeBeat, onReady, searchParams) {
     this.toneIndicatorCanvas = toneIndicatorCanvas;
-    this.synth = new SimpleSynthesizer();
-    const { chord, handleMidiMessage } = this;
     const createVelocitySlider = () => {
       const velocitySlider = document.getElementById('velocity') ?? { value: 64 };
       const velocityValue = document.getElementById('velocityValue');
@@ -770,6 +768,8 @@ const PianoKeyboard = class {
     };
     this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = this.createMidiChannelSelector();
+    const { handleMidiMessage } = this;
+    const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     this.selectedMidiOutputPorts = setupMidiPorts(
       (msg) => {
         const { data } = msg;
@@ -777,7 +777,6 @@ const PianoKeyboard = class {
         sendWebMidiLinkMessage?.(data);
       }
     );
-    const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     setupMidiSequencer(
       createMidiSequenceParser(),
       (midiMessage) => {
@@ -794,7 +793,7 @@ const PianoKeyboard = class {
       onReady
     );
     setupSongle(
-      chord,
+      this.chord,
       onChangeKey,
       onChangeBeat,
       onReady,
