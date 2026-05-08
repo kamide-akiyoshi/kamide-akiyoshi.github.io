@@ -35,9 +35,9 @@ const PianoKeyboard = class {
       v.model = c.instrument;
     };
   };
-  handleMidiMessage = (msg) => {
-    const [statusWithCh, ...data] = msg;
-    const channel = statusWithCh & 0xF;
+  /** @param {number[]} */
+  handleMidiMessage = ([statusWithCh, ...data]) => {
+    const channel = statusWithCh & 0x0F;
     const status = statusWithCh & 0xF0;
     switch(status) {
       case 0x90:
@@ -285,8 +285,9 @@ const PianoKeyboard = class {
     instrumentView.setup((event) => {
       const programNumber = parseInt(event.target.value);
       const ch = this.midiChannelSelector.selectedChannel;
-      this.sendWebMidiLinkMessage?.([0xC0 | ch, programNumber]);
-      this.selectedMidiOutputPorts?.programChange(ch, programNumber);
+      const data = [0xC0 | ch, programNumber];
+      this.sendWebMidiLinkMessage?.(data);
+      this.selectedMidiOutputPorts?.send(data);
       this.programChange(ch, programNumber);
     });
     const setInstrumentModelOf = (ch) => {
@@ -307,8 +308,9 @@ const PianoKeyboard = class {
   manualNoteOn = (noteNumber, orderInChord) => {
     const ch = this.midiChannelSelector.selectedChannel;
     const velocity = this.velocitySlider.value - 0;
-    this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, velocity]);
-    this.selectedMidiOutputPorts?.noteOn(ch, noteNumber, velocity);
+    const data = [0x90 | ch, noteNumber, velocity];
+    this.sendWebMidiLinkMessage?.(data);
+    this.selectedMidiOutputPorts?.send(data);
     this.noteOn(ch, noteNumber, velocity);
     const { pianoKeyPressedChannnel } = this;
     if( pianoKeyPressedChannnel.has(noteNumber) ) {
@@ -327,8 +329,9 @@ const PianoKeyboard = class {
     const { pianoKeyPressedChannnel } = this;
     if( pianoKeyPressedChannnel.has(noteNumber) ) {
       const ch = pianoKeyPressedChannnel.get(noteNumber);
-      this.sendWebMidiLinkMessage?.([0x90 | ch, noteNumber, 0]);
-      this.selectedMidiOutputPorts?.noteOff(ch, noteNumber);
+      const data = [0x90 | ch, noteNumber, 0];
+      this.sendWebMidiLinkMessage?.(data);
+      this.selectedMidiOutputPorts?.send(data);
       this.noteOff(ch, noteNumber);
       pianoKeyPressedChannnel.delete(noteNumber);
     }
@@ -771,22 +774,22 @@ const PianoKeyboard = class {
     const { handleMidiMessage } = this;
     const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
     this.selectedMidiOutputPorts = setupMidiPorts(
-      /** @param {MIDIMessageEvent} msg */
-      (msg) => {
-        const { data } = msg;
+      /** @param {MIDIMessageEvent} messageEvent */
+      (messageEvent) => {
+        const { data } = messageEvent;
         handleMidiMessage(data);
         sendWebMidiLinkMessage?.(data);
       }
     );
     setupMidiSequencer(
       createMidiSequenceParser(),
-      (midiMessage) => {
-        handleMidiMessage(midiMessage);
-        sendWebMidiLinkMessage?.(midiMessage);
+      (data) => {
+        handleMidiMessage(data);
+        sendWebMidiLinkMessage?.(data);
         try {
-          this.selectedMidiOutputPorts?.send(midiMessage);
+          this.selectedMidiOutputPorts?.send(data);
         } catch(e) {
-          console.error(midiMessage, e);
+          console.error(data, e);
         }
       },
       onChangeKey,

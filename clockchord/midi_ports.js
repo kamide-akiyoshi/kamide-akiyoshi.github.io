@@ -6,30 +6,21 @@ const setupMidiPorts = (midiMessageListener) => {
   if( ! window.isSecureContext ) {
     console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
   }
-  // MIDI port selector
   const createSelectedMidiOutputPorts = () => {
     /**
      * @type {MIDIOutput[] & {
      *  addPort: (port: MIDIOutput) => void,
      *  removePort: (port: MIDIOutput) => void,
-     *  send: (message: Iterable<number>) => void,
-     *  noteOn: (channel: number, noteNumber: number, velocity: number) => void,
-     *  noteOff: (channel: number, noteNumber: number) => void,
-     *  programChange: (channel: number, programNumber: number) => void
+     *  send: typeof MIDIOutput.prototype.send,
      * }}
      */
     const ports = [];
-    ports.addPort = (port) => {
-      ports.push(port);
-    };
+    ports.addPort = (port) => { ports.push(port); };
     ports.removePort = (port) => {
       const i = ports.findIndex(p => p.id === port.id);
       i < 0 || ports.splice(i, 1);
     };
-    ports.send = (message) => ports.forEach(port => port.send(message));
-    ports.noteOn = (channel, noteNumber, velocity = 64) => ports.send([0x90 + channel, noteNumber, velocity]);
-    ports.noteOff = (channel, noteNumber) => ports.send([0x90 + channel, noteNumber, 0]);
-    ports.programChange = (channel, programNumber) => ports.send([0xC0 + channel, programNumber]);
+    ports.send = (data, timestamp) => ports.forEach((port) => port.send(data, timestamp));
     return ports;
   };
   const selectedMidiOutputPorts = createSelectedMidiOutputPorts();
@@ -40,9 +31,9 @@ const setupMidiPorts = (midiMessageListener) => {
      * @param {MIDIPort} port
      * @returns {HTMLInputElement | null}
      */
-    get: port => midiElement.querySelector(`input[value="${port.id}"]`),
+    get: (port) => midiElement.querySelector(`input[value="${port.id}"]`),
     /** @param {MIDIPort} port */
-    add: port => {
+    add: (port) => {
       if( checkboxes.get(port) ) return;
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -67,7 +58,7 @@ const setupMidiPorts = (midiMessageListener) => {
       };
     },
     /** @param {MIDIPort} port */
-    remove: port => {
+    remove: (port) => {
       switch(port.type) {
         case "input":
           port.removeEventListener("midimessage", midiMessageListener);
