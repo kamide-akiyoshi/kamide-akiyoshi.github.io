@@ -235,4 +235,5 @@ const SONG_KEYS = new Map([
   ["www.youtube.com/watch?v=JuyQQUqD64c", "Bb"],
   ["piapro.jp/t/vKC3/20080929204221", "G"],
   ["www.nicovideo.jp/watch/sm4748812", "G"],
+  ["www.youtube.com/watch?v=yCZFof7Y0tQ", "E"],
 ]);
