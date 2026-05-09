@@ -772,7 +772,8 @@ const PianoKeyboard = class {
     this.velocitySlider = createVelocitySlider();
     this.midiChannelSelector = this.createMidiChannelSelector();
     const { handleMidiMessage } = this;
-    const sendWebMidiLinkMessage = this.sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
+    const sendWebMidiLinkMessage = setupWebMidiLink(handleMidiMessage);
+    this.sendWebMidiLinkMessage = sendWebMidiLinkMessage;
     this.selectedMidiOutputPorts = setupMidiPorts(
       /** @param {MIDIMessageEvent} messageEvent */
       (messageEvent) => {
