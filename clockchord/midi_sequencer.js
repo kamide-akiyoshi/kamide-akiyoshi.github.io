@@ -1,13 +1,59 @@
 
+/**
+ * @typedef {{
+ *  tick: number,
+ *  data?: Uint8Array,
+ *  metaType?: number,
+ *  metaData?: Uint8Array,
+ *  tempo?: { microsecondsPerQuarter: number },
+ *  timeSignature?: {
+ *    numerator: number,
+ *    denominator: number,
+ *    clocksPerTick: number,
+ *    noteted32ndsPerQuarter: number,
+ *  },
+ *  keySignature?: number,
+ *  minor?: boolean,
+ *  text?: string,
+ *  systemExclusive?: Uint8Array,
+ *  lyricsNextPosition?: number, // For merged lyrics event
+ * }} MidiEvent
+ */
+
+/**
+ * @typedef {MidiEvent[] & { title?: string }} MidiTrack
+ */
+
+/**
+ * @typedef {{
+ *  formatType: number,
+ *  tickLength: number,
+ *  title?: string,
+ *  tracks: MidiTrack[],
+ *  keySignatures: MidiEvent[],
+ *  tempos: MidiEvent[],
+ *  timeSignatures: MidiEvent[],
+ *  lyrics: MidiEvent[],
+ *  markers: MidiEvent[],
+ * }} MidiSequence
+ */
+
 const createMidiSequenceParser = () => {
   const HEADER_CHUNK_ID = "MThd";
   const TRACK_CHUNK_ID = "MTrk";
+  /** @type {Object.<string, TextDecoder>} */
   const textDecoders = {};
+  /** @param {string} encoding */
   const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
+  /**
+   * @param {Uint8Array} byteArray
+   * @param {string} validChunkId
+   */
   const detectInvalidChunkId = (byteArray, validChunkId) => {
     const chunkId = decoderOf("UTF-8").decode(byteArray.subarray(0, validChunkId.length));
     return chunkId === validChunkId ? undefined : chunkId;
   };
+  /** @param {Uint8Array} byteArray */
   const parseText = (byteArray) => {
     let text;
     let encoding;
@@ -23,8 +69,14 @@ const createMidiSequenceParser = () => {
     }
     return text.replace(/\0/g, '');
   };
+  /** @param {number} b */
   const parseSignedByte = (b) => (b & 0x80) ? b - 0x100 : b;
+  /** @param {Uint8Array} byteArray */
   const parseBigEndian = (byteArray) => byteArray.reduce((out, n) => (out << 8) + n);
+  /**
+   * @param {Uint8Array} byteArray
+   * @returns {[number, Uint8Array]}
+   */
   const parseVariableLengthValue = (byteArray) => {
     let value = 0, valueLength = 0;
     while(valueLength < 4) {
@@ -35,12 +87,18 @@ const createMidiSequenceParser = () => {
     const rest = byteArray.subarray(valueLength);
     return [value, rest];
   };
+  /** @param {Uint8Array} byteArray */
   const parseVariableLengthData = (byteArray) => {
     const [length, rest] = parseVariableLengthValue(byteArray);
+    /** @type {Uint8Array[]} */
     const out = [rest.subarray(0, length)];
     length < rest.length && out.push(rest.subarray(length));
     return out;
   };
+  /**
+   * @param {Uint8Array} byteArray
+   * @param {MidiEvent} event
+   */
   const parseMetaEvent = (byteArray, event) => {
     if( (event.metaType = byteArray[0]) == 0x2F ) {
       return undefined; // End Of Track
@@ -72,19 +130,34 @@ const createMidiSequenceParser = () => {
     }
     return rest;
   };
+  /**
+   * @param {Uint8Array} byteArray
+   * @param {MidiEvent} event
+   */
   const parseSystemExclusiveEvent = (byteArray, event) => {
     const [data, rest] = parseVariableLengthData(byteArray);
     event.systemExclusive = data;
     return rest;
   };
+  /**
+   * @param {Uint8Array} byteArray
+   * @param {MidiEvent} event
+   * @param {number} length
+   */
   const parseFixedLengthEvent = (byteArray, event, length) => {
     event.data = byteArray.subarray(0, length);
     return length < byteArray.length ? byteArray.subarray(length) : undefined;
   };
+  /**
+   * @param {Uint8Array} byteArray
+   * @param {MidiEvent} event
+   * @param {number} runningStatus
+   */
   const parseMidiEvent = (byteArray, event, runningStatus) => {
     const topByte = byteArray[0];
     const hasNewStatus = topByte & 0x80;
     const status = hasNewStatus ? topByte : runningStatus;
+    /** @type {number} */
     let dataLength;
     switch(status & 0xF0) {
       case 0xF0:
@@ -136,11 +209,16 @@ const createMidiSequenceParser = () => {
     }
     return parseFixedLengthEvent(byteArray, event, dataLength);
   };
+  /**
+   * @param {MidiEvent[]} events
+   * @param {MidiEvent} event
+   */
   const insertEvent = (events, event) => {
     const { tick } = event;
     const index = events.findLastIndex((e) => e.tick <= tick);
     events.splice((index < 0 ? 0 : index) + 1, 0, event);
   };
+  /** @param {Uint8Array} sequenceByteArray */
   const parseMidiSequence = (sequenceByteArray) => {
     const invalidHeaderChunkId = detectInvalidChunkId(sequenceByteArray, HEADER_CHUNK_ID);
     if( invalidHeaderChunkId ) {
@@ -148,6 +226,7 @@ const createMidiSequenceParser = () => {
       throw new Error("Invalid MIDI file format");
     }
     const headerChunkSize = parseBigEndian(sequenceByteArray.subarray(4, 8));
+    /** @type {MidiSequence} */
     const sequence = {
       formatType: parseBigEndian(sequenceByteArray.subarray(8, 10)),
       tickLength: 0,
@@ -168,8 +247,10 @@ const createMidiSequenceParser = () => {
       sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
     }
     const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
+    /** @type {number} */
     let karaokeLyricsMetaType;
     Array.from({ length: numberOfTrack }).reduce(
+      /** @param {Uint8Array} tracksByteArray */
       (tracksByteArray) => {
         if( !tracksByteArray ) { // No more track
           return undefined;
@@ -181,24 +262,38 @@ const createMidiSequenceParser = () => {
         const trackChunkSize = parseBigEndian(tracksByteArray.subarray(4, 8));
         const nextTrackTop = 8 + trackChunkSize;
         let trackByteArray = tracksByteArray.subarray(8, nextTrackTop);
+        /** @type {MidiTrack} */
         const events = [];
         let tick = 0;
+        /** @type {number} */
         let runningStatus;
+        /**
+         * @type {{
+         *  lastFragmentTick: number,
+         *  event?: MidiEvent,
+         *  createEvent: (event: MidiEvent) => void,
+         *  appendTextOf: (event: MidiEvent) => void,
+         * }} mergedLyrics
+         */
         const mergedLyrics = {
           lastFragmentTick: 0,
+          /** @param {MidiEvent} event */
           createEvent: (event) => {
             karaokeLyricsMetaType = event.metaType;
             const lastTick = events.findLast((e) => e.metaType === karaokeLyricsMetaType)?.tick ?? 0;
             mergedLyrics.lastFragmentTick = tick;
-            const createdEvent = mergedLyrics.event = {
+            /** @type {MidiEvent} */
+            const createdEvent = {
               ...event,
               tick: tick - Math.min(sequence.ticksPerQuarter * 2, tick - lastTick),
               metaType: 5,
             };
+            mergedLyrics.event = createdEvent;
             insertEvent(sequence.lyrics, createdEvent);
             insertEvent(events, createdEvent);
             event.lyricsNextPosition = event.text.length;
           },
+          /** @param {MidiEvent} event */
           appendTextOf: (event) => {
             mergedLyrics.lastFragmentTick = tick;
             const mergedEvent = mergedLyrics.event;
@@ -208,6 +303,7 @@ const createMidiSequenceParser = () => {
         while(true) {
           const [deltaTime, eventByteArray] = parseVariableLengthValue(trackByteArray);
           tick += deltaTime;
+          /** @type {MidiEvent} */
           const event = { tick };
           trackByteArray = parseMidiEvent(eventByteArray, event, runningStatus);
           if( "metaType" in event ) {
@@ -270,6 +366,7 @@ const createMidiSequenceParser = () => {
       },
       tracksByteArray
     );
+    /** @type {(e1: MidiEvent, e2: MidiEvent) => number} */
     const ascendingByTick = (e1, e2) => e1.tick < e2.tick ? -1 : e1.tick > e2.tick ? 1 : 0;
     [
       "keySignatures",
