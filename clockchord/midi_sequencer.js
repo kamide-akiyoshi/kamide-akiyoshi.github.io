@@ -1,33 +1,37 @@
-
 /**
+ * @typedef {{
+ *  numerator: number,
+ *  denominator: number,
+ *  clocksPerTick: number,
+ *  noteted32ndsPerQuarter: number
+ * }} MidiTimeSignature
+ *
  * @typedef {{
  *  tick: number,
  *  data?: Uint8Array,
  *  metaType?: number,
  *  metaData?: Uint8Array,
  *  tempo?: { microsecondsPerQuarter: number },
- *  timeSignature?: {
- *    numerator: number,
- *    denominator: number,
- *    clocksPerTick: number,
- *    noteted32ndsPerQuarter: number,
- *  },
+ *  timeSignature?: MidiTimeSignature,
  *  keySignature?: number,
  *  minor?: boolean,
  *  text?: string,
  *  systemExclusive?: Uint8Array,
  *  lyricsNextPosition?: number, // For merged lyrics event
+ *  ticksPerBeat?: number,
  * }} MidiEvent
- */
-
-/**
- * @typedef {MidiEvent[] & { title?: string }} MidiTrack
- */
-
-/**
+ *
+ * @typedef {MidiEvent[] & {
+ *  title?: string;
+ *  currentEventIndex?: number;
+ * }} MidiTrack
+ *
  * @typedef {{
  *  formatType: number,
  *  tickLength: number,
+ *  ticksPerQuarter?: number,
+ *  framesPerSec?: number,
+ *  ticksPerFrame?: number,
  *  title?: string,
  *  tracks: MidiTrack[],
  *  keySignatures: MidiEvent[],
@@ -37,7 +41,6 @@
  *  markers: MidiEvent[],
  * }} MidiSequence
  */
-
 const createMidiSequenceParser = () => {
   const HEADER_CHUNK_ID = "MThd";
   const TRACK_CHUNK_ID = "MTrk";
@@ -55,7 +58,9 @@ const createMidiSequenceParser = () => {
   };
   /** @param {Uint8Array} byteArray */
   const parseText = (byteArray) => {
+    /** @type {string} */
     let text;
+    /** @type {string} */
     let encoding;
     try {
       encoding = Encoding.detect(byteArray) || "sjis";
@@ -247,7 +252,7 @@ const createMidiSequenceParser = () => {
       sequence.ticksPerQuarter = parseBigEndian(timeDivisionArray);
     }
     const tracksByteArray = sequenceByteArray.subarray(8 + headerChunkSize);
-    /** @type {number} */
+    /** @type {number | undefined} */
     let karaokeLyricsMetaType;
     Array.from({ length: numberOfTrack }).reduce(
       /** @param {Uint8Array} tracksByteArray */
@@ -382,8 +387,26 @@ const createMidiSequenceParser = () => {
   return parseMidiSequence;
 };
 
+/**
+ * @param {ReturnType<createMidiSequenceParser>} parseMidiSequence 
+ * @param {(data: Uint8Array) => void} sendMidiMessage 
+ * @param {(key: number, minor: boolean) => void} onChangeKey
+ * @param {(beat: number) => void} onChangeBeat 
+ * @param {() => void} onReady 
+ */
 const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onChangeBeat, onReady) => {
+  /** @type {MidiEvent} */
   let lastTimeSignatureEvent;
+  /**
+   * @type {{
+   *  element: HTMLElement,
+   *  pastElement: HTMLElement,
+   *  text?: string,
+   *  clear: () => void,
+   *  setText: (text: string) => void,
+   *  proceedText: (nextPosition: number) => void,
+   * }}
+   */
   const currentLyrics = {
     element: document.getElementById("lyrics"),
     pastElement: document.getElementById("past_lyrics"),
@@ -403,6 +426,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       currentLyrics.pastElement.innerText = t.slice(0, nextPosition);
     },
   };
+  /** @param {MidiEvent} event */
   const doMetaEvent = (event) => {
     const { metaType } = event;
     switch(metaType) {
@@ -444,10 +468,12 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     }
   };
   const midiFileNameElement = document.getElementById("midi_file_name");
+  /** @type {HTMLInputElement} */
   const tickPositionSlider = document.getElementById("time_position") ?? {};
   const timeSignatureElement = document.getElementById("time_signature");
   const tempoElement = document.getElementById("tempo");
   const titleElement = document.getElementById("song_title");
+  /** @param {string} title */
   const setMidiSequenceTitle = (title) => {
     const trimmedTitle = title?.trim() ?? "";
     titleElement.textContent = trimmedTitle;
@@ -455,9 +481,13 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   };
   const markerElement = document.getElementById("song_marker");
   const textElement = document.getElementById("song_text");
+  /** @type {MidiSequence} */
   let midiSequence;
   const midiSequenceElement = document.getElementById("midi_sequence");
-  document.getElementById("play_pause")?.addEventListener('click', () => intervalId ? pause() : play());
+  /** @type {HTMLButtonElement} */
+  const playPauseButton = document.getElementById("play_pause");
+  playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
+  /** @type {HTMLImageElement} */
   const playPauseIcon = document.getElementById("play_pause_icon");
   tickPositionSlider.addEventListener?.("input", async (event) => {
     await pause();
@@ -484,6 +514,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       keyTimelineElement.appendChild(element);
     });
   };
+  /** @param {MidiSequence} seq */
   const setMidiSequence = (seq) => {
     midiSequence = seq;
     textElement.textContent = "";
@@ -510,6 +541,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     midiSequencerElement.prepend(midiSequenceElement);
     onReady?.();
   };
+  /** @param {File} file */
   const loadMidiFile = (file) => {
     file.arrayBuffer().then((ab) => {
       if( !ab.byteLength ) throw new Error("Empty file");
@@ -521,6 +553,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       alert(`${file.name}: ${error}`);
     });
   };
+  /** @type {HTMLInputElement} */
   const midiFileInput = document.getElementById("midi_file");
   const midiFileDropZone = document.getElementsByTagName("body")[0];
   document.getElementById("midi_file_select_button")?.addEventListener("click", () => {
@@ -546,6 +579,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     loadMidiFile(file);
   });
   let tickPosition = 0;
+  /** @param {number} tick */
   const setTickPosition = (tick) => {
     pause();
     tickPositionSlider.value = tickPosition = tick;
@@ -553,6 +587,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     if( !midiSequence ) {
       return;
     }
+    /** @param {MidiEvent[]} array */
     const doLastMetaEvent = (array) => {
       const lastEvent = array.findLast((event) => event.tick <= tick);
       lastEvent && doMetaEvent(lastEvent);
@@ -590,7 +625,9 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       track.currentEventIndex = mid;
     });
   };
+  /** @type {number | undefined} */
   let beat;
+  /** @param {number} tick */
   const setBeatAt = (tick) => {
     const {
       tick: startTick,
@@ -602,12 +639,17 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     onChangeBeat?.(beat = newBeat, numerator);
   };
   const INTERVAL_MILLI_SEC = 10;
+  /** @type {number} */
   let ticksPerInterval;
+  /** @param {number} uspq */
   const changeTempo = (uspq) => {
     tempoElement.textContent = Music.bpmTextOf(Math.floor(60000000 / uspq));
     ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
   };
-  let intervalId, sentinel;
+  /** @type {number | undefined} */
+  let intervalId;
+  /** @type {WakeLockSentinel | undefined} */
+  let sentinel;
   const requestWakeLock = async () => { // To prevent screen lock while MIDI playing
     try {
       const { wakeLock } = navigator;
@@ -656,6 +698,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
         tickPositionSlider.value = tickPosition;
         tracks.forEach((events) => {
           while(true) {
+            /** @type {MidiEvent} */
             const event = events[events.currentEventIndex];
             if( !event || event.tick > tickPosition ) {
               break;
