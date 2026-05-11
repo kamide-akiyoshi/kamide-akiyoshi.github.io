@@ -410,6 +410,13 @@ const SimpleSynthesizer = class {
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
   static NUMBER_OF_CHANNELS = 16;
+  static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
+  static DEFAULT_PITCH_BEND = { pitchBendCent: 0, pitchBendValue: 0, pitchBendSensitivity: 2 };
+  /**
+   * @param {number} value
+   * @param {number} sensitivity
+   */
+  static pitchBendValueToCent = (value, sensitivity) => 100 * sensitivity * value / (1 << 13);
   static {
     try {
       /** @type {typeof window.AudioContext} */
@@ -427,7 +434,10 @@ const SimpleSynthesizer = class {
       PERCUSSION_CHANNEL,
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
+      DEFAULT_CHANNEL_GAIN,
+      DEFAULT_PITCH_BEND,
       audioContext,
+      pitchBendValueToCent,
     } = SimpleSynthesizer;
     if( !audioContext ) return;
     const minEnvelopeGainValue = 0.01;
@@ -438,9 +448,8 @@ const SimpleSynthesizer = class {
         /** @type {HTMLInputElement | { value: string, addEventListener?: undefined }} */
         (document.getElementById('volume')) ?? { value: "0.5" };
       const mixer = audioContext.createGain();
-      const { gain } = mixer;
       const changeVolume = () => {
-        gain.value = parseFloat(volumeSlider.value) ** 2;
+        mixer.gain.value = parseFloat(volumeSlider.value) ** 2;
       };
       volumeSlider.addEventListener?.('input', changeVolume);
       changeVolume();
@@ -574,59 +583,35 @@ const SimpleSynthesizer = class {
       }
       return voice;
     };
-    /**
-     * @param {number} value
-     * @param {number} sensitivity
-     */
-    const pitchBendToCent = (value, sensitivity) => 100 * sensitivity * value / (1 << 13);
-    this.midiChannels = Array.from(
+    const midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
-        let pitchBendCent = 0;
-         const voices = Object.assign(
-          new Map(),
-          {
-            /**
-             * @param {number} value
-             * @param {number} sensitivity
-             */
-            applyPitchBend(value, sensitivity) {
-              pitchBendCent = pitchBendToCent(value, sensitivity);
-              voices.forEach((voice) => voice.detune?.(pitchBendCent));
-            },
-            /** @param {boolean} [immediately] */
-            releaseAll(immediately) {
-              voices.forEach(
-                (voice, noteNumber) => voice.release(() => voices.delete(noteNumber), immediately)
-              );
-            }
-          }
-        );
-        let volume = 100, expression = 0x7F;
+        /** @type {Map<number, Voice>} */ 
+        const voices = new Map();
+        let { volume, expression } = DEFAULT_CHANNEL_GAIN;
         const createAmpan = () => {
           const amplifier = audioContext.createGain();
           const updateGain = () => { amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F); }
           updateGain();
           const panner = audioContext.createStereoPanner();
+          const center = 0x40;
+          const setPan = (value = center) => {
+            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+            // Web Audio API's panner value: -1(L) ... 1(R)
+            panner.pan.setValueAtTime((value - center) / center, audioContext.currentTime);
+          };
           amplifier.connect(panner);
           panner.connect(mixer ??= createMixer());
-          return { amplifier, panner, updateGain };
+          return { amplifier, updateGain, setPan };
         };
         /** @type {ReturnType<typeof createAmpan> | undefined} */
         let ampan;
         const getAmpan = () => ampan ??= createAmpan();
-        /** @param {number} value */
-        const setPan = (value) => {
-          // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-          // Web Audio API's panner value: -1(L) ... 1(R)
-          getAmpan().panner.pan.setValueAtTime((value - 0x40) / 0x40, audioContext.currentTime);
-        };
         let programNumber = 0;
-        /** @type {Instrument | undefined} */
-        let instrument;
+        let instrument = channelNumber == PERCUSSION_CHANNEL ? GENERIC_PERCUSSION : INSTRUMENTS[programNumber];
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number} | undefined} */
         let parameterNumber;
-        let pitchBendValue = 0, pitchBendSensitivity = 2;
+        let { pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND;
         const channel = {
           /**
            * @param {number} control
@@ -652,7 +637,7 @@ const SimpleSynthesizer = class {
             }
             const { MSB, LSB, isRegistered } = parameterNumber;
             if( isRegistered && MSB === 0 && LSB === 0 ) {
-              pitchBendCent = pitchBendToCent(
+              pitchBendCent = pitchBendValueToCent(
                 pitchBendValue,
                 pitchBendSensitivity = value
               );
@@ -660,10 +645,11 @@ const SimpleSynthesizer = class {
           },
           /** @param {number} value */
           set pitchBendValue(value) {
-            voices.applyPitchBend(
+            pitchBendCent = pitchBendValueToCent(
               pitchBendValue = value,
               pitchBendSensitivity
             );
+            voices.forEach((voice) => voice.detune?.(pitchBendCent));
           },
           /** @param {number} value */
           set modulationDepth(value) {
@@ -675,25 +661,31 @@ const SimpleSynthesizer = class {
           /** @param {number} value */
           set expression(value) { expression = value; getAmpan().updateGain(); },
           /** @param {number} value */
-          set pan(value) { setPan(value); },
+          set pan(value) { getAmpan().setPan(value); },
           /** @param {number} value */
           set program(value) {
-            if( channelNumber == PERCUSSION_CHANNEL ) return;
+            if( channelNumber == PERCUSSION_CHANNEL ) {
+              // Keep using the default percussion instrument regardless of program change messages
+              return;
+            }
             instrument = INSTRUMENTS[programNumber = value];
           },
           get program() { return programNumber; },
-          get instrument() { return instrument ?? INSTRUMENTS[programNumber]; },
+          get instrument() { return instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            voices.applyPitchBend(
-              pitchBendValue = 0,
-              pitchBendSensitivity = 2
-            );
-            volume = 100; expression = 0x7F; getAmpan().updateGain();
-            setPan(0x40);
+            ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
+            voices.forEach((voice) => voice.detune?.(pitchBendCent));
+            ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
+            getAmpan().updateGain();
+            getAmpan().setPan();
           },
-          allSoundOff() { voices.releaseAll(true); },
-          allNotesOff() { voices.releaseAll(); },
+          allSoundOff() {
+            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
+          },
+          allNotesOff() {
+            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
+          },
           /** @param {number} noteNumber */
           noteOff(noteNumber) {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
@@ -708,7 +700,7 @@ const SimpleSynthesizer = class {
             if( !voice ) {
               voice = createVoice(
                 getAmpan().amplifier,
-                this.instrument,
+                instrument,
                 FREQUENCIES[noteNumber]
               );
               voice.detune?.(pitchBendCent);
@@ -718,13 +710,9 @@ const SimpleSynthesizer = class {
             return isNewVoice;
           },
         };
-        if( channelNumber == PERCUSSION_CHANNEL ) {
-          instrument = GENERIC_PERCUSSION;
-        } else {
-          channel.program = 0;
-        }
         return channel;
-      } // Array.from
-    ); // midiChannels
-  }; // constuctor
+      }
+    );
+    this.midiChannels = midiChannels;
+  };
 };
