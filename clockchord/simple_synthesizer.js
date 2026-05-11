@@ -2,10 +2,13 @@
 /**
  * @typedef {{
  *  name: string;
- *  wave: OscillatorType | 'noise';
  *  envelope: number[];
- *  terms?: [number[], number[]];
- * }} Instrument
+ * } & ({
+ *  wave: Exclude<OscillatorType, 'custom'> | 'noise';
+ * } | {
+ *  wave: 'custom';
+ *  terms: [number[], number[]];
+ * })} Instrument
  */
 
 /** @type {Instrument} */
@@ -133,7 +136,7 @@ const INSTRUMENTS = [
   },
   {
     name: "Rock Organ",
-    wave: "sawtooth",
+    wave: "custom",
     terms: [
       [0, 0, 0, 0, 0],
       [0, 1, 0.5, 0.5, 0.5],
