@@ -287,7 +287,7 @@ const PianoKeyboard = class {
       const ch = this.midiChannelSelector.selectedChannel;
       const data = [0xC0 | ch, programNumber];
       this.sendWebMidiLinkMessage?.(data);
-      this.selectedMidiOutputPorts?.send(data);
+      this.selectedMidiOutputPorts?.forEach(port => port.send(data));
       this.programChange(ch, programNumber);
     });
     const setInstrumentModelOf = (ch) => {
@@ -310,7 +310,7 @@ const PianoKeyboard = class {
     const velocity = this.velocitySlider.value - 0;
     const data = [0x90 | ch, noteNumber, velocity];
     this.sendWebMidiLinkMessage?.(data);
-    this.selectedMidiOutputPorts?.send(data);
+    this.selectedMidiOutputPorts?.forEach(port => port.send(data));
     this.noteOn(ch, noteNumber, velocity);
     const { pianoKeyPressedChannnel } = this;
     if( pianoKeyPressedChannnel.has(noteNumber) ) {
@@ -331,7 +331,7 @@ const PianoKeyboard = class {
       const ch = pianoKeyPressedChannnel.get(noteNumber);
       const data = [0x90 | ch, noteNumber, 0];
       this.sendWebMidiLinkMessage?.(data);
-      this.selectedMidiOutputPorts?.send(data);
+      this.selectedMidiOutputPorts?.forEach(port => port.send(data));
       this.noteOff(ch, noteNumber);
       pianoKeyPressedChannnel.delete(noteNumber);
     }
@@ -788,7 +788,7 @@ const PianoKeyboard = class {
         handleMidiMessage(data);
         sendWebMidiLinkMessage?.(data);
         try {
-          this.selectedMidiOutputPorts?.send(data);
+          this.selectedMidiOutputPorts?.forEach(port => port.send(data));
         } catch(e) {
           console.error(data, e);
         }
