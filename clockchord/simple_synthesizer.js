@@ -412,6 +412,7 @@ const SimpleSynthesizer = class {
   static NUMBER_OF_CHANNELS = 16;
   static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
   static DEFAULT_PITCH_BEND = { pitchBendCent: 0, pitchBendValue: 0, pitchBendSensitivity: 2 };
+  static MIN_ENVELOPE_GAIN_VALUE = 0.01;
   /**
    * @param {number} value
    * @param {number} sensitivity
@@ -436,11 +437,11 @@ const SimpleSynthesizer = class {
       FREQUENCIES,
       DEFAULT_CHANNEL_GAIN,
       DEFAULT_PITCH_BEND,
+      MIN_ENVELOPE_GAIN_VALUE,
       audioContext,
       pitchBendValueToCent,
     } = SimpleSynthesizer;
     if( !audioContext ) return;
-    const minEnvelopeGainValue = 0.01;
     /** @type {ReturnType<typeof createMixer> | undefined} */
     let mixer;
     const createMixer = () => {
@@ -565,10 +566,10 @@ const SimpleSynthesizer = class {
             modulator?.oscillator.stop();
             onStop?.();
           };
-          if( immediately || gain.value <= minEnvelopeGainValue ) { stop(); return; }
+          if( immediately || gain.value <= MIN_ENVELOPE_GAIN_VALUE ) { stop(); return; }
           const [, , , releaseTime] = envelope;
           if( !releaseTime ) { stop(); return; }
-          const delay = releaseTime * Math.log(gain.value / minEnvelopeGainValue);
+          const delay = releaseTime * Math.log(gain.value / MIN_ENVELOPE_GAIN_VALUE);
           if( delay <= 0 ) { stop(); return; }
           gain.cancelScheduledValues(audioContext.currentTime);
           gain.setTargetAtTime(0, audioContext.currentTime, releaseTime);
