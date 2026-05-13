@@ -7,12 +7,11 @@ const setupWebMidiLink = (onMessage) => {
   window.addEventListener(
     'message',
     (event) => {
-      const messageString = typeof event.data === "string" ? event.data : null;
-      if( ! messageString ) {
+      if( typeof event.data !== "string" ) {
         // Ignore non-string message from other source such as Songle
         return;
       }
-      const strs = messageString.split(",");
+      const strs = event.data.split(",");
       const id = strs.shift();
       switch(id) {
         case ID_MIDI:
@@ -36,12 +35,9 @@ const setupWebMidiLink = (onMessage) => {
   loadButton.addEventListener('click', () => {
     const url = urlElement.value;
     if( url ) {
-      attach();
-      iFrame.src = url;
-    } else {
-      iFrame.src = "";
-      detach();
+      attach(); iFrame.src = url; return;
     }
+    iFrame.src = ""; detach();
   });
   /** @param {number[]} data */
   return (data) => {
