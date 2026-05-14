@@ -10,6 +10,7 @@ const Music = class {
       ["\u{1D12A}", "x", "##"], // Double sharp
     ];
     const A = 'A'.charCodeAt(0);
+    /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const fsPatterns = flatSharpPatternTree[Math.trunc((hour + 15) / 7)];
       if( !fsPatterns ) return [];
@@ -19,12 +20,19 @@ const Music = class {
     };
     const fsPatternToHour = flatSharpPatternTree.flatMap((patterns, index) => {
       const majorHourF = (index - 2) * 7 - 1;
-      return patterns.map((pattern) => ([pattern, majorHourF]));
+      return patterns.map(
+        /** @returns {[string, number]} */
+        (pattern) => ([pattern, majorHourF])
+      );
     }).sort(
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
     const abciToHour = Array.from({ length: 7 }, (_, abci) => (abci + 2) * 2 % 7);
+    /**
+     * @param {string} text 
+     * @returns {[number, string] | undefined}
+     */
     this.parsePitchName = (text) => {
       const abcHour = abciToHour[text.substring(0, 1).toUpperCase().charCodeAt(0) - A] ?? -1;
       if( abcHour < 0 ) return undefined;
@@ -36,6 +44,7 @@ const Music = class {
       })?.[1] ?? -1;
       return [majorHourF + abcHour, rest];
     };
+    /** @param {number} hour */
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
       const n = Math.abs(hour);
@@ -43,14 +52,27 @@ const Music = class {
       return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
     };
   };
+  /** @param {number} n */
   static togglePitchNumberAndMajorHour = (n) => n + (n & 1) * 6;
+  /**
+   * @param {number} hour1 
+   * @param {number} hour2 
+   */
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
+  /** @param {number} hour */
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
+  /** @param {number} hour */
   static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
+  /**
+   * @param {number} hour
+   * @param {boolean} [minor]
+   */
   static majorMinorTextOf = (hour = 0, minor) => {
+    /** @param {number} hour */
     const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
+  /** @param {number} bpmNumber */
   static bpmTextOf = (bpmNumber) => `𝅘𝅥 = ${bpmNumber}`;
 }
 
@@ -96,6 +118,7 @@ const CircleOfFifthsClock = class {
   dial = {
     keySignatureTextAt0: 'key',
     borderRadius: [0.14, 0.29, 0.42, 0.5],
+    /** @param {string} value */
     set theme(value) {
       const addOrRemove = value === 'dark' ? 'add' : 'remove';
       [
@@ -105,6 +128,7 @@ const CircleOfFifthsClock = class {
       this.themeColor = CircleOfFifthsClock.themeColors[value];
       this.draw();
     },
+    /** @param {string} value */
     set backgroundMode(value) {
       if( value === 'pie' ) this.isPieMode = true; else delete this.isPieMode;
       this.draw();
