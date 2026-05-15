@@ -133,6 +133,10 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       currentPosition = formatTime(widget.position);
       positionCaptureButton.style.display = "unset";
       positionElement.textContent = `${currentPosition}/${duration}[ms]`
+      if( widget.mode === SongleWidgetAPI.NN_VIDEO_MODE ) {
+        // Cancel the delay in Niconico Video
+        widget.setAllEventTimingOffset(-200);
+      }
       widget.on("chordPlay", (event) => {
         const chordSymbol = event.chord.name;
         chordElement.textContent = chordSymbol;
