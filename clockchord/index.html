@@ -430,6 +430,15 @@
 		display: none;
 		vertical-align: text-top;
 	}
+	.bpm {
+    	display: inline-block;
+		min-width: 1.5em;
+	}
+	#songlePosition, #songleDuration {
+		min-width: 3em;
+		display: inline-block;
+		text-align: right;
+	}
 	.song_url {
 		font-style: italic;
 		font-weight: bold;
@@ -537,9 +546,9 @@
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
       <div id="songleCurrent">
-        <span id="songleTempo"></span>
+		<span id="songleTempo" style="display: none;">𝅘𝅥 = <span class="bpm"></span></span>
         <button id="songleCapturePosition" title="Capture position" aria-label="Capture position">📷</button>
-        <span id="songlePosition"></span>
+		<span><span id="songlePosition"></span>/<span id="songleDuration"></span>[ms]</span>
         <span id="songleChord"></span>
       </div>
       <div id="EmbeddedSongle">
@@ -579,7 +588,7 @@
         </div>
         <div>
 		  <span id="time_signature" class="grayout">4/4</span>
-          <span id="tempo" class="grayout">𝅘𝅥 = 120</span>
+          <span id="tempo" class="grayout" style="display: none;">𝅘𝅥 = <span class="bpm">120</span></span>
           <span id="song_marker"></span>
         </div>
         <div id="song_text"></div>

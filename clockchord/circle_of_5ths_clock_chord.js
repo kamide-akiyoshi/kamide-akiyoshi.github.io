@@ -72,8 +72,6 @@ const Music = class {
     const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
-  /** @param {number} bpmNumber */
-  static bpmTextOf = (bpmNumber) => `𝅘𝅥 = ${bpmNumber}`;
 }
 
 const CircleOfFifthsClock = class {

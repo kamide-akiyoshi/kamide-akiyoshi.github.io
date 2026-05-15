@@ -16,7 +16,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     navigator.clipboard.writeText(currentPositionText);
   });
   const positionElement = document.getElementById("songlePosition");
+  const durationElement = document.getElementById("songleDuration");
   const tempoElement = document.getElementById("songleTempo");
+  const bpmElement = tempoElement.querySelector(".bpm");
   const chordElement = document.getElementById("songleChord");
   const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
   autoChordPlayCheckbox.addEventListener("change", (event) => {
@@ -84,9 +86,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       widgetElement = undefined;
     }
     keyTimelineElement.setSongKeyTimeline();
+    tempoElement.style.display = "none";
     [
-      tempoElement,
+      bpmElement,
       positionElement,
+      durationElement,
       chordElement,
       errorMessageElement
     ].forEach((element) => element.textContent = "");
@@ -129,9 +133,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
       keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
-      durationText = msTextOf(widget.duration);
+      durationElement.textContent = durationText = msTextOf(widget.duration);
       const showPosition = () => {
-        positionElement.textContent = `${currentPositionText = msTextOf(widget.position)}/${durationText}[ms]`;
+        positionElement.textContent = `${currentPositionText = msTextOf(widget.position)}`;
         positionCaptureButton.style.display = "unset";
       };
       showPosition();
@@ -156,7 +160,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
           chord.start();
         }
         showPosition();
-        tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
+        bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
+        tempoElement.style.display = null;
         songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
       });
       const handleSeek = () => {

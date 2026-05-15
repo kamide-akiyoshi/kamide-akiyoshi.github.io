@@ -441,8 +441,8 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
         markerElement.textContent = event.text ? `🏷️${event.text}` : "";
         break;
       case 0x51:
-        changeTempo(event.tempo.microsecondsPerQuarter);
         tempoElement.classList.remove("grayout");
+        changeTempo(event.tempo.microsecondsPerQuarter);
         break;
       case 0x58:
         {
@@ -472,6 +472,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   const tickPositionSlider = document.getElementById("time_position") ?? {};
   const timeSignatureElement = document.getElementById("time_signature");
   const tempoElement = document.getElementById("tempo");
+  const bpmElement = tempoElement.querySelector(".bpm");
   const titleElement = document.getElementById("song_title");
   /** @param {string} title */
   const setMidiSequenceTitle = (title) => {
@@ -643,8 +644,9 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   let ticksPerInterval;
   /** @param {number} uspq */
   const changeTempo = (uspq) => {
-    tempoElement.textContent = Music.bpmTextOf(Math.floor(60000000 / uspq));
+    bpmElement.textContent = `${Math.floor(60000000 / uspq)}`;
     ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
+    tempoElement.style.display = null;
   };
   /** @type {number | undefined} */
   let intervalId;
