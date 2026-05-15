@@ -9,10 +9,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const positionCaptureButton = document.getElementById("songleCapturePosition");
-  let currentPosition = 0;
-  let duration = 0;
+  const msTextOf = (t) => `${Math.floor(t.milliseconds)}`;
+  let currentPositionText = "0";
+  let durationText = "0";
   positionCaptureButton.addEventListener("click", () => {
-    navigator.clipboard.writeText(`${currentPosition}`);
+    navigator.clipboard.writeText(currentPositionText);
   });
   const positionElement = document.getElementById("songlePosition");
   const tempoElement = document.getElementById("songleTempo");
@@ -65,7 +66,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       keyTimelineElement.appendChild(element);
     });
   };
-  const formatTime = (t) => `${Math.floor(t.milliseconds)}`;
   const errorMessages = {
     100: "Could not embed: Song deleted",
     101: "Could not embed: Not permitted",
@@ -129,10 +129,12 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
       keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
-      duration = formatTime(widget.duration);
-      currentPosition = formatTime(widget.position);
-      positionCaptureButton.style.display = "unset";
-      positionElement.textContent = `${currentPosition}/${duration}[ms]`
+      durationText = msTextOf(widget.duration);
+      const showPosition = () => {
+        positionElement.textContent = `${currentPositionText = msTextOf(widget.position)}/${durationText}[ms]`;
+        positionCaptureButton.style.display = "unset";
+      };
+      showPosition();
       if( widget.mode === SongleWidgetAPI.NN_VIDEO_MODE ) {
         // Cancel the delay in Niconico Video
         widget.setAllEventTimingOffset(-250);
@@ -153,9 +155,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
         if (autoChordPlayCheckbox.checked) {
           chord.start();
         }
-        currentPosition = formatTime(widget.position);
-        positionCaptureButton.style.display = "unset";
-        positionElement.textContent = `${currentPosition}/${duration}[ms]`
+        showPosition();
         tempoElement.textContent = Music.bpmTextOf(Math.round(event.beat.bpm));
         songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
       });
@@ -167,7 +167,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       widget.on("pause", () => { chord.stop(); });
       widget.on("finish", () => {
         chord.stop();
-        chordElement.textContext = "";
+        chordElement.textContent = "";
       });
       onReady?.();
     };
