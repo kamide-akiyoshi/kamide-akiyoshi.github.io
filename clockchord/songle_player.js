@@ -135,7 +135,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       positionElement.textContent = `${currentPosition}/${duration}[ms]`
       if( widget.mode === SongleWidgetAPI.NN_VIDEO_MODE ) {
         // Cancel the delay in Niconico Video
-        widget.setAllEventTimingOffset(-200);
+        widget.setAllEventTimingOffset(-250);
+        widget.eventPollingInterval = 1; // [ms]
       }
       widget.on("chordPlay", (event) => {
         const chordSymbol = event.chord.name;
