@@ -1,11 +1,15 @@
 
 const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) => {
+  const widgetParent = document.getElementById("EmbeddedSongle");
+  if( !widgetParent ) {
+    alert("No container element found to embed Songle Widget");
+    return;
+  }
   const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
   const HTTPS_URL_PREFIX = "https://";
   const urlInput = document.getElementById("SongleUrl");
   const songKeyInput = document.getElementById("SongleKeySig");
   const loadButton = document.getElementById("LoadSongleUrl");
-  const widgetParent = document.getElementById("EmbeddedSongle");
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const currentStatusBar = document.getElementById("songleCurrent");
@@ -15,11 +19,12 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const positionElement = document.getElementById("songlePosition");
   const durationElement = document.getElementById("songleDuration");
   const tempoElement = document.getElementById("songleTempo");
-  const bpmElement = tempoElement.querySelector(".bpm");
+  const bpmElement = tempoElement?.querySelector(".bpm");
   const chordElement = document.getElementById("songleChord");
+  /** @type {HTMLInputElement} */
   const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
-  autoChordPlayCheckbox.addEventListener("change", (event) => {
-    event.target.checked ? chord.clear() : chord.stop();
+  autoChordPlayCheckbox?.addEventListener("change", () => {
+    autoChordPlayCheckbox.checked ? chord.clear() : chord.stop();
   });
   const toSongKeyTimeline = (text) => {
     if (!text) return;
@@ -93,10 +98,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     PianoKeyboard.setSongTitleToDocument(undefined);
   };
   const loadSongle = (urlText, songKeyTimelineText) => {
-    if (!widgetParent) {
-      alert("Parent element not found to embed the Songle Widget");
-      return;
-    }
     if (widget) {
       const { remove } = widget;
       if (remove) {
