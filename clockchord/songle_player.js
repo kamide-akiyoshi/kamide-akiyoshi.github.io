@@ -159,7 +159,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
         songKeyTimeline?.handleBeatPlay(timePosition);
       });
       const handleSeek = () => {
-        songKeyTimeline && setTimeout(() => songKeyTimeline.handleSeek(widget.position.milliseconds), 0);
+        const timePosition = widget.position.milliseconds;
+        positionElement.textContent = `${Math.floor(timePosition)}`;
+        songKeyTimeline && setTimeout(() => songKeyTimeline.handleSeek(timePosition), 0);
       };
       widget.on("seek", handleSeek);
       widget.on("play", handleSeek);
