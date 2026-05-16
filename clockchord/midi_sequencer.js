@@ -426,6 +426,11 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       currentLyrics.pastElement.innerText = t.slice(0, nextPosition);
     },
   };
+  const timeSignatureElement = document.getElementById("time_signature");
+  const tempoElement = document.getElementById("tempo");
+  const bpmElement = tempoElement.querySelector(".bpm");
+  const markerElement = document.getElementById("song_marker");
+  const textElement = document.getElementById("song_text");
   /** @param {MidiEvent} event */
   const doMetaEvent = (event) => {
     const { metaType } = event;
@@ -467,12 +472,6 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
         break;
     }
   };
-  const midiFileNameElement = document.getElementById("midi_file_name");
-  /** @type {HTMLInputElement} */
-  const tickPositionSlider = document.getElementById("time_position") ?? {};
-  const timeSignatureElement = document.getElementById("time_signature");
-  const tempoElement = document.getElementById("tempo");
-  const bpmElement = tempoElement.querySelector(".bpm");
   const titleElement = document.getElementById("song_title");
   /** @param {string} title */
   const setMidiSequenceTitle = (title) => {
@@ -480,19 +479,14 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     titleElement.textContent = trimmedTitle;
     PianoKeyboard.setSongTitleToDocument(trimmedTitle);
   };
-  const markerElement = document.getElementById("song_marker");
-  const textElement = document.getElementById("song_text");
   /** @type {MidiSequence} */
   let midiSequence;
   const midiSequenceElement = document.getElementById("midi_sequence");
-  /** @type {HTMLButtonElement} */
-  const playPauseButton = document.getElementById("play_pause");
-  playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
-  /** @type {HTMLImageElement} */
-  const playPauseIcon = document.getElementById("play_pause_icon");
-  tickPositionSlider.addEventListener?.("input", async (event) => {
-    await pause();
-    setTickPosition(parseInt(event.target.value));
+  /** @type {HTMLInputElement} */
+  const tickPositionSlider = document.getElementById("time_position") ?? {};
+  tickPositionSlider.addEventListener?.("input", (event) => {
+    pause();
+    setTickPosition(parseInt(tickPositionSlider.value));
   });
   const keyTimelineElement = document.getElementById("midi_key_timeline");
   const midiSequencerElement = midiSequenceElement.parentElement;
@@ -542,6 +536,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     midiSequencerElement.prepend(midiSequenceElement);
     onReady?.();
   };
+  const midiFileNameElement = document.getElementById("midi_file_name");
   /** @param {File} file */
   const loadMidiFile = (file) => {
     file.arrayBuffer().then((ab) => {
@@ -671,6 +666,11 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       requestWakeLock();
     }
   });
+  /** @type {HTMLButtonElement} */
+  const playPauseButton = document.getElementById("play_pause");
+  playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
+  /** @type {HTMLImageElement} */
+  const playPauseIcon = document.getElementById("play_pause_icon");
   const pause = () => {
     if( !intervalId ) return;
     clearInterval(intervalId);
