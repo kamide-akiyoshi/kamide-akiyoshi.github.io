@@ -13,9 +13,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const currentStatusBar = document.getElementById("songleCurrent");
-  const msTextOf = (t) => `${Math.floor(t.milliseconds)}`;
-  let currentPositionText = "0";
-  let durationText = "0";
   const positionElement = document.getElementById("songlePosition");
   const durationElement = document.getElementById("songleDuration");
   const tempoElement = document.getElementById("songleTempo");
@@ -130,12 +127,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
-      keyTimelineElement.setSongKeyTimeline(songKeyTimeline, widget.duration.milliseconds);
-      durationElement.textContent = durationText = msTextOf(widget.duration);
-      const showPosition = () => {
-        positionElement.textContent = `${currentPositionText = msTextOf(widget.position)}`;
-      };
-      showPosition();
+      const duration = widget.duration.milliseconds;
+      const timePosition = widget.position.milliseconds;
+      keyTimelineElement.setSongKeyTimeline(songKeyTimeline, duration);
+      durationElement.textContent = `${Math.floor(duration)}`;
+      positionElement.textContent = `${Math.floor(timePosition)}`;
       if( widget.mode === SongleWidgetAPI.NN_VIDEO_MODE ) {
         // Cancel the delay in Niconico Video
         widget.setAllEventTimingOffset(-100);
@@ -151,15 +147,16 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       });
       widget.on("beatPlay", (event) => {
         const numerator = event.bar.beats.length || 4;
-        const position = event.beat.position;
-        onChangeBeat?.(position - 1, numerator);
+        const beatPosition = event.beat.position;
+        onChangeBeat?.(beatPosition - 1, numerator);
         if (autoChordPlayCheckbox.checked) {
           chord.start();
         }
-        showPosition();
+        const timePosition = widget.position.milliseconds;
+        positionElement.textContent = `${Math.floor(timePosition)}`;
         bpmElement.textContent = `${Math.round(event.beat.bpm)}`;
         tempoElement.style.display = null;
-        songKeyTimeline?.handleBeatPlay(widget.position.milliseconds);
+        songKeyTimeline?.handleBeatPlay(timePosition);
       });
       const handleSeek = () => {
         songKeyTimeline && setTimeout(() => songKeyTimeline.handleSeek(widget.position.milliseconds), 0);
