@@ -215,7 +215,6 @@ const SONG_KEYS = new Map([
   ["www.nicovideo.jp/watch/sm8995619", "F#m,155500,Gm"],
   ["www.youtube.com/watch?v=p47fEXGabaY", "C#m"],
   ["www.youtube.com/watch?v=5WYHAaUlzpw", "Bbm"],
-  ["www.youtube.com/watch?v=t3M4jqdoJMc", "F,53000,Ab,71900,F,93000,Ab,111500,F,132900,Ab,151700,F,163500,Ab,175200,E"],
   ["www.youtube.com/watch?v=fWNaR-rxAic", "G"],
   ["www.youtube.com/watch?v=RFFzHTHEiq8", "D"],
   ["www.youtube.com/watch?v=gixbnMuquhA", "D"],
@@ -237,4 +236,6 @@ const SONG_KEYS = new Map([
   ["www.nicovideo.jp/watch/sm4748812", "G"],
   ["www.youtube.com/watch?v=yCZFof7Y0tQ", "E"],
   ["www.youtube.com/watch?v=h3JFEfdK_Ls", "Dm,75000,D"],
+  ["www.youtube.com/watch?v=t3M4jqdoJMc", "F,53000,Ab,71900,F,93000,Ab,111500,F,132900,Ab,151700,F,163500,Ab,175200,E"],
+  ["www.youtube.com/watch?v=LfQ0MVIYFnM", "F"],
 ]);
