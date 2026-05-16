@@ -426,10 +426,6 @@
 		font-size: 150%;
 		line-height: 1;
 	}
-	#songleCapturePosition {
-		display: none;
-		vertical-align: text-top;
-	}
 	.bpm {
     	display: inline-block;
 		min-width: 1.5em;
@@ -546,11 +542,8 @@
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
       <div id="songleCurrent" style="display: none;">
-		<span id="songleTempo" style="display: none;">𝅘𝅥 = <span class="bpm"></span></span>
-		<span id="songlePosition">0</span>
-		<button id="songleCapturePosition" title="Capture position" aria-label="Capture position">📷</button>
-		/
-		<span id="songleDuration">0</span>[ms]
+		<span id="songleTempo">𝅘𝅥 = <span class="bpm"></span></span>
+		<span id="songlePosition">0</span> / <span id="songleDuration">0</span>[ms]
         <span id="songleChord"></span>
       </div>
       <div id="EmbeddedSongle">
@@ -883,8 +876,6 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <li>123.456秒の位置で B♭ に転調</li>
 <li>234.567秒の位置で F♯m に転調</li>
 </ul>
-<p>再生途中で「転調した！」と思った瞬間に<button title="Capture position" aria-label="Capture position">📷</button>ボタンを押すことで、転調位置をクリップボードに素早くコピーできます。
-</p>
 <h4>コードやビートが合ってないなど違和感がある場合</h4>
 <p>ぜひ、Songleのデータを訂正してあげてください。Songleの自動解析は完璧ではないので、自動解析後に誰も訂正していなかったりすると、そういうことがよくあります。
 </p>

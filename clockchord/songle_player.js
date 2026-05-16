@@ -9,13 +9,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const currentStatusBar = document.getElementById("songleCurrent");
-  const positionCaptureButton = document.getElementById("songleCapturePosition");
   const msTextOf = (t) => `${Math.floor(t.milliseconds)}`;
   let currentPositionText = "0";
   let durationText = "0";
-  positionCaptureButton.addEventListener("click", () => {
-    navigator.clipboard.writeText(currentPositionText);
-  });
   const positionElement = document.getElementById("songlePosition");
   const durationElement = document.getElementById("songleDuration");
   const tempoElement = document.getElementById("songleTempo");
