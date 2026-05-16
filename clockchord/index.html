@@ -435,8 +435,8 @@
 		min-width: 1.5em;
 	}
 	#songlePosition, #songleDuration {
-		min-width: 3em;
 		display: inline-block;
+		min-width: 3em;
 		text-align: right;
 	}
 	.song_url {
@@ -545,10 +545,12 @@
   <div style="width: 100%;">
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
-      <div id="songleCurrent">
+      <div id="songleCurrent" style="display: none;">
 		<span id="songleTempo" style="display: none;">𝅘𝅥 = <span class="bpm"></span></span>
-        <button id="songleCapturePosition" title="Capture position" aria-label="Capture position">📷</button>
-		<span><span id="songlePosition"></span>/<span id="songleDuration"></span>[ms]</span>
+		<span id="songlePosition">0</span>
+		<button id="songleCapturePosition" title="Capture position" aria-label="Capture position">📷</button>
+		/
+		<span id="songleDuration">0</span>[ms]
         <span id="songleChord"></span>
       </div>
       <div id="EmbeddedSongle">

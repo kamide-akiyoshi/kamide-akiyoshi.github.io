@@ -8,6 +8,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const widgetParent = document.getElementById("EmbeddedSongle");
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
+  const currentStatusBar = document.getElementById("songleCurrent");
   const positionCaptureButton = document.getElementById("songleCapturePosition");
   const msTextOf = (t) => `${Math.floor(t.milliseconds)}`;
   let currentPositionText = "0";
@@ -77,7 +78,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   };
   let widgetElement, widget;
   const removeSongle = () => {
-    positionCaptureButton.style.display = "none";
+    currentStatusBar.style.display = "none";
     delete window.onSongleWidgetReady;
     delete window.onSongleWidgetError;
     chord.stop();
@@ -86,7 +87,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       widgetElement = undefined;
     }
     keyTimelineElement.setSongKeyTimeline();
-    tempoElement.style.display = "none";
     [
       bpmElement,
       positionElement,
@@ -128,6 +128,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       videoPlayerSizeH: "auto",
       songleWidgetSizeW: "auto",
     });
+    currentStatusBar.style.display = null;
     widgetParent.insertBefore(widgetElement, keyTimelineElement);
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
       const { song } = widget = songleWidget;
@@ -136,7 +137,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       durationElement.textContent = durationText = msTextOf(widget.duration);
       const showPosition = () => {
         positionElement.textContent = `${currentPositionText = msTextOf(widget.position)}`;
-        positionCaptureButton.style.display = "unset";
       };
       showPosition();
       if( widget.mode === SongleWidgetAPI.NN_VIDEO_MODE ) {
