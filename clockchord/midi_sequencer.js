@@ -484,10 +484,6 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
   const midiSequenceElement = document.getElementById("midi_sequence");
   /** @type {HTMLInputElement} */
   const tickPositionSlider = document.getElementById("time_position") ?? {};
-  tickPositionSlider.addEventListener?.("input", (event) => {
-    pause();
-    setTickPosition(parseInt(tickPositionSlider.value));
-  });
   const keyTimelineElement = document.getElementById("midi_key_timeline");
     /** @type {HTMLButtonElement} */
   const playPauseButton = document.getElementById("play_pause");
@@ -650,8 +646,6 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     ticksPerInterval = 1000 * INTERVAL_MILLI_SEC * (midiSequence.ticksPerQuarter / uspq);
     tempoElement.style.display = null;
   };
-  /** @type {number | undefined} */
-  let intervalId;
   /** @type {WakeLockSentinel | undefined} */
   let sentinel;
   const requestWakeLock = async () => { // To prevent screen lock while MIDI playing
@@ -673,21 +667,8 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       requestWakeLock();
     }
   });
-  playPauseButton.addEventListener('click', () => intervalId ? pause() : play());
-  const pause = () => {
-    if( !intervalId ) return;
-    clearInterval(intervalId);
-    intervalId = undefined;
-    for( let ch = 0; ch < SimpleSynthesizer.NUMBER_OF_CHANNELS; ch++ ) {
-      sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
-      sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
-    };
-    if( playPauseIcon ) {
-      playPauseIcon.src = "image/play-button-svgrepo-com.svg";
-      playPauseIcon.alt = "Play";
-    }
-    releaseWakeLock();
-  };
+  /** @type {number | undefined} */
+  let intervalId;
   const play = () => {
     if( !midiSequence || intervalId ) return;
     if( tickPosition === 0 ) {
@@ -720,7 +701,6 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
         setBeatAt(tickPosition);
         if( (tickPosition += ticksPerInterval) > tickLength ) {
           // End of a song
-          pause();
           setTickPosition(0);
         }
       },
@@ -732,4 +712,25 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     }
     requestWakeLock();
   };
+  const pause = () => {
+    if( !intervalId ) return;
+    clearInterval(intervalId);
+    intervalId = undefined;
+    for( let ch = 0; ch < SimpleSynthesizer.NUMBER_OF_CHANNELS; ch++ ) {
+      sendMidiMessage([0xB0 + ch, 0x7B, 0]); // All Notes Off
+      sendMidiMessage([0xE0 + ch, 0, 0x40]); // Reset Pitch Bend to center
+    };
+    if( playPauseIcon ) {
+      playPauseIcon.src = "image/play-button-svgrepo-com.svg";
+      playPauseIcon.alt = "Play";
+    }
+    releaseWakeLock();
+  };
+  playPauseButton.addEventListener('click', () => intervalId ? pause() : play());
+  tickPositionSlider.addEventListener?.("input", () => {
+    if( intervalId ) {
+      tickPositionSlider.addEventListener("change", play, { once: true });
+    }
+    setTickPosition(parseInt(tickPositionSlider.value));
+  });
 };
