@@ -542,7 +542,9 @@
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
       <div id="songleCurrent" style="display: none;">
-		<span id="songleTempo">𝅘𝅥 = <span class="bpm">BPM</span></span>
+		<span id="songleTempo">
+			<span aria-label="Tempo in BPM" title="Tempo in BPM">𝅘𝅥 = </span><span class="bpm">BPM</span>
+		</span>
 		<span id="songlePosition">0</span>/<span id="songleDuration">0</span>[ms]
         <span id="songleChord"></span>
       </div>
@@ -583,7 +585,9 @@
         </div>
         <div>
 		  <span id="time_signature" class="grayout">4/4</span>
-          <span id="tempo" class="grayout" style="display: none;">𝅘𝅥 = <span class="bpm">120</span></span>
+          <span id="tempo" class="grayout" style="display: none;">
+			<span aria-label="Tempo in BPM" title="Tempo in BPM">𝅘𝅥 = </span><span class="bpm">120</span>
+		  </span>
           <span id="song_marker"></span>
         </div>
         <div id="song_text"></div>
