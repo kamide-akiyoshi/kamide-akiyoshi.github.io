@@ -46,8 +46,8 @@ const createMidiSequenceParser = () => {
   const TRACK_CHUNK_ID = "MTrk";
   /** @type {Object.<string, TextDecoder>} */
   const textDecoders = {};
-  /** @param {string} encoding */
-  const decoderOf = (encoding) => textDecoders[encoding] ??= new TextDecoder(encoding);
+  /** @param {string} detectedEncoding */
+  const decoderOf = (detectedEncoding) => textDecoders[detectedEncoding] ??= new TextDecoder(detectedEncoding);
   /**
    * @param {Uint8Array} byteArray
    * @param {string} validChunkId
@@ -61,15 +61,15 @@ const createMidiSequenceParser = () => {
     /** @type {string} */
     let text;
     /** @type {string} */
-    let encoding;
+    let detectedEncoding;
+    const defaultEncoding = "sjis";
     try {
-      encoding = Encoding.detect(byteArray) || "sjis";
-      text = decoderOf(encoding).decode(byteArray);
+      detectedEncoding = Encoding.detect(byteArray) || defaultEncoding;
+      text = decoderOf(detectedEncoding).decode(byteArray);
     } catch(error) {
-      const defaultEncoding = "sjis";
       text = decoderOf(defaultEncoding).decode(byteArray);
       console.warn(
-        `Failed to decode as "${encoding}", so force "${defaultEncoding}", and decoded to "${text}" from the source data:`,
+        `Failed to decode as "${detectedEncoding}", so force "${defaultEncoding}", and decoded to "${text}" from the source data:`,
         byteArray, error);
     }
     return text.replace(/\0/g, '');
