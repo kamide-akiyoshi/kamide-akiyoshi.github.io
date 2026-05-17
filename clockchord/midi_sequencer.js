@@ -489,8 +489,19 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     setTickPosition(parseInt(tickPositionSlider.value));
   });
   const keyTimelineElement = document.getElementById("midi_key_timeline");
+    /** @type {HTMLButtonElement} */
+  const playPauseButton = document.getElementById("play_pause");
+  /** @type {HTMLImageElement} */
+  const playPauseIcon = document.getElementById("play_pause_icon");
+  const midiFileNameElement = document.getElementById("midi_file_name");
+  /** @type {HTMLInputElement} */
+  const midiFileInput = document.getElementById("midi_file");
+  const midiFileDropZone = document.getElementsByTagName("body")[0];
+  //
   const midiSequencerElement = midiSequenceElement.parentElement;
   midiSequencerElement.removeChild(midiSequenceElement);
+  // NOTICE: After here, document.getElementById("RemovedChildElementId") returns null
+  //
   const setSongKeyTimeline = (keySignatures, tickLength) => {
     while( keyTimelineElement.firstChild ) {
       keyTimelineElement.removeChild(keyTimelineElement.firstChild);
@@ -536,7 +547,6 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
     midiSequencerElement.prepend(midiSequenceElement);
     onReady?.();
   };
-  const midiFileNameElement = document.getElementById("midi_file_name");
   /** @param {File} file */
   const loadMidiFile = (file) => {
     file.arrayBuffer().then((ab) => {
@@ -549,10 +559,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       alert(`${file.name}: ${error}`);
     });
   };
-  /** @type {HTMLInputElement} */
-  const midiFileInput = document.getElementById("midi_file");
-  const midiFileDropZone = document.getElementsByTagName("body")[0];
-  document.getElementById("midi_file_select_button")?.addEventListener("click", () => {
+  document.getElementById("midi_file_select_button").addEventListener("click", () => {
     midiFileInput.click();
   });
   midiFileInput.addEventListener("change", () => loadMidiFile(midiFileInput.files[0]));
@@ -666,11 +673,7 @@ const setupMidiSequencer = (parseMidiSequence, sendMidiMessage, onChangeKey, onC
       requestWakeLock();
     }
   });
-  /** @type {HTMLButtonElement} */
-  const playPauseButton = document.getElementById("play_pause");
-  playPauseButton?.addEventListener('click', () => intervalId ? pause() : play());
-  /** @type {HTMLImageElement} */
-  const playPauseIcon = document.getElementById("play_pause_icon");
+  playPauseButton.addEventListener('click', () => intervalId ? pause() : play());
   const pause = () => {
     if( !intervalId ) return;
     clearInterval(intervalId);
