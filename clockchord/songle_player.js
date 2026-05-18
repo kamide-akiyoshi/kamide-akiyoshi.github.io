@@ -23,10 +23,10 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   autoChordPlayCheckbox?.addEventListener("change", () => {
     autoChordPlayCheckbox.checked ? chord.clear() : chord.stop();
   });
-  const showError = (message) => {
+  const showError = (message = "") => {
     if (errorMessageElement) {
       errorMessageElement.textContent = message;
-    } else {
+    } else if ( message ) {
       alert(message);
     }
   };
@@ -99,7 +99,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       bpmElement,
       positionElement,
       durationElement,
-      chordElement
+      chordElement,
+      errorMessageElement
     ].forEach((element) => element.textContent = "");
     PianoKeyboard.setSongTitleToDocument(undefined);
   };
@@ -118,7 +119,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       showError("Songle Widget API not available now");
       return;
     }
-    errorMessageElement.textContent = "";
+    showError();
     urlInput.value = urlText;
     songKeyInput.value = songKeyTimelineText;
     if (!urlText) {
