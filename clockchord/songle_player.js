@@ -23,6 +23,13 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   autoChordPlayCheckbox?.addEventListener("change", () => {
     autoChordPlayCheckbox.checked ? chord.clear() : chord.stop();
   });
+  const showError = (message) => {
+    if (errorMessageElement) {
+      errorMessageElement.textContent = message;
+    } else {
+      alert(message);
+    }
+  };
   const toSongKeyTimeline = (text) => {
     if (!text) return;
     let t;
@@ -67,12 +74,15 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       keyTimelineElement.appendChild(element);
     });
   };
-  const errorMessages = {
+  const songleErrorMessages = {
     100: "Could not embed: Song deleted",
     101: "Could not embed: Not permitted",
     200: "Music map loading aborted",
     201: "Music map loading failed",
     300: "Sound file (mp3) download failed",
+  };
+  const showSongleError = (status) => {
+    showError(`Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`);
   };
   let widgetElement, widget;
   const removeSongle = () => {
@@ -89,8 +99,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       bpmElement,
       positionElement,
       durationElement,
-      chordElement,
-      errorMessageElement
+      chordElement
     ].forEach((element) => element.textContent = "");
     PianoKeyboard.setSongTitleToDocument(undefined);
   };
@@ -105,6 +114,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       widget = undefined;
       removeSongle();
     }
+    if( typeof SongleWidgetAPI === "undefined" ) {
+      showError("Songle Widget API not available now");
+      return;
+    }
+    errorMessageElement.textContent = "";
     urlInput.value = urlText;
     songKeyInput.value = songKeyTimelineText;
     if (!urlText) {
@@ -175,12 +189,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     };
     window.onSongleWidgetError = (apiKey, songleWidget) => {
       const { status } = widget = songleWidget;
-      const formattedMessage = `Songle error ${status} : ${errorMessages[status] ?? "Unknown error"}`;
-      if (errorMessageElement) {
-        errorMessageElement.textContent = formattedMessage;
-      } else {
-        alert(formattedMessage);
-      }
+      showSongleError(status);
     };
   };
   loadButton?.addEventListener("click", () => {
