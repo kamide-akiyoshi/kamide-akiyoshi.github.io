@@ -601,9 +601,14 @@ const SimpleSynthesizer = class {
             // Web Audio API's panner value: -1(L) ... 1(R)
             panner.pan.setValueAtTime((value - center) / center, audioContext.currentTime);
           };
+          const reset = () => {
+            ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
+            updateGain();
+            setPan();
+          };
           amplifier.connect(panner);
           panner.connect(mixer ??= createMixer());
-          return { amplifier, updateGain, setPan };
+          return { amplifier, updateGain, setPan, reset };
         };
         /** @type {ReturnType<typeof createAmpan> | undefined} */
         let ampan;
@@ -677,9 +682,7 @@ const SimpleSynthesizer = class {
             parameterNumber = undefined;
             ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
             voices.forEach((voice) => voice.detune?.(pitchBendCent));
-            ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
-            getAmpan().updateGain();
-            getAmpan().setPan();
+            getAmpan().reset();
           },
           allSoundOff() {
             voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
