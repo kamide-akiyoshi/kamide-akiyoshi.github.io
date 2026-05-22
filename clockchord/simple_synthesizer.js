@@ -410,6 +410,7 @@ const SimpleSynthesizer = class {
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
   static NUMBER_OF_CHANNELS = 16;
+  static CENTER_PAN_VALUE = 0x40;
   static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
   static DEFAULT_PITCH_BEND = { pitchBendCent: 0, pitchBendValue: 0, pitchBendSensitivity: 2 };
   static MIN_ENVELOPE_GAIN_VALUE = 0.01;
@@ -436,6 +437,7 @@ const SimpleSynthesizer = class {
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
       DEFAULT_CHANNEL_GAIN,
+      CENTER_PAN_VALUE,
       DEFAULT_PITCH_BEND,
       MIN_ENVELOPE_GAIN_VALUE,
       audioContext,
@@ -587,28 +589,38 @@ const SimpleSynthesizer = class {
     const midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       (_, channelNumber) => {
-        /** @type {Map<number, Voice>} */ 
-        const voices = new Map();
-        let { volume, expression } = DEFAULT_CHANNEL_GAIN;
         const createAmpan = () => {
+          let { volume, expression } = DEFAULT_CHANNEL_GAIN;
           const amplifier = audioContext.createGain();
-          const updateGain = () => { amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F); }
+          const updateGain = () => {
+            amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F);
+          };
           updateGain();
           const panner = audioContext.createStereoPanner();
-          const center = 0x40;
-          const setPan = (value = center) => {
-            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-            // Web Audio API's panner value: -1(L) ... 1(R)
-            panner.pan.setValueAtTime((value - center) / center, audioContext.currentTime);
-          };
-          const reset = () => {
-            ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
-            updateGain();
-            setPan();
-          };
           amplifier.connect(panner);
           panner.connect(mixer ??= createMixer());
-          return { amplifier, updateGain, setPan, reset };
+          const setPan = (value = CENTER_PAN_VALUE) => {
+            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+            // Web Audio API's panner value: -1(L) ... 1(R)
+            panner.pan.setValueAtTime(
+              (value - CENTER_PAN_VALUE) / CENTER_PAN_VALUE,
+              audioContext.currentTime
+            );
+          };
+          return {
+            get destination() { return amplifier; },
+            /** @param {typeof volume} value */
+            set volume(value) { volume = value; updateGain(); },
+            /** @param {typeof expression} value */
+            set expression(value) { expression = value; updateGain(); },
+            /** @param {number} value */
+            set pan(value) { setPan(value); },
+            reset: () => {
+              ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
+              updateGain();
+              setPan();
+            },
+          };
         };
         /** @type {ReturnType<typeof createAmpan> | undefined} */
         let ampan;
@@ -618,6 +630,8 @@ const SimpleSynthesizer = class {
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number} | undefined} */
         let parameterNumber;
         let { pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND;
+        /** @type {Map<number, Voice>} */ 
+        const voices = new Map();
         const channel = {
           /**
            * @param {number} control
@@ -663,17 +677,14 @@ const SimpleSynthesizer = class {
             voices.forEach((voice) => voice.changeModulation?.(gainValue));
           },
           /** @param {number} value */
-          set volume(value) { volume = value; getAmpan().updateGain(); },
+          set volume(value) { getAmpan().volume = value; },
           /** @param {number} value */
-          set expression(value) { expression = value; getAmpan().updateGain(); },
+          set expression(value) { getAmpan().expression = value; },
           /** @param {number} value */
-          set pan(value) { getAmpan().setPan(value); },
+          set pan(value) { getAmpan().pan = value; },
           /** @param {number} value */
           set program(value) {
-            if( channelNumber == PERCUSSION_CHANNEL ) {
-              // Keep using the default percussion instrument regardless of program change messages
-              return;
-            }
+            if( channelNumber == PERCUSSION_CHANNEL ) return;
             instrument = INSTRUMENTS[programNumber = value];
           },
           get program() { return programNumber; },
@@ -703,7 +714,7 @@ const SimpleSynthesizer = class {
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
               voice = createVoice(
-                getAmpan().amplifier,
+                getAmpan().destination,
                 instrument,
                 FREQUENCIES[noteNumber]
               );
