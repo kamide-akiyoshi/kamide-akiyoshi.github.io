@@ -459,6 +459,39 @@ const SimpleSynthesizer = class {
       mixer.connect(audioContext.destination);
       return mixer;
     }
+    const createStereoAmplifier = () => {
+      let { volume, expression } = DEFAULT_CHANNEL_GAIN;
+      const amplifier = audioContext.createGain();
+      const updateGain = () => {
+        amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F);
+      };
+      updateGain();
+      const panner = audioContext.createStereoPanner();
+      amplifier.connect(panner);
+      panner.connect(mixer ??= createMixer());
+      const setPan = (value = CENTER_PAN_VALUE) => {
+        // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
+        // Web Audio API's panner value: -1(L) ... 1(R)
+        panner.pan.setValueAtTime(
+          (value - CENTER_PAN_VALUE) / CENTER_PAN_VALUE,
+          audioContext.currentTime
+        );
+      };
+      return {
+        get audioInput() { return amplifier; },
+        /** @param {typeof volume} value */
+        set volume(value) { volume = value; updateGain(); },
+        /** @param {typeof expression} value */
+        set expression(value) { expression = value; updateGain(); },
+        /** @param {number} value */
+        set pan(value) { setPan(value); },
+        reset: () => {
+          ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
+          updateGain();
+          setPan();
+        },
+      };
+    };
     /** @type {ReturnType<typeof createNoiseBuffer> | undefined} */
     let noiseBuffer;
     const createNoiseBuffer = () => {
@@ -590,42 +623,9 @@ const SimpleSynthesizer = class {
       {length: NUMBER_OF_CHANNELS},
       /** @param {undefined} _ */
       (_, channelNumber) => {
-        const createAmpan = () => {
-          let { volume, expression } = DEFAULT_CHANNEL_GAIN;
-          const amplifier = audioContext.createGain();
-          const updateGain = () => {
-            amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F);
-          };
-          updateGain();
-          const panner = audioContext.createStereoPanner();
-          amplifier.connect(panner);
-          panner.connect(mixer ??= createMixer());
-          const setPan = (value = CENTER_PAN_VALUE) => {
-            // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-            // Web Audio API's panner value: -1(L) ... 1(R)
-            panner.pan.setValueAtTime(
-              (value - CENTER_PAN_VALUE) / CENTER_PAN_VALUE,
-              audioContext.currentTime
-            );
-          };
-          return {
-            get destination() { return amplifier; },
-            /** @param {typeof volume} value */
-            set volume(value) { volume = value; updateGain(); },
-            /** @param {typeof expression} value */
-            set expression(value) { expression = value; updateGain(); },
-            /** @param {number} value */
-            set pan(value) { setPan(value); },
-            reset: () => {
-              ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
-              updateGain();
-              setPan();
-            },
-          };
-        };
-        /** @type {ReturnType<typeof createAmpan> | undefined} */
-        let ampan;
-        const getAmpan = () => ampan ??= createAmpan();
+        /** @type {ReturnType<typeof createStereoAmplifier> | undefined} */
+        let stereoAmplifier;
+        const getStereoAmp = () => stereoAmplifier ??= createStereoAmplifier();
         let programNumber = 0;
         let instrument = channelNumber == PERCUSSION_CHANNEL ? GENERIC_PERCUSSION : INSTRUMENTS[programNumber];
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number} | undefined} */
@@ -633,6 +633,14 @@ const SimpleSynthesizer = class {
         let { pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND;
         /** @type {Map<number, Voice>} */ 
         const voices = new Map();
+        /** @param {boolean} [immediately] */
+        const releaseAllVoices = (immediately) => {
+          voices.forEach((voice) => voice.release(undefined, immediately));
+        }
+        const resetPitchBend = () => {
+          ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
+          voices.forEach((voice) => voice.detune?.(pitchBendCent));
+        };
         const channel = {
           /**
            * @param {number} control
@@ -678,11 +686,11 @@ const SimpleSynthesizer = class {
             voices.forEach((voice) => voice.changeModulation?.(gainValue));
           },
           /** @param {number} value */
-          set volume(value) { getAmpan().volume = value; },
+          set volume(value) { getStereoAmp().volume = value; },
           /** @param {number} value */
-          set expression(value) { getAmpan().expression = value; },
+          set expression(value) { getStereoAmp().expression = value; },
           /** @param {number} value */
-          set pan(value) { getAmpan().pan = value; },
+          set pan(value) { getStereoAmp().pan = value; },
           /** @param {number} value */
           set program(value) {
             if( channelNumber == PERCUSSION_CHANNEL ) return;
@@ -692,16 +700,11 @@ const SimpleSynthesizer = class {
           get instrument() { return instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
-            voices.forEach((voice) => voice.detune?.(pitchBendCent));
-            getAmpan().reset();
+            resetPitchBend();
+            getStereoAmp().reset();
           },
-          allSoundOff() {
-            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), true));
-          },
-          allNotesOff() {
-            voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber)));
-          },
+          allSoundOff() { releaseAllVoices(true); },
+          allNotesOff() { releaseAllVoices(); },
           /** @param {number} noteNumber */
           noteOff(noteNumber) {
             voices.get(noteNumber)?.release(() => voices.delete(noteNumber));
@@ -714,11 +717,7 @@ const SimpleSynthesizer = class {
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
-              voice = createVoice(
-                getAmpan().destination,
-                instrument,
-                FREQUENCIES[noteNumber]
-              );
+              voice = createVoice(getStereoAmp().audioInput, instrument, FREQUENCIES[noteNumber]);
               voice.detune?.(pitchBendCent);
               voices.set(noteNumber, voice);
             }
