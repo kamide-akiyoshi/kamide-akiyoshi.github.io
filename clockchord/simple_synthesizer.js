@@ -588,6 +588,7 @@ const SimpleSynthesizer = class {
     };
     const midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
+      /** @param {undefined} _ */
       (_, channelNumber) => {
         const createAmpan = () => {
           let { volume, expression } = DEFAULT_CHANNEL_GAIN;
