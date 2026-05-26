@@ -514,7 +514,11 @@ const SimpleSynthesizer = class {
       oscillator.frequency.value = 6;
       oscillator.connect(amplifier);
       oscillator.start();
-      return { oscillator, amplifier };
+      return {
+        stop() { oscillator.stop(); },
+        /** @param {number} value */
+        set gainValue(value) { amplifier.gain.value = value; },
+      };
     };
     /**
      * @param {Instrument} instrument
@@ -550,8 +554,9 @@ const SimpleSynthesizer = class {
      * @param {AudioNode} destination
      * @param {Instrument} instrument
      * @param {number} [frequency]
+     * @param {number} [modulationGainValue]
      */
-    const createVoice = (destination, instrument, frequency) => {
+    const createVoice = (destination, instrument, frequency, modulationGainValue) => {
       let isPressing = false;
       const velocityAmp = audioContext.createGain();
       velocityAmp.gain.value = 0;
@@ -598,7 +603,7 @@ const SimpleSynthesizer = class {
             gain.cancelScheduledValues(audioContext.currentTime);
             gain.value = 0;
             source.stop();
-            modulator?.oscillator.stop();
+            modulator?.stop();
             onStop?.();
           };
           if( immediately || gain.value <= MIN_ENVELOPE_GAIN_VALUE ) { stop(); return; }
@@ -613,9 +618,10 @@ const SimpleSynthesizer = class {
       };
       if( source instanceof OscillatorNode ) {
         voice.detune = (cent) => { source.detune.value = cent; };
-        voice.changeModulation = (value) => {
-          (modulator ??= createModulator(source.frequency)).amplifier.gain.value = value;
+        voice.changeModulation = (gainValue) => {
+          (modulator ??= createModulator(source.frequency)).gainValue = gainValue;
         };
+        if( modulationGainValue ) voice.changeModulation(modulationGainValue);
       }
       return voice;
     };
@@ -631,6 +637,7 @@ const SimpleSynthesizer = class {
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number} | undefined} */
         let parameterNumber;
         let { pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND;
+        let modulationGainValue = 0;
         /** @type {Map<number, Voice>} */ 
         const voices = new Map();
         /** @param {boolean} [immediately] */
@@ -682,8 +689,8 @@ const SimpleSynthesizer = class {
           },
           /** @param {number} value */
           set modulationDepth(value) {
-            const gainValue = value / 32;
-            voices.forEach((voice) => voice.changeModulation?.(gainValue));
+            modulationGainValue = value / 32;
+            voices.forEach((voice) => voice.changeModulation?.(modulationGainValue));
           },
           /** @param {number} value */
           set volume(value) { getStereoAmp().volume = value; },
@@ -717,7 +724,12 @@ const SimpleSynthesizer = class {
             let voice = voices.get(noteNumber);
             const isNewVoice = !voice?.isPressing;
             if( !voice ) {
-              voice = createVoice(getStereoAmp().audioInput, instrument, FREQUENCIES[noteNumber]);
+              voice = createVoice(
+                getStereoAmp().audioInput,
+                instrument,
+                FREQUENCIES[noteNumber],
+                modulationGainValue
+              );
               voice.detune?.(pitchBendCent);
               voices.set(noteNumber, voice);
             }
