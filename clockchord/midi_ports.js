@@ -3,8 +3,8 @@
  * @param {EventListenerOrEventListenerObject} midiMessageListener
  */
 const setupMidiPorts = (midiMessageListener) => {
-  const midiElement = document.getElementById('midi');
-  if( ! midiElement ) return;
+  const midiPortsElement = document.getElementById('midi_ports');
+  if( ! midiPortsElement ) return;
   if( ! window.isSecureContext ) {
     console.warn("Warning: Not in secure context - MIDI IN/OUT not allowed");
   }
@@ -29,7 +29,7 @@ const setupMidiPorts = (midiMessageListener) => {
   };
   const checkboxes = {
     /** @type {(port: MIDIPort) => HTMLInputElement | null} */
-    get: (port) => midiElement.querySelector(`input[value="${port.id}"]`),
+    get: (port) => midiPortsElement.querySelector(`input[value="${port.id}"]`),
     /** @param {MIDIPort} port */
     add: (port) => {
       if( checkboxes.get(port) ) return;
@@ -80,6 +80,8 @@ const setupMidiPorts = (midiMessageListener) => {
           break;
       }
     });
+    midiPortsElement.removeAttribute("style"); // Remove style="display: none;" to show MIDI ports section
+    midiPortsElement.previousElementSibling?.removeAttribute("style"); // Remove style="display: none;" of the previous <hr> element
   }).catch(msg => {
     alert(msg);
   });

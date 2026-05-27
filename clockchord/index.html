@@ -301,20 +301,22 @@
 	#periodicWaveTerms .periodicWaveTerms {
 		display: flex;
 	}
-	#midi {
+	#midi_ports {
 		display: flex;
 		align-items: flex-start;
 	}
-	#midi > * {
+	#midi_ports > * {
 		display: flex;
 		flex-direction: column;
 		margin-left: 10px;
 	}
-	#midi > *:first-child {
+	#midi_ports > *:first-child {
 		margin-left: 0;
 	}
-	#midi * {
-		font-size: small;
+	.midi_in_out_label {
+		display: inline-flex;
+    	align-items: center;
+    	gap: 0.5em;
 	}
 	#midi_channel {
 		margin-top: 2px;
@@ -684,18 +686,16 @@
         <input id="releaseTime" type="range" value="0.2" min="0" max="2" step="0.01"/>
       </div>
     </div>
-    <hr/>
-    <div id="midi">
+	<hr style="display: none;"/>
+    <div id="midi_ports" style="display: none;">
       <div id="midi_input">
-        <span>
-          <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32" align="center"/>
-          MIDI IN
+        <span class="midi_in_out_label">
+          <img alt="MIDI IN" title="MIDI IN" src="image/midi.svg" height="32"/>MIDI IN
         </span>
       </div>
       <div id="midi_output">
-        <span>
-          <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32" align="center"/>
-          MIDI OUT
+        <span class="midi_in_out_label">
+          <img alt="MIDI OUT" title="MIDI OUT" src="image/midi.svg" height="32"/>MIDI OUT
         </span>
       </div>
     </div>
