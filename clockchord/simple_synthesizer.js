@@ -413,7 +413,6 @@ const SimpleSynthesizer = class {
   static CENTER_PAN_VALUE = 0x40;
   static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
   static DEFAULT_PITCH_BEND = { pitchBendCent: 0, pitchBendValue: 0, pitchBendSensitivity: 2 };
-  static MIN_ENVELOPE_GAIN_VALUE = 0.01;
   /**
    * @param {number} value
    * @param {number} sensitivity
@@ -439,7 +438,6 @@ const SimpleSynthesizer = class {
       DEFAULT_CHANNEL_GAIN,
       CENTER_PAN_VALUE,
       DEFAULT_PITCH_BEND,
-      MIN_ENVELOPE_GAIN_VALUE,
       audioContext,
       pitchBendValueToCent,
     } = SimpleSynthesizer;
@@ -579,40 +577,44 @@ const SimpleSynthesizer = class {
           isPressing = true;
           clearTimeout(timeoutIdToStop);
           timeoutIdToStop = undefined;
-          const { gain } = envelopeAmp;
-          gain.cancelScheduledValues(audioContext.currentTime);
+          envelopeAmp.gain.cancelScheduledValues(audioContext.currentTime);
+          const maxLevel = 1;
           const [attackTime, decayTime, sustainLevel] = envelope;
-          velocityAmp.gain.value = velocity / 0x7F;
           const t1 = audioContext.currentTime + attackTime;
           if( attackTime ) {
-            gain.linearRampToValueAtTime(1, t1);
+            envelopeAmp.gain.linearRampToValueAtTime(maxLevel, t1);
           } else {
-            gain.value = 1;
+            envelopeAmp.gain.value = maxLevel;
           }
-          if( sustainLevel < 1 ) {
-            gain.setTargetAtTime(sustainLevel, t1, decayTime);
+          if( sustainLevel < maxLevel ) {
+            envelopeAmp.gain.setTargetAtTime(sustainLevel, t1, decayTime);
           }
+          velocityAmp.gain.value = velocity / 0x7F;
         },
         release: (onStop, immediately = false) => {
-          if( timeoutIdToStop && !immediately ) return;
+          if( timeoutIdToStop && !immediately ) {
+            // Wait until timeout to stop
+            return;
+          }
           isPressing = false;
-          const { gain } = envelopeAmp;
           const stop = () => {
             clearTimeout(timeoutIdToStop);
             timeoutIdToStop = undefined;
-            gain.cancelScheduledValues(audioContext.currentTime);
-            gain.value = 0;
+            envelopeAmp.gain.cancelScheduledValues(audioContext.currentTime);
+            envelopeAmp.gain.value = 0;
             source.stop();
             modulator?.stop();
             onStop?.();
           };
-          if( immediately || gain.value <= MIN_ENVELOPE_GAIN_VALUE ) { stop(); return; }
+          if( immediately ) { stop(); return; }
           const [, , , releaseTime] = envelope;
           if( !releaseTime ) { stop(); return; }
-          const delay = releaseTime * Math.log(gain.value / MIN_ENVELOPE_GAIN_VALUE);
+          const minLevelToStop = 0.01;
+          if( envelopeAmp.gain.value <= minLevelToStop ) { stop(); return; }
+          const delay = releaseTime * Math.log(envelopeAmp.gain.value / minLevelToStop);
           if( delay <= 0 ) { stop(); return; }
-          gain.cancelScheduledValues(audioContext.currentTime);
-          gain.setTargetAtTime(0, audioContext.currentTime, releaseTime);
+          envelopeAmp.gain.cancelScheduledValues(audioContext.currentTime);
+          envelopeAmp.gain.setTargetAtTime(0, audioContext.currentTime, releaseTime);
           timeoutIdToStop = setTimeout(stop, delay * 1000);
         },
       };
