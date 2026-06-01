@@ -644,7 +644,7 @@ const SimpleSynthesizer = class {
         const voices = new Map();
         /** @param {boolean} [immediately] */
         const releaseAllVoices = (immediately) => {
-          voices.forEach((voice) => voice.release(undefined, immediately));
+          voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), immediately));
         }
         const resetPitchBend = () => {
           ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
