@@ -412,12 +412,7 @@ const SimpleSynthesizer = class {
   static NUMBER_OF_CHANNELS = 16;
   static CENTER_PAN_VALUE = 0x40;
   static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
-  static DEFAULT_PITCH_BEND = { pitchBendCent: 0, pitchBendValue: 0, pitchBendSensitivity: 2 };
-  /**
-   * @param {number} value
-   * @param {number} sensitivity
-   */
-  static pitchBendValueToCent = (value, sensitivity) => 100 * sensitivity * value / (1 << 13);
+  static DEFAULT_PITCH_BEND = { cent: 0, value: 0, sensitivity: 2 };
   static {
     try {
       /** @type {typeof window.AudioContext} */
@@ -439,7 +434,6 @@ const SimpleSynthesizer = class {
       CENTER_PAN_VALUE,
       DEFAULT_PITCH_BEND,
       audioContext,
-      pitchBendValueToCent,
     } = SimpleSynthesizer;
     if( !audioContext ) return;
     /** @type {ReturnType<typeof createMixer> | undefined} */
@@ -627,6 +621,22 @@ const SimpleSynthesizer = class {
       }
       return voice;
     };
+    /** @param {Map<number, Voice>} targetVoices */
+    const createPitchBend = (targetVoices) => {
+      let { cent, value, sensitivity } = DEFAULT_PITCH_BEND;
+      const updateCent = () => { cent = 100 * sensitivity * value / (1 << 13); };
+      const applyCent = () => targetVoices.forEach(pitchBend.applyTo);
+      const pitchBend = {
+        /** @param {number} newSensitivity */
+        set sensitivity(newSensitivity) { sensitivity = newSensitivity; updateCent(); },
+        /** @param {number} newValue */
+        set value(newValue) { value = newValue; updateCent(); applyCent(); },
+        /** @param {Voice} voice */
+        applyTo(voice) { voice.detune?.(cent); },
+        reset() { ({ cent, value, sensitivity } = DEFAULT_PITCH_BEND); applyCent(); },
+      };
+      return pitchBend;
+    };
     const midiChannels = Array.from(
       {length: NUMBER_OF_CHANNELS},
       /** @param {undefined} _ */
@@ -638,18 +648,14 @@ const SimpleSynthesizer = class {
         let instrument = channelNumber == PERCUSSION_CHANNEL ? GENERIC_PERCUSSION : INSTRUMENTS[programNumber];
         /** @type {{ isRegistered: boolean, MSB?: number, LSB?: number} | undefined} */
         let parameterNumber;
-        let { pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND;
         let modulationGainValue = 0;
         /** @type {Map<number, Voice>} */ 
         const voices = new Map();
+        const pitchBend = createPitchBend(voices);
         /** @param {boolean} [immediately] */
         const releaseAllVoices = (immediately) => {
           voices.forEach((voice, noteNumber) => voice.release(() => voices.delete(noteNumber), immediately));
         }
-        const resetPitchBend = () => {
-          ({ pitchBendCent, pitchBendValue, pitchBendSensitivity } = DEFAULT_PITCH_BEND);
-          voices.forEach((voice) => voice.detune?.(pitchBendCent));
-        };
         const channel = {
           /**
            * @param {number} control
@@ -670,25 +676,18 @@ const SimpleSynthesizer = class {
           /** @param {number} value */
           set parameterValue(value) {
             if( !parameterNumber ) {
-              console.warn(`Warning: MIDI CH.${channelNumber + 1}: No parameter number received yet, value ${value} ignored`);
+              console.warn(
+                `Warning: MIDI CH.${channelNumber + 1}: Parameter number not received yet, so parameter value ${value} ignored`
+              );
               return;
             }
             const { MSB, LSB, isRegistered } = parameterNumber;
             if( isRegistered && MSB === 0 && LSB === 0 ) {
-              pitchBendCent = pitchBendValueToCent(
-                pitchBendValue,
-                pitchBendSensitivity = value
-              );
+              pitchBend.sensitivity = value;
             }
           },
           /** @param {number} value */
-          set pitchBendValue(value) {
-            pitchBendCent = pitchBendValueToCent(
-              pitchBendValue = value,
-              pitchBendSensitivity
-            );
-            voices.forEach((voice) => voice.detune?.(pitchBendCent));
-          },
+          set pitchBendValue(value) { pitchBend.value = value; },
           /** @param {number} value */
           set modulationDepth(value) {
             modulationGainValue = value / 32;
@@ -709,7 +708,7 @@ const SimpleSynthesizer = class {
           get instrument() { return instrument; },
           resetAllControllers() {
             parameterNumber = undefined;
-            resetPitchBend();
+            pitchBend.reset();
             getStereoAmp().reset();
           },
           allSoundOff() { releaseAllVoices(true); },
@@ -732,7 +731,7 @@ const SimpleSynthesizer = class {
                 FREQUENCIES[noteNumber],
                 modulationGainValue
               );
-              voice.detune?.(pitchBendCent);
+              pitchBend.applyTo(voice);
               voices.set(noteNumber, voice);
             }
             voice.attack(velocity);
