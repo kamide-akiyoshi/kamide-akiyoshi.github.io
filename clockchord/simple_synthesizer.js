@@ -410,9 +410,6 @@ const SimpleSynthesizer = class {
     (_, midiNoteNumber) => 440 * (2 ** ((midiNoteNumber - 69)/12))
   );
   static NUMBER_OF_CHANNELS = 16;
-  static CENTER_PAN_VALUE = 0x40;
-  static DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
-  static DEFAULT_PITCH_BEND = { cent: 0, value: 0, sensitivity: 2 };
   static {
     try {
       /** @type {typeof window.AudioContext} */
@@ -430,9 +427,6 @@ const SimpleSynthesizer = class {
       PERCUSSION_CHANNEL,
       NUMBER_OF_CHANNELS,
       FREQUENCIES,
-      DEFAULT_CHANNEL_GAIN,
-      CENTER_PAN_VALUE,
-      DEFAULT_PITCH_BEND,
       audioContext,
     } = SimpleSynthesizer;
     if( !audioContext ) return;
@@ -452,6 +446,7 @@ const SimpleSynthesizer = class {
       return mixer;
     }
     const createStereoAmplifier = () => {
+      const DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
       let { volume, expression } = DEFAULT_CHANNEL_GAIN;
       const amplifier = audioContext.createGain();
       const updateGain = () => {
@@ -461,6 +456,7 @@ const SimpleSynthesizer = class {
       const panner = audioContext.createStereoPanner();
       amplifier.connect(panner);
       panner.connect(mixer ??= createMixer());
+      const CENTER_PAN_VALUE = 0x40;
       const setPan = (value = CENTER_PAN_VALUE) => {
         // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
         // Web Audio API's panner value: -1(L) ... 1(R)
@@ -623,6 +619,7 @@ const SimpleSynthesizer = class {
     };
     /** @param {Map<number, Voice>} targetVoices */
     const createPitchBend = (targetVoices) => {
+      const DEFAULT_PITCH_BEND = { cent: 0, value: 0, sensitivity: 2 };
       let { cent, value, sensitivity } = DEFAULT_PITCH_BEND;
       const updateCent = () => { cent = 100 * sensitivity * value / (1 << 13); };
       const applyCent = () => targetVoices.forEach(pitchBend.applyTo);
