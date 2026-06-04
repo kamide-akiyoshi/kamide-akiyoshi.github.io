@@ -449,22 +449,11 @@ const SimpleSynthesizer = class {
       const DEFAULT_CHANNEL_GAIN = { volume: 100, expression: 0x7F };
       let { volume, expression } = DEFAULT_CHANNEL_GAIN;
       const amplifier = audioContext.createGain();
-      const updateGain = () => {
-        amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F);
-      };
+      const updateGain = () => amplifier.gain.value = (volume / 0x7F) * (expression / 0x7F);
       updateGain();
       const panner = audioContext.createStereoPanner();
       amplifier.connect(panner);
       panner.connect(mixer ??= createMixer());
-      const CENTER_PAN_VALUE = 0x40;
-      const setPan = (value = CENTER_PAN_VALUE) => {
-        // MIDI Control# 0x0A's value: 0(L) ... 0x7F(R)
-        // Web Audio API's panner value: -1(L) ... 1(R)
-        panner.pan.setValueAtTime(
-          (value - CENTER_PAN_VALUE) / CENTER_PAN_VALUE,
-          audioContext.currentTime
-        );
-      };
       return {
         get audioInput() { return amplifier; },
         /** @param {typeof volume} value */
@@ -472,11 +461,14 @@ const SimpleSynthesizer = class {
         /** @param {typeof expression} value */
         set expression(value) { expression = value; updateGain(); },
         /** @param {number} value */
-        set pan(value) { setPan(value); },
+        set pan(value) {
+          // MIDI Control# 0x0A: 0(L) ... 0x40(Center) ... 0x7F(R)
+          // Web Audio API's panner value: -1(L) ... 0(Center) ... 1(R)
+          panner.pan.value = (value - 0x40) / 0x40;
+        },
         reset: () => {
-          ({ volume, expression } = DEFAULT_CHANNEL_GAIN);
-          updateGain();
-          setPan();
+          ({ volume, expression } = DEFAULT_CHANNEL_GAIN); updateGain();
+          panner.pan.value = 0;
         },
       };
     };
