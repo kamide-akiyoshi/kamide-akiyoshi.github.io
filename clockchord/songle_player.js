@@ -5,8 +5,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     alert("No container element found to embed Songle Widget");
     return;
   }
-  const SONGLE_SONG_URL_PREFIX = "https://songle.jp/songs/";
   const HTTPS_URL_PREFIX = "https://";
+  const SONGLE_SONG_URL_PREFIX = `${HTTPS_URL_PREFIX}songle.jp/songs/`;
   const urlInput = document.getElementById("SongleUrl");
   const songKeyInput = document.getElementById("SongleKeySig");
   const loadButton = document.getElementById("LoadSongleUrl");
