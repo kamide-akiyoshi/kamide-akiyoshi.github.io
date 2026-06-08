@@ -7,8 +7,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   }
   const HTTPS_URL_PREFIX = "https://";
   const SONGLE_SONG_URL_PREFIX = `${HTTPS_URL_PREFIX}songle.jp/songs/`;
+  /** @type {HTMLInputElement} */
   const urlInput = document.getElementById("SongleUrl");
+  /** @type {HTMLInputElement} */
   const songKeyInput = document.getElementById("SongleKeySig");
+  /** @type {HTMLButtonElement} */
   const loadButton = document.getElementById("LoadSongleUrl");
   const errorMessageElement = document.getElementById("SongleErrorMessage");
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
@@ -30,25 +33,28 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       alert(message);
     }
   };
+  /** @param {string} text */
   const toSongKeyTimeline = (text) => {
     if (!text) return;
     let t;
     const timeline = text.split(",").reduce((tl, token, index) => {
       if (index & 1) {
-        tl.push(t = { position: parseInt(token) });
+        tl.push(t = { position: parseInt(token), key: "" });
       } else {
         t.key = token;
       }
       return tl;
-    }, [t = { position: 0 }]);
+    }, [t = { position: 0, key: "" }]);
     let nextIndex = 1;
     let nextPosition = timeline[nextIndex]?.position;
+    /** @param {number} newPosition */
     timeline.handleBeatPlay = (newPosition) => {
       if (nextPosition > newPosition) return;
       const t = timeline[nextIndex];
       if (t) onChangeKey?.(t.key);
       nextPosition = timeline[++nextIndex]?.position;
     };
+    /** @param {number} newPosition */
     timeline.handleSeek = (newPosition) => {
       nextIndex = timeline.findIndex((t) => t.position > newPosition);
       if (nextIndex < 0) nextIndex = timeline.length;
