@@ -33,28 +33,31 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       alert(message);
     }
   };
+  /**
+   * @typedef {{position: number, key: string}} SongKeyChange
+   * @typedef {SongKeyChange[] & {handleBeatPlay: (position: number) => void, handleSeek: (position: number) => void}} SongKeyTimeline
+   */
   /** @param {string} text */
   const toSongKeyTimeline = (text) => {
     if (!text) return;
     let t;
+    /** @type {SongKeyTimeline} */
     const timeline = text.split(",").reduce((tl, token, index) => {
       if (index & 1) {
-        tl.push(t = { position: parseInt(token), key: "" });
+        tl.push(t = { position: parseInt(token) });
       } else {
         t.key = token;
       }
       return tl;
-    }, [t = { position: 0, key: "" }]);
+    }, [t = { position: 0 }]);
     let nextIndex = 1;
     let nextPosition = timeline[nextIndex]?.position;
-    /** @param {number} newPosition */
     timeline.handleBeatPlay = (newPosition) => {
       if (nextPosition > newPosition) return;
       const t = timeline[nextIndex];
       if (t) onChangeKey?.(t.key);
       nextPosition = timeline[++nextIndex]?.position;
     };
-    /** @param {number} newPosition */
     timeline.handleSeek = (newPosition) => {
       nextIndex = timeline.findIndex((t) => t.position > newPosition);
       if (nextIndex < 0) nextIndex = timeline.length;
@@ -63,6 +66,10 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     };
     return timeline;
   };
+  /**
+   * @param {SongKeyTimeline} songKeyTimeline
+   * @param {number} duration
+   */
   keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
     while (keyTimelineElement.firstChild) {
       keyTimelineElement.removeChild(keyTimelineElement.firstChild);
