@@ -34,11 +34,11 @@ const setupKeySignatureSelector = () => {
         this.numberOfSharps = hour;
         return;
       }
-      if( value.hasValue ) { // Chord
+      if( value?.hasValue ) { // Chord
         this.parse([value.hour, value.isMinor]);
         return;
       }
-      if( !value.split ) return;
+      if( !value?.split ) return;
       const splitStrings = value.split("m", 2);
       const [root, minor] = [splitStrings[0], splitStrings.length > 1];
       let hour = parseInt(root);
