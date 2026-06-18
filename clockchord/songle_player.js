@@ -40,16 +40,16 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   /** @param {string} text */
   const toSongKeyTimeline = (text) => {
     if (!text) return;
-    let t;
+    let position = 0;
     /** @type {SongKeyTimeline} */
     const timeline = text.split(",").reduce((tl, token, index) => {
       if (index & 1) {
-        tl.push(t = { position: parseInt(token) });
+        position = parseInt(token);
       } else {
-        t.key = token;
+        tl.push({ position, key: token });
       }
       return tl;
-    }, [t = { position: 0 }]);
+    }, []);
     let nextIndex = 1;
     let nextPosition = timeline[nextIndex]?.position;
     timeline.handleBeatPlay = (newPosition) => {
