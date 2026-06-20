@@ -1,4 +1,8 @@
-
+/**
+ * @typedef {{position: number, key: string}} SongKeyChange
+ * @typedef {SongKeyChange[] & {handleBeatPlay: (position: number) => void, handleSeek: (position: number) => void}} SongKeyTimeline
+ * @typedef {HTMLDivElement & {setSongKeyTimeline: (songKeyTimeline?: SongKeyTimeline, duration?: number) => void}} SongKeyTimelineElement
+ */
 const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) => {
   const widgetParent = document.getElementById("EmbeddedSongle");
   if( !widgetParent ) {
@@ -7,13 +11,14 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   }
   const HTTPS_URL_PREFIX = "https://";
   const SONGLE_SONG_URL_PREFIX = `${HTTPS_URL_PREFIX}songle.jp/songs/`;
-  /** @type {HTMLInputElement} */
+  /** @type {HTMLInputElement | null} */
   const urlInput = document.getElementById("SongleUrl");
-  /** @type {HTMLInputElement} */
+  /** @type {HTMLInputElement | null} */
   const songKeyInput = document.getElementById("SongleKeySig");
-  /** @type {HTMLButtonElement} */
+  /** @type {HTMLButtonElement | null} */
   const loadButton = document.getElementById("LoadSongleUrl");
   const errorMessageElement = document.getElementById("SongleErrorMessage");
+  /** @type {SongKeyTimelineElement | null} */
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const currentStatusBar = document.getElementById("songleCurrent");
   const positionElement = document.getElementById("songlePosition");
@@ -21,7 +26,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const tempoElement = document.getElementById("songleTempo");
   const bpmElement = tempoElement?.querySelector(".bpm");
   const chordElement = document.getElementById("songleChord");
-  /** @type {HTMLInputElement} */
+  /** @type {HTMLInputElement | null} */
   const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
   autoChordPlayCheckbox?.addEventListener("change", () => {
     autoChordPlayCheckbox.checked ? chord.clear() : chord.stop();
@@ -33,10 +38,6 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       alert(message);
     }
   };
-  /**
-   * @typedef {{position: number, key: string}} SongKeyChange
-   * @typedef {SongKeyChange[] & {handleBeatPlay: (position: number) => void, handleSeek: (position: number) => void}} SongKeyTimeline
-   */
   /** @param {string} text */
   const toSongKeyTimeline = (text) => {
     if (!text) return;
@@ -66,11 +67,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     };
     return timeline;
   };
-  /**
-   * @param {SongKeyTimeline} songKeyTimeline
-   * @param {number} duration
-   */
-  keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
+  keyTimelineElement && (keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
     while (keyTimelineElement.firstChild) {
       keyTimelineElement.removeChild(keyTimelineElement.firstChild);
     }
@@ -86,7 +83,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       element.style.width = `${(endPosition - position) / duration * 100}%`;
       keyTimelineElement.appendChild(element);
     });
-  };
+  });
+  /** @type {Record<number, string>} */
   const songleErrorMessages = {
     100: "Could not embed: Song deleted",
     101: "Could not embed: Not permitted",
@@ -94,6 +92,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     201: "Music map loading failed",
     300: "Sound file (mp3) download failed",
   };
+  /** @param {number} status */
   const showSongleError = (status) => {
     showError(`Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`);
   };
@@ -107,7 +106,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       widgetElement.remove();
       widgetElement = undefined;
     }
-    keyTimelineElement.setSongKeyTimeline();
+    keyTimelineElement?.setSongKeyTimeline();
     [
       bpmElement,
       positionElement,
