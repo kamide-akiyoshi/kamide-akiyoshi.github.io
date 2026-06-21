@@ -841,9 +841,11 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </ul></li>
 </ul>
 <h4>Songle登録曲の検索</h4>
-<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。鍵マーク🔑のついた曲は、song_keys.js にキーが登録されています。</p>
-<p>Songleで検索しても、ClockChordで開くには楽曲URLをコピペする必要がありますが、その手間が省けて便利です。
-</p>
+<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
+<ul><li>鍵マーク🔑のついた楽曲は、song_keys.js にキー（転調地図）が登録されているため、キーの表示変更が自動的に行われます。</li>
+<li>検索結果の下にある [🔍Search by Songle] のリンクをクリックすると、同じキーワードによるSongleの検索結果が表示されます。<ul>
+	<li>再生数、編集数、YouTubeに絞った検索結果など、Songle上でしか参照できない情報をチェックしたいときに活用してください。</li>
+</ul></li></ul>
 <h4>楽曲URLを指定して開く</h4>
 <p>Songleに登録されている楽曲のURLを指定して Songle Widget を開くには、Songle player の枠に下記の値を入力して[Load]ボタンをクリックします。</p>
 <ol>
