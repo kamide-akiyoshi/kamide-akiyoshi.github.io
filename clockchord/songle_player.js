@@ -116,7 +116,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     ].forEach((element) => element.textContent = "");
     PianoKeyboard.setSongTitleToDocument(undefined);
   };
-  const loadSongle = (urlText, songKeyTimelineText) => {
+  const loadSongle = (urlText, songKeyTimelineText, songStartAt) => {
     if (widget) {
       const { remove } = widget;
       if (remove) {
@@ -145,6 +145,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       api: "songle-link",
       url: urlText,
       songAutoPlay: true,
+      songStartAt,
       videoPlayerSizeW: "auto",
       videoPlayerSizeH: "auto",
       songleWidgetSizeW: "auto",
@@ -205,6 +206,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       showSongleError(status);
     };
   };
+  const startAt = searchParams.get("at") ?? "0";
   loadButton?.addEventListener("click", () => {
     let url = urlInput.value;
     try {
@@ -218,10 +220,10 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     } catch (error) {
       console.error(error);
     }
-    loadSongle(url, songKeyInput.value);
+    loadSongle(url, songKeyInput.value, startAt);
   });
   const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
   if (initialUrlText) {
-    loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"));
+    loadSongle(initialUrlText, searchParams.get("keysig") ?? searchParams.get("key"), startAt);
   }
 };
