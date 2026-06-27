@@ -831,18 +831,17 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <h3>Songle player</h3>
 <p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲を <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
 </p>
-<ul>
-<li>再生すると、Songleの音楽地図に基づいてビート、コードの情報がClockChordに送信され、自動的にコードが鳴ります。<ul>
-  <li>背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、イルミネーションのようにトーンインジケーターが美しく光り輝きます。</li>
-</ul></li>
-<li>キー（調）が <a href="./song_keys.js" target="_blank">song_keys.js</a> に登録されている曲の場合<ul>
-  <li>時計の文字盤にキーが自動設定されます（転調にもついていきます）。</li>
-  <li>Songleの音楽地図の下に「<a href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a>」が追加されます（転調タイミングを視覚的に把握できます）。</li>
-</ul></li>
-</ul>
+<p>再生すると、Songleの音楽地図に基づいてビート、コードの情報がClockChordに送信され、自動的にコードが鳴ります。
+その際、背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、イルミネーションのようにトーンインジケーターが美しく光り輝き、視覚的に「能動的音楽鑑賞」を楽しめます。
+</p>
+<p>なお、<strong>Songleの音楽地図には、曲のキー（調）を登録できないという弱点がある</strong
+ >ため、転調タイミングを含めた調の情報を「<a
+ href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a
+>」として記録したファイル <a href="./song_keys.js" target="_blank">song_keys.js</a> をClockChord側で別途用意し、ClockChordの作者が随時、手動で登録しています。
+再生時に調を把握できた楽曲に限り、キーの表示変更が自動的に行われます（調を把握できなかった楽曲では、この機能は働きません）。</p>
 <h4>Songle登録曲の検索</h4>
 <p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
-<ul><li>鍵マーク🔑のついた楽曲は、song_keys.js にキー（転調地図）が登録されているため、キーの表示変更が自動的に行われます。</li>
+<ul><li>鍵マーク🔑のついた楽曲は、ClockChord側で転調地図が登録されています。</li>
 <li>検索結果の下にある [🔍Search by Songle] のリンクをクリックすると、同じキーワードによるSongleの検索結果が表示されます。<ul>
 	<li>再生数、編集数、YouTubeに絞った検索結果など、Songle上でしか参照できない情報をチェックしたいときに活用してください。</li>
 </ul></li></ul>
