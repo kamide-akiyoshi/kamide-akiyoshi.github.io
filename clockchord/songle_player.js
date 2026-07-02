@@ -21,6 +21,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   /** @type {SongKeyTimelineElement | null} */
   const keyTimelineElement = document.getElementById("SongleKeyTimeline");
   const currentStatusBar = document.getElementById("songleCurrent");
+  const songleVolume = document.getElementById("songleVolume");
   const positionElement = document.getElementById("songlePosition");
   const durationElement = document.getElementById("songleDuration");
   const tempoElement = document.getElementById("songleTempo");
@@ -97,6 +98,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     showError(`Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`);
   };
   let widgetElement, widget;
+  songleVolume?.addEventListener("input", () => {
+    if (widget) {
+      widget.volume = songleVolume.value;
+    }
+  });
   const removeSongle = () => {
     currentStatusBar.style.display = "none";
     delete window.onSongleWidgetReady;
@@ -155,6 +161,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
+      widget.volume = songleVolume.value = SongleWidgetAPI.computeAverageVolume(widget);
       const duration = widget.duration.milliseconds;
       const timePosition = widget.position.milliseconds;
       keyTimelineElement.setSongKeyTimeline(songKeyTimeline, duration);

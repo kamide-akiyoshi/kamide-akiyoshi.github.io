@@ -64,6 +64,12 @@
 		#ClockChord {
 			flex-direction: column;
 		}
+		#songleCurrent {
+			flex-direction: column;
+		}
+		#songleVolume {
+			width: calc(100% - 32px);
+		}
 	}
 	#ClockChord {
 		display: flex;
@@ -424,7 +430,14 @@
 		display: flex;
 		flex-direction: column;
 	}
+	#songleCurrent {
+		display: flex;
+	}
+	#songleVolumeLabel > * {
+		height: 24px;
+	}
 	#songleChord {
+		padding-left: 0.25em;
 		font-size: 150%;
 		line-height: 1;
 	}
@@ -544,11 +557,17 @@
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
       <div id="songleCurrent" style="display: none;">
-		<span id="songleTempo">
-			<span aria-label="Tempo in BPM" title="Tempo in BPM">&#x2669;= </span><span class="bpm">BPM</span>
-		</span>
-		<span id="songlePosition">0</span>/<span id="songleDuration">0</span>[ms]
-        <span id="songleChord"></span>
+	    <label id="songleVolumeLabel" for="songleVolume" title="Volume">
+          <img src="image/speaker.svg" alt="Volume"/>
+          <input id="songleVolume" type="range" value="0" min="0" max="100" step="1"/>
+        </label>
+		<div>
+          <span id="songleTempo">
+        	<span aria-label="Tempo in BPM" title="Tempo in BPM">&#x2669;= </span><span class="bpm">BPM</span>
+          </span>
+          <span id="songlePosition">0</span>/<span id="songleDuration">0</span>[ms]
+          <span id="songleChord"></span>
+        </div>
       </div>
       <div id="EmbeddedSongle">
         <div id="SongleErrorMessage"></div>
