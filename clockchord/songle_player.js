@@ -216,7 +216,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   const options = {
     songKeyTimelineText: searchParams.get("keysig") ?? searchParams.get("key") ?? "",
     songStartAt: searchParams.get("at"),
-    songAutoPlay: searchParams.get("autoplay") ?? true,
+    songAutoPlay: searchParams.get("autoplay"),
     songAutoLoop: searchParams.get("loop"),
   };
   loadButton?.addEventListener("click", () => {
