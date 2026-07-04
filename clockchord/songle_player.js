@@ -122,8 +122,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     ].forEach((element) => element.textContent = "");
     PianoKeyboard.setSongTitleToDocument(undefined);
   };
-  const loadSongle = (urlText, options) => {
-    const {songKeyTimelineText, ...otherOptions} = options ?? {};
+  const loadSongle = (params) => {
+    const {songKeyTimelineText, ...otherParams} = params ?? {};
     if (widget) {
       const { remove } = widget;
       if (remove) {
@@ -139,22 +139,20 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       return;
     }
     showError();
-    urlInput.value = urlText;
+    urlInput.value = params.url;
     songKeyInput.value = songKeyTimelineText;
-    if (!urlText) {
+    if (!params.url) {
       return;
     }
     if (!songKeyTimelineText && typeof SONG_KEYS !== "undefined") {
-      songKeyInput.value = SONG_KEYS.get(urlText) ?? "";
+      songKeyInput.value = SONG_KEYS.get(params.url) ?? "";
     }
     const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
     widgetElement = SongleWidgetAPI.createSongleWidgetElement({
-      api: "songle-link",
-      url: urlText,
       videoPlayerSizeW: "auto",
       videoPlayerSizeH: "auto",
       songleWidgetSizeW: "auto",
-      ...otherOptions
+      ...otherParams
     });
     currentStatusBar.style.display = null;
     widgetParent.insertBefore(widgetElement, keyTimelineElement);
@@ -213,7 +211,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       showSongleError(status);
     };
   };
-  const options = {
+  const params = {
+    api: "clockchord-songle-player",
+    url: undefined,
     songKeyTimelineText: searchParams.get("keysig") ?? searchParams.get("key") ?? "",
     songStartAt: searchParams.get("at"),
     songAutoPlay: searchParams.get("autoplay"),
@@ -232,9 +232,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     } catch (error) {
       console.error(error);
     }
-    options.songKeyTimelineText = songKeyInput.value;
-    loadSongle(url, options);
+    params.url = url;
+    params.songKeyTimelineText = songKeyInput.value;
+    loadSongle(params);
   });
-  const initialUrlText = searchParams.get("songle") ?? searchParams.get("url");
-  initialUrlText && loadSongle(initialUrlText, options);
+  (params.url = searchParams.get("songle") ?? searchParams.get("url")) && loadSongle(params);
 };
