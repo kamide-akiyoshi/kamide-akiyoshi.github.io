@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<HTML>
+<HTML lang="ja">
 <HEAD>
 <meta charset="UTF-8">
 <meta name="keywords" content="ClockChord,JavaScript,CircleOfFifths,ChordProgression,MIDI,五度圏,コード進行,時計,楽器">
@@ -23,7 +23,7 @@
 <script src="./chord_button.js"></script>
 <script src="./circle_of_5ths_clock_chord.js"></script>
 <script>new CircleOfFifthsClock();</script>
-<style type="text/css">
+<style>
 	#background_mode_select {
 		right: 20px;
 		top: 3px;
@@ -464,7 +464,7 @@
 	}
 </style>
 </HEAD>
-<BODY BGCOLOR=white>
+<BODY>
 <h1>ClockChord</h1>
 <a href="#how_to_use" style="font-size: small;">How to use</a>
 |
@@ -477,30 +477,30 @@
       <input id="volume" type="range" value="0.5" min="0" max="1.6" step="0.01"/>
     </label>
     <div class="clock">
-      <label id="minor_label" for="minor"><input id="minor" type="checkbox">m</input></label>
+      <label id="minor_label" for="minor"><input id="minor" type="checkbox"></input>m</label>
       <button id="setkey" title="Set the chord as key signature"></button>
       <label id="keyselect_label" for="keyselect" title="Select key signature to normalize ♯/♭ notation">Key<select id="keyselect" style="height: 32px;">
-        <option value="0"></option>
+        <option value="0">♮</option>
       </select></label>
       <button id="enharmonic" title="Enharmonic key"></button>
-      <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400px" height="400px">HTML5 canvas not supported</canvas>
-      <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400px" height="400px"></canvas>
-      <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400px" height="400px"></canvas>
-      <canvas id="circleOfFifthsClockCanvas" class="circle" width="400px" height="400px"></canvas>
-      <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400px" height="400px" tabindex="0"></canvas>
+      <canvas id="circleOfFifthsClockDialCanvas" class="circle" width="400" height="400">HTML5 canvas not supported</canvas>
+      <canvas id="circleOfFifthsClockBeatCanvas" class="circle" width="400" height="400"></canvas>
+      <canvas id="circleOfFifthsClockToneIndicatorCanvas" class="circle" width="400" height="400"></canvas>
+      <canvas id="circleOfFifthsClockCanvas" class="circle" width="400" height="400"></canvas>
+      <canvas id="circleOfFifthsClockChordButtonCanvas" class="circle disable_selection chord-tap" width="400" height="400" tabindex="0"></canvas>
       <span id="center_chord" class="disable_selection chord-tap"></span>
       <div id="background_mode_select">
-        <label for="bg_pie" aria-label="Pie" title="Pie"><input type="radio" id="bg_pie" name="background_mode" value="pie" checked>🪭</input></label>
-        <label for="bg_donut" aria-label="Donut" title="Donut"><input type="radio" id="bg_donut" name="background_mode" value="donut">⭕</input></label>
+        <label for="bg_pie" aria-label="Pie" title="Pie"><input type="radio" id="bg_pie" name="background_mode" value="pie" checked></input>🪭</label>
+        <label for="bg_donut" aria-label="Donut" title="Donut"><input type="radio" id="bg_donut" name="background_mode" value="donut"></input>⭕</label>
       </div>
       <div id="theme_select">
-        <label for="theme_light" aria-label="Light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked>🌞</input></label>
-        <label for="theme_dark" aria-label="Dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark">🌛</input></label>
+        <label for="theme_light" aria-label="Light" title="Light"><input type="radio" id="theme_light" name="theme" value="light" checked></input>🌞</label>
+        <label for="theme_dark" aria-label="Dark" title="Dark"><input type="radio" id="theme_dark" name="theme" value="dark"></input>🌛</label>
       </div>
       <div id="autoChordPlayContainer" title="Auto chord play by Songle">
         <input id="autoChordPlay" type="checkbox" checked
           aria-label="Auto chord play by Songle"
-        >Auto</input>
+        ></input>Auto
       </div>
       <div id="chord_text_box">
         <input id="chord_text" name="chord_text" type="text" placeholder="Chord"
@@ -551,8 +551,8 @@
           <div>...and any combination available!</div>
         </div>
       </div>
-    </div>
-  </detail>
+    </details>
+  </div>
   <div style="width: 100%;">
     <fieldset id="songleLink">
       <legend><a href="https://songle.jp/" target="_blank">Songle</a> player</legend>
@@ -587,7 +587,8 @@
       <div>
         <form id="songleSearchForm" action="search">
           <label for="search_keyword"><a href="search">Search</a></label>
-          <input type="search" name="q" required id="search_keyword"></input> <input type="submit" value="🔍Search"></input>
+          <input type="search" name="q" required id="search_keyword"></input>
+		  <input type="submit" value="🔍Search"></input>
         </form>
       </div>
     </fieldset>
@@ -653,7 +654,7 @@
     </div>
     <div id="wave">
       <label for="waveselect" title="wave">
-        <img id="waveIcon" alt="wave" height="32" align="center"/>
+        <img id="waveIcon" alt="wave" height="32" style="vertical-align: middle;"/>
         <select id="waveselect" style="height: 32px;">
         </select>
       </label>
@@ -675,7 +676,7 @@
       </div>
     </div>
     <div id="envelope">
-      <img id="envelopeIcon" alt="envelope" title="envelope" src="image/envelope.svg" height="32" align="center"/>
+      <img id="envelopeIcon" alt="envelope" title="envelope" src="image/envelope.svg" height="32"/>
       <div class="envelope_param">
         <span>
           <label for="attackTime">Attack time</label>
@@ -733,8 +734,7 @@
   </div>
 </div>
 <hr/>
-<a name="how_to_use"></a>
-<h1>五度圏時計楽器 ClockChord</h1>
+<h1 id="how_to_use">五度圏時計楽器 ClockChord</h1>
 <h2>操作方法（Operation）</h2>
 <p>和音の出る五度圏時計です。文字盤のコード名をクリックまたはタッチしてみてください。</p>
 <p>Chord-soundable circle-of-fifths clock - Click or touch the chord symbol on dial</p>
@@ -914,17 +914,18 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <dl>
 <dt>songle</dt>
 <dd>URL欄の入力値を指定します。URLで指定された曲の埋め込まれたSongle Widgetが、ClockChordに最初から埋め込まれた状態で開きます。
-<br/>※ https://songle.jp/songs/<span class="song_url">楽曲URL</span> から <span class="song_url">楽曲URL</span> の部分を抜き出し、% でエンコードされたままの状態で指定してください。
+<div>※ https://songle.jp/songs/<span class="song_url">楽曲URL</span> から <span class="song_url">楽曲URL</span> の部分を抜き出し、% でエンコードされたままの状態で指定してください。</div>
 </dd>
 <dt>url</dt>
 <dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
 <dd>Key欄の入力値を指定します。省略した場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかればそれが入力値として使われます。
-<br/>※ シャープとして半角の # を直接指定しても、<a
+<div>※ シャープとして半角の # を直接指定しても、<a
  href="https://developer.mozilla.org/ja/docs/Web/URI/Reference/Fragment/Text_fragments" target="_blank">テキストフラグメント</a
 >として解釈され、無視されてしまいます。その場合はシャープ記号 ♯ で代用するか、または %23 のように<a
  href="https://developer.mozilla.org/ja/docs/Glossary/Percent-encoding" target="_blank">パーセントエンコーディングを使ってエスケープ</a
->する必要があります。</dd>
+>する必要があります。</div>
+</dd>
 <dt>key</dt>
 <dd>パラメータkeysigと同じです。</dd>
 <dt>at</dt>
