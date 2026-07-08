@@ -121,6 +121,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       errorMessageElement
     ].forEach((element) => element.textContent = "");
     PianoKeyboard.setSongTitleToDocument(undefined);
+    urlInput.required = true; // Re-add the previously removed "required" attribute
   };
   const loadSongle = (params) => {
     const {songKeyTimelineText, ...otherParams} = params ?? {};
@@ -156,6 +157,11 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     });
     currentStatusBar.style.display = null;
     widgetParent.insertBefore(widgetElement, keyTimelineElement);
+    //
+    // Remove "required" attribute to accept the empty URL for removing the widget
+    // (urlInput.required="false" does not remove the attribute)
+    urlInput.removeAttribute("required");
+    //
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
@@ -220,6 +226,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     songAutoLoop: searchParams.get("loop"),
   };
   loadButton?.addEventListener("click", () => {
+    if( !urlInput.reportValidity() ) {
+      return;
+    }
     let url = urlInput.value;
     try {
       // Decode if percent-encoded URL entered (such as the content URL copied from Songle URL)
