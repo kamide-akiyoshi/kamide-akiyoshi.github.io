@@ -73,6 +73,9 @@ const Music = class {
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
   static Chord = class {
+    constructor(rawText) {
+      this.parseText(rawText);
+    };
     clear() {
       delete this.majorBassHour;
       delete this.hour;
