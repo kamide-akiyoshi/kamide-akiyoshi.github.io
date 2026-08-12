@@ -317,12 +317,12 @@ const PianoKeyboard = class {
       this.manualNoteOff(noteNumber);
     }
     pianoKeyPressedChannnel.set(noteNumber, ch);
-    !orderInChord && this.chord.pianoKeyElementClassLists.clear();
+    !orderInChord && this.chordView.pianoKeyElementClassLists.clear();
     const element = this.pianoKeyElements[noteNumber];
     if( element ) {
       const cl = element.classList;
       cl.add('pressed');
-      orderInChord && this.chord.pianoKeyElementClassLists.add(cl, orderInChord == 1);
+      orderInChord && this.chordView.pianoKeyElementClassLists.add(cl, orderInChord == 1);
     }
   };
   manualNoteOff = (noteNumber) => {
@@ -348,8 +348,9 @@ const PianoKeyboard = class {
     get note() { return this._note; },
     get noteC() { return this._noteC; },
   };
-  chord = {
+  chordView = {
     pianoKeyElementClassLists: [],
+    model: new Music.Chord(),
     setup(keySignatureSelector) {
       const createDetachableElementEntry = id => {
         const element = document.getElementById(id);
@@ -366,14 +367,14 @@ const PianoKeyboard = class {
           },
         };
       };
-      const chord = this;
-      chord.keySignatureSelector = keySignatureSelector;
-      chord.label = createDetachableElementEntry('chord');
-      chord.dialCenterLabel = createDetachableElementEntry('center_chord');
-      chord.chordTextInput = document.getElementById('chord_text');
-      chord.keySignatureSetButton = document.getElementById('setkey');
-      chord.keySignatureSetButton.addEventListener('click', () => keySignatureSelector.parse(chord));
-      const cls = chord.pianoKeyElementClassLists;
+      const chordView = this;
+      chordView.keySignatureSelector = keySignatureSelector;
+      chordView.label = createDetachableElementEntry('chord');
+      chordView.dialCenterLabel = createDetachableElementEntry('center_chord');
+      chordView.chordTextInput = document.getElementById('chord_text');
+      chordView.keySignatureSetButton = document.getElementById('setkey');
+      chordView.keySignatureSetButton.addEventListener('click', () => keySignatureSelector.parse(chordView.model));
+      const cls = chordView.pianoKeyElementClassLists;
       cls.clear = () => {
         while( cls.length ) cls.pop().remove('chord', 'root');
       };
@@ -384,7 +385,6 @@ const PianoKeyboard = class {
       }
     },
     clear() {
-      const chord = this;
       const {
         label,
         dialCenterLabel,
@@ -392,135 +392,52 @@ const PianoKeyboard = class {
         keyOrChordChanged,
         buttonCanvas,
         chordTextInput,
-      } = chord;
+        model,
+      } = this;
       label?.detach();
       dialCenterLabel?.detach();
-      delete chord.majorBassHour;
-      delete chord.hour;
-      delete chord.rootPitchName;
-      delete chord.rootPitchNumber;
-      delete chord.offset3rd;
-      delete chord.offset5th;
-      delete chord.offset7th;
-      delete chord.add9th;
+      model.clear();
       keyOrChordChanged();
       buttonCanvas.setChord();
       chordTextInput.value = "";
       pianoKeyElementClassLists.clear();
     },
-    get hasValue() { return "hour" in this; },
-    get hasBass() { return "majorBassHour" in this; },
-    get isSus2() { return this.offset3rd === -2; },
-    get isMinor() { return this.offset3rd === -1; },
-    get isSus4() { return this.offset3rd === 1; },
-    parseText(rawText) {
-      const chord = this;
-      chord.clear();
-      const trimmedText = rawText?.trim();
-      if( !trimmedText ) return;
-      const [chordText, bassText] = trimmedText.split("/");
-      const parsedRoot = Music.parsePitchName(chordText);
-      if( !parsedRoot ) return;
-      let suffix;
-      [chord.hour, suffix] = parsedRoot;
-      if( bassText ) {
-        const parsedBass = Music.parsePitchName(bassText);
-        if( parsedBass ) {
-          const [majorBassHour] = parsedBass;
-          if( ! Music.enharmonicallyEquals(majorBassHour, chord.hour) ) {
-            chord.majorBassHour = majorBassHour;
-          }
-        }
-      }
-      suffix = suffix.replace(/\(|\)|\,/g, "");
-      const eat = (str) => {
-        const found = suffix.startsWith(str);
-        if( found ) suffix = suffix.replace(str, "");
-        return found;
-      };
-      // dim/aug/minor
-      const setMinor = () => {
-        chord.offset3rd = -1;
-        chord.hour -= 3;
-      };
-      if( eat("dim9") ) {
-        setMinor();
-        chord.offset5th = -1;
-        chord.offset7th = 1;
-        chord.add9th = true;
-      }
-      else if( eat("dim7") ) {
-        setMinor();
-        chord.offset5th = -1;
-        chord.offset7th = 1;
-      }
-      else if( eat("dim") ) {
-        setMinor();
-        chord.offset5th = -1;
-      }
-      else if( eat("aug") ) chord.offset5th = 1;
-      else if( eat("m") ) setMinor();
-      //
-      // 6th/7th/9th
-      if( eat("add9") ) chord.add9th = true;
-      else if( eat("M9") ) {
-        chord.offset7th = 3;
-        chord.add9th = true;
-      }
-      else if( eat("M7") ) chord.offset7th = 3;
-      else if( eat("9") ) {
-        chord.offset7th = 2;
-        chord.add9th = true;
-      }
-      else if( eat("7") ) chord.offset7th = 2;
-      else if( eat("69") ) {
-        chord.offset7th = 1;
-        chord.add9th = true;
-      }
-      else if( eat("6") ) chord.offset7th = 1;
-      //
-      // sus4/sus2
-      if( eat("sus4") ) chord.offset3rd = 1;
-      else if( eat("sus2") ) {
-        chord.offset3rd = -2;
-        delete chord.add9th; // To avoid duplicated pitch number when chord inversion (2nd + octave === 9th)
-      }
-      // -5/b5, +5/#5
-      if( eat("-5") || eat("b5") ) chord.offset5th = -1;
-      else if( eat("+5") || eat("#5") ) chord.offset5th = 1;
-      return;
-    },
     pitchNameToHtml: ([abc, fs]) => fs ? `${abc}<sup>${fs}</sup>` : abc,
     stop: () => {
       this.manualAllNotesOff();
-      this.chord.buttonCanvas.disableStrum();
+      this.chordView.buttonCanvas.disableStrum();
     },
     start: () => {
       const {
         leftEnd,
-        chord,
+        chordView,
       } = this;
       const {
-        majorBassHour,
-        hour,
         label,
         dialCenterLabel,
         chordTextInput,
         keySignatureSetButton,
-        offset3rd,
-        offset5th,
-        offset7th,
-        add9th,
         stop,
         buttonCanvas,
         pianoKeyElementClassLists,
         keyOrChordChanged,
-        hasValue,
         pitchNameToHtml,
-      } = chord;
+        model,
+      } = chordView;
       stop();
-      if( ! hasValue ) return;
-      const { hasBass, isSus2, isMinor, isSus4 } = chord;
+      if( ! model.hasValue ) return;
+      const {
+        majorBassHour,
+        hour,
+        hasBass,
+        isSus2,
+        isMinor,
+        isSus4,
+        offset3rd,
+        offset5th,
+        offset7th,
+        add9th,
+      } = model;
       const majorRootHour = hour + (isMinor ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
@@ -536,10 +453,10 @@ const PianoKeyboard = class {
       noteOn(rootPitchNumber + 4 + (offset3rd ?? 0));
       noteOn(rootPitchNumber + 7 + (offset5th ?? 0));
       offset7th && noteOn(rootPitchNumber + 8 + offset7th);
-      add9th && noteOn(rootPitchNumber + 14);
+      add9th && !isSus2 && noteOn(rootPitchNumber + 14);
       noteOn(bassPitchNumber, true);
-      chord.notes = Array.from(this.pianoKeyPressedChannnel.keys());
-      buttonCanvas.setChord(chord);
+      chordView.notes = Array.from(this.pianoKeyPressedChannnel.keys());
+      buttonCanvas.setChord(model);
       buttonCanvas.enableStrum();
       const rootPitchName = Music.majorPitchNameAt(majorRootHour);
       if( ! rootPitchName ) return;
@@ -574,22 +491,23 @@ const PianoKeyboard = class {
       keyOrChordChanged();
     },
     keyOrChordChanged: () => {
-      const { chord } = this;
+      const { chordView } = this;
       const {
         keySignatureSelector,
         keySignatureSetButton: { style },
-      } = chord;
+        model,
+      } = chordView;
       style.visibility = (
-        chord.hasValue &&
+        model.hasValue &&
         ! (
-          chord.isMinor === keySignatureSelector.minor &&
-          Music.enharmonicallyEquals(chord.hour, keySignatureSelector.numberOfSharps)
+          model.isMinor === keySignatureSelector.minor &&
+          Music.enharmonicallyEquals(model.hour, keySignatureSelector.numberOfSharps)
         )
       ) ? 'visible' : 'hidden';
     },
     strum: (direction) => {
       const {
-        chord: { notes },
+        chordView: { notes },
         manualNoteOff,
         manualNoteOn,
       } = this;
@@ -624,7 +542,7 @@ const PianoKeyboard = class {
     const {
       manualNoteOn,
       manualNoteOff,
-      chord,
+      chordView,
     } = this;
     const [
       whiteKeyElement,
@@ -680,7 +598,7 @@ const PianoKeyboard = class {
         hour += 7;
       }
       element.addEventListener(pointerdown, e => {
-        chord.clear();
+        chordView.clear();
         manualNoteOn(noteNumber);
         keyboard.focus();
         e.preventDefault();
@@ -733,7 +651,7 @@ const PianoKeyboard = class {
       const noteNumber = index + leftEnd.noteC;
       manualNoteOn(noteNumber);
       activeNoteNumbers.set(e.code, noteNumber);
-      chord.clear();
+      chordView.clear();
     });
     keyboard.addEventListener("keyup", e => {
       const { activeNoteNumbers } = pcKey;
@@ -798,7 +716,7 @@ const PianoKeyboard = class {
       onReady
     );
     setupSongle(
-      this.chord,
+      this.chordView,
       onChangeKey,
       onChangeBeat,
       onReady,

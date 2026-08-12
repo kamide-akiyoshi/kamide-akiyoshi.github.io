@@ -3,7 +3,7 @@
  * @typedef {SongKeyChange[] & {handleBeatPlay: (position: number) => void, handleSeek: (position: number) => void}} SongKeyTimeline
  * @typedef {HTMLDivElement & {setSongKeyTimeline: (songKeyTimeline?: SongKeyTimeline, duration?: number) => void}} SongKeyTimelineElement
  */
-const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) => {
+const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams) => {
   const widgetParent = document.getElementById("EmbeddedSongle");
   if( !widgetParent ) {
     alert("No container element found to embed Songle Widget");
@@ -30,7 +30,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
   /** @type {HTMLInputElement | null} */
   const autoChordPlayCheckbox = document.getElementById("autoChordPlay");
   autoChordPlayCheckbox?.addEventListener("change", () => {
-    autoChordPlayCheckbox.checked ? chord.clear() : chord.stop();
+    autoChordPlayCheckbox.checked ? chordView.clear() : chordView.stop();
   });
   const showError = (message = "") => {
     if (errorMessageElement) {
@@ -107,7 +107,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
     currentStatusBar.style.display = "none";
     delete window.onSongleWidgetReady;
     delete window.onSongleWidgetError;
-    chord.stop();
+    chordView.stop();
     if (widgetElement) {
       widgetElement.remove();
       widgetElement = undefined;
@@ -180,8 +180,8 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
         const chordSymbol = event.chord.name;
         chordElement.textContent = chordSymbol;
         if (autoChordPlayCheckbox.checked) {
-          chord.parseText(chordSymbol);
-          chord.start();
+          chordView.model.parseText(chordSymbol) || chordView.clear();
+          chordView.start();
         }
       });
       widget.on("beatPlay", (event) => {
@@ -189,7 +189,7 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
         const beatPosition = event.beat.position;
         onChangeBeat?.(beatPosition - 1, numerator);
         if (autoChordPlayCheckbox.checked) {
-          chord.start();
+          chordView.start();
         }
         const timePosition = widget.position.milliseconds;
         positionElement.textContent = `${Math.floor(timePosition)}`;
@@ -205,9 +205,9 @@ const setupSongle = (chord, onChangeKey, onChangeBeat, onReady, searchParams) =>
       };
       widget.on("seek", handleSeek);
       widget.on("play", handleSeek);
-      widget.on("pause", () => { chord.stop(); });
+      widget.on("pause", () => { chordView.stop(); });
       widget.on("finish", () => {
-        chord.stop();
+        chordView.stop();
         chordElement.textContent = "";
       });
       onReady?.();

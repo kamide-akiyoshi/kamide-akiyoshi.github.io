@@ -34,7 +34,7 @@ const setupKeySignatureSelector = () => {
         this.numberOfSharps = hour;
         return;
       }
-      if( value?.hasValue ) { // Chord
+      if( value instanceof Music.Chord ) {
         this.parse([value.hour, value.isMinor]);
         return;
       }

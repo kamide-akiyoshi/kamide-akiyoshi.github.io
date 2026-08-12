@@ -72,6 +72,116 @@ const Music = class {
     const textAt = (hour) => this.majorPitchNameAt(hour).join('');
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
+  static Chord = class {
+    clear() {
+      delete this.majorBassHour;
+      delete this.hour;
+      delete this.offset3rd;
+      delete this.offset5th;
+      delete this.offset7th;
+      delete this.add9th;
+    };
+    get hasValue() { return "hour" in this; };
+    get hasBass() { return "majorBassHour" in this; };
+    get isMajor() { return (this.offset3rd ?? 0) === 0; };
+    get isMinor() { return this.offset3rd === -1; };
+    get isSus4() { return this.offset3rd === 1; };
+    get isSus2() { return this.offset3rd === -2; };
+    setRelativeMinor() { // C -> Am
+      this.offset3rd = -1;
+    };
+    setRelativeMajor() { // Am -> C
+      delete this.offset3rd;
+    }
+    setSus4() { this.offset3rd = 1; };
+    setSus2() { this.offset3rd = -2; };
+    setParallelMinor() { // C -> Cm
+      if( this.isMinor ) return;
+      this.hour -= 3;
+      this.setRelativeMinor();
+    };
+    setParallelMajor() { // Cm -> C
+      if( ! this.isMinor ) return;
+      this.hour += 3;
+      this.setRelativeMajor();
+    };
+    setDim5() { this.offset5th = -1; };
+    setAug5() { this.offset5th = 1; };
+    setPerfect5() { delete this.offset5th; };
+    setMajor7() { this.offset7th = 3; };
+    set7() { this.offset7th = 2; };
+    set6() { this.offset7th = 1; };
+    parseText(rawText) {
+      const chord = this;
+      chord.clear();
+      const trimmedText = rawText?.trim();
+      if( !trimmedText ) return;
+      const [chordText, bassText] = trimmedText.split("/");
+      const parsedRoot = Music.parsePitchName(chordText);
+      if( !parsedRoot ) return;
+      let suffix;
+      [chord.hour, suffix] = parsedRoot;
+      if( bassText ) {
+        const parsedBass = Music.parsePitchName(bassText);
+        if( parsedBass ) {
+          const [majorBassHour] = parsedBass;
+          if( ! Music.enharmonicallyEquals(majorBassHour, chord.hour) ) {
+            chord.majorBassHour = majorBassHour;
+          }
+        }
+      }
+      suffix = suffix.replace(/\(|\)|\,/g, "");
+      const eat = (str) => {
+        const found = suffix.startsWith(str);
+        if( found ) suffix = suffix.replace(str, "");
+        return found;
+      };
+      // dim/aug/minor
+      if( eat("dim9") ) {
+        chord.setParallelMinor();
+        chord.setDim5();
+        chord.set6(); // Equivalent to diminished 7th
+        chord.add9th = true;
+      }
+      else if( eat("dim7") ) {
+        chord.setParallelMinor();
+        chord.setDim5();
+        chord.set6(); // Equivalent to diminished 7th
+      }
+      else if( eat("dim") ) {
+        chord.setParallelMinor();
+        chord.setDim5();
+      }
+      else if( eat("aug") ) chord.setAug5();
+      else if( eat("m") ) chord.setParallelMinor();
+      //
+      // 6th/7th/9th
+      if( eat("add9") ) chord.add9th = true;
+      else if( eat("M9") ) {
+        chord.setMajor7();
+        chord.add9th = true;
+      }
+      else if( eat("M7") ) chord.setMajor7();
+      else if( eat("9") ) {
+        chord.set7();
+        chord.add9th = true;
+      }
+      else if( eat("7") ) chord.set7();
+      else if( eat("69") ) {
+        chord.set6();
+        chord.add9th = true;
+      }
+      else if( eat("6") ) chord.set6();
+      //
+      // sus4/sus2
+      if( eat("sus4") ) chord.setSus4();
+      else if( eat("sus2") ) chord.setSus2();
+      // -5/b5, +5/#5
+      if( eat("-5") || eat("b5") ) chord.setDim5();
+      else if( eat("+5") || eat("#5") ) chord.setAug5();
+      return chord;
+    };
+  };
 }
 
 const CircleOfFifthsClock = class {

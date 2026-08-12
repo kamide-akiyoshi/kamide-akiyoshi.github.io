@@ -10,14 +10,14 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
     onSongReady,
     searchParams
   );
-  const { chord } = pianokeyboard;
-  dial.chord = chord;
-  chord.setup(dial.keySignatureSelector = keySignatureSelector);
+  const { chordView } = pianokeyboard;
+  dial.chord = chordView;
+  chordView.setup(dial.keySignatureSelector = keySignatureSelector);
   keySignatureSelector.onChange = () => {
-    chord.keyOrChordChanged();
+    chordView.keyOrChordChanged();
     dial.draw();
   };
-  (chord.buttonCanvas = buttonCanvas).focus();
+  (chordView.buttonCanvas = buttonCanvas).focus();
   const initialKeySig = (searchParams.get("keysig") ?? searchParams.get("key"))?.split(",", 1)[0];
   if( initialKeySig ) keySignatureSelector.parse(initialKeySig);
   const createPcKeyboardBindings = () => {
@@ -40,23 +40,24 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
   }
   const [pcKeyBindMap, shiftLikeKeyCodes] = createPcKeyboardBindings();
   let shiftButtonStatus;
-  const handleEvent = (event, chord) => {
+  const handleEvent = (event, chordView) => {
     switch( event.type ) {
       case 'keydown':
-        if( event.repeat || ! chord || shiftLikeKeyCodes.includes(event.code) ) {
+        if( event.repeat || ! chordView || shiftLikeKeyCodes.includes(event.code) ) {
           event.preventDefault();
           return;
         }
         if( pcKeyBindMap.has(event.code) ) {
-          [chord.hour, chord.offset3rd] = pcKeyBindMap.get(event.code);
-          chord.hour += keySignatureSelector.numberOfSharps;
+          const { model } = chordView;
+          [model.hour, model.offset3rd] = pcKeyBindMap.get(event.code);
+          model.hour += keySignatureSelector.numberOfSharps;
         } else {
           switch(event.code) {
             case 'Space':
               event.preventDefault(); // To avoid unexpected page down
               // fallthrough
             case 'Enter':
-              chord.start();
+              chordView.start();
               return;
             case 'Tab':
               // Move focus (Keep default action)
@@ -74,7 +75,7 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
         event.preventDefault();
         return;
       default:
-        if( ! chord ) {
+        if( ! chordView ) {
           event.preventDefault();
           return;
         } else {
@@ -86,37 +87,45 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
           const br = dial.borderRadius;
           if( r > br[3] || r < br[0] ) return;
           canvas.focus();
-          chord.offset3rd = r < br[1] ? -1 : r > br[2] ? 1 : 0;
-          chord.hour = Math.round( (canvas.lastHourAngle = Math.atan2(x, -y)) * 6 / Math.PI );
-          delete chord.majorBassHour;
+          const { model } = chordView;
+          if( r < br[1] )
+            model.setRelativeMinor();
+          else if( r > br[2] )
+            model.setSus4();
+          else
+            model.setRelativeMajor();
+          model.hour = Math.round( (canvas.lastHourAngle = Math.atan2(x, -y)) * 6 / Math.PI );
+          delete model.majorBassHour;
         }
         break;
     }
-    const relativeHour = chord.hour - keySignatureSelector.numberOfSharps;
-    if( relativeHour < -5 ) chord.hour += 12; else if( relativeHour > 6 ) chord.hour -= 12;
-    chord.offset5th = 0;
+    const { model } = chordView;
+    const relativeHour = model.hour - keySignatureSelector.numberOfSharps;
+    if( relativeHour < -5 ) model.hour += 12; else if( relativeHour > 6 ) model.hour -= 12;
+    model.setPerfect5();
     if( event.altKey || shiftButtonStatus?.button_flat5 ) {
-      if( chord.isSus4 ) {
-        chord.offset3rd = 0; chord.offset5th = 1; // replace sus4 to augumented
+      if( model.isSus4 ) {
+        model.setRelativeMajor(); // Cancel sus4
+        model.setAug5();
       } else {
-        chord.offset5th = -1; // -5
+        model.setDim5();
       }
     }
-    chord.offset7th = 0;
+    model.offset7th = 0;
     if( shiftButtonStatus ) {
-      chord.offset7th = 4;
-      shiftButtonStatus.button_7th && (chord.offset7th -= 2);
-      shiftButtonStatus.button_major7th && (chord.offset7th -= 1);
+      model.offset7th = 4;
+      shiftButtonStatus.button_7th && (model.offset7th -= 2);
+      shiftButtonStatus.button_major7th && (model.offset7th -= 1);
     } else if( event.type === 'keydown' ) {
-      event.shiftKey && (chord.offset7th += 2);
-      event.metaKey && (chord.offset7th += 1);
+      event.shiftKey && (model.offset7th += 2);
+      event.metaKey && (model.offset7th += 1);
     } else {
-      event.button == 2 && (chord.offset7th += 2);
-      event.shiftKey && (chord.offset7th += 1);
+      event.button == 2 && (model.offset7th += 2);
+      event.shiftKey && (model.offset7th += 1);
     }
-    chord.offset7th == 4 && (chord.offset7th = 0);
-    chord.add9th = event.ctrlKey || shiftButtonStatus?.button_add9;
-    chord.start();
+    model.offset7th == 4 && (model.offset7th = 0);
+    model.add9th = event.ctrlKey || shiftButtonStatus?.button_add9;
+    chordView.start();
   };
   const isTouchDevice = typeof window.ontouchstart !== 'undefined';
   const eventTypes = {
@@ -159,24 +168,24 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
     buttonCanvas.title = "Click the chord symbol to sound";
   }
   eventTypes.disable.forEach(t => buttonCanvas.addEventListener(t, handleEvent));
-  eventTypes.start.forEach(t => buttonCanvas.addEventListener(t, e => handleEvent(e, chord)));
-  eventTypes.end.forEach(t => buttonCanvas.addEventListener(t, chord.stop));
+  eventTypes.start.forEach(t => buttonCanvas.addEventListener(t, e => handleEvent(e, chordView)));
+  eventTypes.end.forEach(t => buttonCanvas.addEventListener(t, chordView.stop));
   const handleMouseLeave = (event) => {
-    event.buttons && chord.stop();
+    event.buttons && chordView.stop();
   };
   buttonCanvas.addEventListener("mouseleave", handleMouseLeave);
-  if( chord.dialCenterLabel ) {
-    const { element } = chord.dialCenterLabel;
+  if( chordView.dialCenterLabel ) {
+    const { element } = chordView.dialCenterLabel;
     element.addEventListener('pointerdown', e => {
-      chord.start();
+      chordView.start();
     });
     element.addEventListener('pointerup', e => {
       buttonCanvas.focus();
-      chord.stop();
+      chordView.stop();
     });
     element.addEventListener('mouseleave', handleMouseLeave);
   }
-  buttonCanvas.setChord = (chord) => {
+  buttonCanvas.setChord = (/** @type {Music.Chord} */ chord) => {
     const context = buttonCanvas.getContext("2d");
     const { width, height } = buttonCanvas;
     context.clearRect(0, 0, width, height);
@@ -213,18 +222,18 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
     const diffHourAngle = hourAngle - canvas.lastHourAngle;
     if( Math.abs(diffHourAngle) < Math.PI / 15 ) return;
     canvas.lastHourAngle = hourAngle;
-    chord.strum(diffHourAngle < 0 ? -1 : 1);
+    chordView.strum(diffHourAngle < 0 ? -1 : 1);
   };
   buttonCanvas.enableStrum = () => buttonCanvas.addEventListener(eventTypes.move, handleMouseMove);
   buttonCanvas.disableStrum = () => buttonCanvas.removeEventListener(eventTypes.move, handleMouseMove);
-  if( chord.chordTextInput ) {
-    const { chordTextInput } = chord;
+  if( chordView.chordTextInput ) {
+    const { chordTextInput } = chordView;
     const handleEnterPress = (event) => {
-      chord.parseText(chordTextInput.value);
-      chord.start();
+      chordView.model.parseText(chordTextInput.value) || chordView.clear();
+      chordView.start();
       event.preventDefault();
     };
-    const handleEnterRelease = () => chord.stop();
+    const handleEnterRelease = () => chordView.stop();
     chordTextInput.addEventListener('keydown', (event) => {
       if( ! event.repeat && ["Enter", " "].includes(event.key) ) handleEnterPress(event);
     });
@@ -241,5 +250,5 @@ const activateChordButton = (buttonCanvas, dial, onSongReady) => {
       }
     }
   }
-  chord.clear();
+  chordView.clear();
 };
