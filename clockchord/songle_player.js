@@ -85,6 +85,27 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       keyTimelineElement.appendChild(element);
     });
   });
+  const inferSongKeysByChords = async (url) => {
+    const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${url}`;
+    const response = await fetch(chordJsonUrl);
+    const { chords } = await response.json();
+    const [subDominant, tonic, dominant] = chords.reduce((weights, chord) => {
+      const { name, duration } = chord;
+      const { hasValue, hour } = new Music.Chord(name);
+      if( hasValue ) {
+        const weight = weights.find((w) => w.hour === hour);
+        if( weight ) {
+          weight.duration += duration;
+        } else {
+          weights.push({ hour, duration });
+        }
+      }
+      return weights;
+    }, []).sort((a, b) => b.duration - a.duration).filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => a - b);
+    if( subDominant + 1 === tonic && tonic + 1 === dominant ) {
+      return Music.majorMinorTextOf(tonic);
+    }
+  };
   /** @type {Record<number, string>} */
   const songleErrorMessages = {
     100: "Could not embed: Song deleted",
@@ -123,7 +144,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     PianoKeyboard.setSongTitleToDocument(undefined);
     urlInput.required = true; // Re-add the previously removed "required" attribute
   };
-  const loadSongle = (params) => {
+  const loadSongle = async (params) => {
     const {songKeyTimelineText, ...otherParams} = params ?? {};
     if (widget) {
       const { remove } = widget;
@@ -142,11 +163,23 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     showError();
     urlInput.value = params.url;
     songKeyInput.value = songKeyTimelineText;
+    keyTimelineElement.style.fontStyle = null;
     if (!params.url) {
       return;
     }
     if (!songKeyTimelineText && typeof SONG_KEYS !== "undefined") {
-      songKeyInput.value = SONG_KEYS.get(params.url) ?? "";
+      const registeredKeys = SONG_KEYS.get(params.url);
+      if (registeredKeys) {
+        songKeyInput.value = registeredKeys;
+      } else {
+        const inferredKeys = await inferSongKeysByChords(params.url);
+        if (inferredKeys) {
+          songKeyInput.value = inferredKeys;
+          keyTimelineElement.style.fontStyle = "italic";
+        } else {
+          songKeyInput.value = "";
+        }
+      }
     }
     const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
     widgetElement = SongleWidgetAPI.createSongleWidgetElement({

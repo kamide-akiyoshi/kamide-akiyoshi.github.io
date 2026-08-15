@@ -73,8 +73,13 @@ const Music = class {
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
   static Chord = class {
-    constructor(rawText) {
-      this.parseText(rawText);
+    constructor(value) {
+      const hour = parseInt(value);
+      if( ! isNaN(hour) ) {
+        this.hour = hour;
+        return;
+      }
+      this.parseText(value);
     };
     clear() {
       delete this.majorBassHour;
