@@ -848,7 +848,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 </p>
 <h3>Songle player</h3>
 <p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲を
- <a href="https://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
+ <a href="http://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
 </p>
 <p>再生すると、Songleの音楽地図に基づいてビート、コードの情報がClockChordに送信され、自動的にコードが鳴ります。
 MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、トーンインジケーターがイルミネーションのようにが美しく光り輝き、視覚的に「能動的音楽鑑賞」を楽しめます。
@@ -866,12 +866,12 @@ MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pie�
 >からキーを特定 - ClockChord側で独自に用意した、調に関する音楽地図です。転調のタイミングも登録できるようになっています。これはClockChordの作者がメンテナンスしており、<a
  href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに保存しています。</li>
 <li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank">コード進行からキーを推論</a
-> - 転調地図になかった場合、<a href="https://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">Songle Widget の API</a
+> - 転調地図になかった場合、<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">Songle Widget の API</a
 > で和音の音楽地図を取得し、そこに書かれたコードごとに持続時間を集計、上位3つのコードを主要三和音とみなしてキーを推論します。
 ただし、コード進行やその書き方によっては推論に失敗する場合があります。また、転調がある場合、転調のタイミングまでは推論できません。</li>
 </ul>
 <h4>Songle登録曲の検索</h4>
-<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
+<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="http://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
 <ul><li>鍵マーク🔑のついた楽曲は、ClockChord側で転調地図が登録されています。</li>
 <li>検索結果の下にある [🔍Search by Songle] のリンクをクリックすると、同じキーワードによるSongleの検索結果が表示されます。<ul>
 	<li>再生数、編集数、YouTubeに絞った検索結果など、Songle上でしか参照できない情報をチェックしたいときに活用してください。</li>
