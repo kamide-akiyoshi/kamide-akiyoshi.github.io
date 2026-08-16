@@ -427,8 +427,8 @@ const PianoKeyboard = class {
       stop();
       if( ! model.hasValue ) return;
       const {
+        majorRootHour,
         majorBassHour,
-        hour,
         hasBass,
         isSus2,
         isMinor,
@@ -438,7 +438,6 @@ const PianoKeyboard = class {
         offset7th,
         add9th,
       } = model;
-      const majorRootHour = hour + (isMinor ? 3 : 0);
       const rootPitchNumber = Music.togglePitchNumberAndMajorHour(majorRootHour) + 24;
       const bassPitchNumber = hasBass
         ? Music.togglePitchNumberAndMajorHour(majorBassHour) + 24
@@ -487,7 +486,7 @@ const PianoKeyboard = class {
         label?.attach(htmlChordText);
         dialCenterLabel?.attach(htmlChordText);
       }
-      keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(hour)) || Music.NATURAL;
+      keySignatureSetButton.textContent = Music.keySignatureTextAt(Music.normalizeHourAsKey(model.hour)) || Music.NATURAL;
       keyOrChordChanged();
     },
     keyOrChordChanged: () => {

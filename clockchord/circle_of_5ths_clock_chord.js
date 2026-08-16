@@ -95,6 +95,10 @@ const Music = class {
     get isMinor() { return this.offset3rd === -1; };
     get isSus4() { return this.offset3rd === 1; };
     get isSus2() { return this.offset3rd === -2; };
+    get majorRootHour() {
+      if( this.isMinor ) return this.hour + 3;
+      return this.hour;
+    };
     setRelativeMinor() { // C -> Am
       this.offset3rd = -1;
     };
