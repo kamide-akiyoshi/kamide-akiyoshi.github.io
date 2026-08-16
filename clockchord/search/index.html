@@ -70,7 +70,7 @@ const searchSongle = () => {
   statusElement.textContent = "⏳ Searching...";
   resultContainer.appendChild(statusElement);
   fetch(
-    `http://widget.songle.jp/api/v1/songs/search.json?${currentSearchParams}`
+    `https://widget.songle.jp/api/v1/songs/search.json?${currentSearchParams}`
   ).then((response) => {
     if( ! response.ok ) {
       const { status } = response;
