@@ -91,23 +91,32 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
    */
   const inferSongKeysByChords = async (url) => {
     const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${url}`;
-    const response = await fetch(chordJsonUrl);
-    const { chords } = await response.json();
-    const [subDominant, tonic, dominant] = chords.reduce((weights, chord) => {
-      const { name, duration } = chord;
-      const { hasValue, hour } = new Music.Chord(name);
-      if( hasValue ) {
-        const weight = weights.find((w) => w.hour === hour);
-        if( weight ) {
-          weight.duration += duration;
-        } else {
-          weights.push({ hour, duration });
-        }
+    try {
+      const response = await fetch(chordJsonUrl);
+      if (!response.ok) {
+        console.error(`Failed to fetch chord data from ${chordJsonUrl}: ${response.status} ${response.statusText}`);
+        return;
       }
-      return weights;
-    }, []).sort((a, b) => b.duration - a.duration).filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => a - b);
-    if( subDominant + 1 === tonic && tonic + 1 === dominant ) {
-      return Music.majorMinorTextOf(tonic);
+      const { chords } = await response.json();
+      const [subDominant, tonic, dominant] = chords.reduce((weights, chord) => {
+        const { name, duration } = chord;
+        const { hasValue, hour } = new Music.Chord(name);
+        if( hasValue ) {
+          const weight = weights.find((w) => w.hour === hour);
+          if( weight ) {
+            weight.duration += duration;
+          } else {
+            weights.push({ hour, duration });
+          }
+        }
+        return weights;
+      }, []).sort((a, b) => b.duration - a.duration).filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => a - b);
+      if( subDominant + 1 === tonic && tonic + 1 === dominant ) {
+        return Music.majorMinorTextOf(tonic);
+      }
+    } catch (error) {
+      console.error(error);
+      return;
     }
   };
   /** @type {Record<number, string>} */
