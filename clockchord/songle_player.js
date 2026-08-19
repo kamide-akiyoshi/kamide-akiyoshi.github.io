@@ -85,6 +85,10 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       keyTimelineElement.appendChild(element);
     });
   });
+  /**
+   * @param {string} url
+   * @returns {Promise<string | undefined>}
+   */
   const inferSongKeysByChords = async (url) => {
     const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${url}`;
     const response = await fetch(chordJsonUrl);
