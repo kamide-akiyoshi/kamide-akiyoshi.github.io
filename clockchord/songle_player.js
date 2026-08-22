@@ -68,13 +68,15 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     };
     return timeline;
   };
-  keyTimelineElement && (keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
+  keyTimelineElement && (keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, optionalDuration) => {
     while (keyTimelineElement.firstChild) {
       keyTimelineElement.removeChild(keyTimelineElement.firstChild);
     }
     if (!songKeyTimeline) {
       return;
     }
+    // While duretion undetermined, avoid zero duration to calculate the timeline bar width correctly
+    const duration = optionalDuration ?? songKeyTimeline[songKeyTimeline.length - 1].position + 30000;
     songKeyTimeline.forEach((t, i) => {
       const { position, key } = t;
       const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
@@ -195,6 +197,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       }
     }
     const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
+    keyTimelineElement.setSongKeyTimeline(songKeyTimeline);
     widgetElement = SongleWidgetAPI.createSongleWidgetElement({
       videoPlayerSizeW: "auto",
       videoPlayerSizeH: "auto",
