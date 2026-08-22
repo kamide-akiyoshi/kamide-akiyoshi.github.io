@@ -211,7 +211,6 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
-      widget.volume = songleVolume.value = SongleWidgetAPI.computeAverageVolume(widget);
       const duration = widget.duration.milliseconds;
       const timePosition = widget.position.milliseconds;
       keyTimelineElement.setSongKeyTimeline(songKeyTimeline, duration);
@@ -222,6 +221,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         widget.setAllEventTimingOffset(-100);
         widget.eventPollingInterval = 1; // [ms]
       }
+      widget.volume = songleVolume.value = SongleWidgetAPI.computeAverageVolume(widget);
       widget.on("chordPlay", (event) => {
         const chordSymbol = event.chord.name;
         chordElement.textContent = chordSymbol;
