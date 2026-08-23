@@ -68,7 +68,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     };
     return timeline;
   };
-  keyTimelineElement && (keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, optionalDuration) => {
+  keyTimelineElement && (keyTimelineElement.setSongKeyTimeline = (songKeyTimeline, duration) => {
     while (keyTimelineElement.firstChild) {
       keyTimelineElement.removeChild(keyTimelineElement.firstChild);
     }
@@ -76,14 +76,14 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       return;
     }
     // While duretion undetermined, avoid zero duration to calculate the timeline bar width correctly
-    const duration = optionalDuration ?? songKeyTimeline[songKeyTimeline.length - 1].position + 30000;
+    const nonZeroDuration = duration ?? songKeyTimeline[songKeyTimeline.length - 1].position + 30000;
     songKeyTimeline.forEach((t, i) => {
       const { position, key } = t;
-      const endPosition = songKeyTimeline[i + 1]?.position ?? duration;
+      const endPosition = songKeyTimeline[i + 1]?.position ?? nonZeroDuration;
       const element = document.createElement("div");
       element.textContent = i ? key : `🔑${key}`;
       element.classList.add("key");
-      element.style.width = `${(endPosition - position) / duration * 100}%`;
+      element.style.width = `${(endPosition - position) / nonZeroDuration * 100}%`;
       keyTimelineElement.appendChild(element);
     });
   });
