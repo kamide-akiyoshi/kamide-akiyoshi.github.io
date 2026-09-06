@@ -100,7 +100,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         return;
       }
       const { chords } = await response.json();
-      const [subDominant, tonic, dominant] = chords.reduce((weights, chord) => {
+      const durationRanking = chords.reduce((weights, chord) => {
         const { name, duration } = chord;
         const { hasValue, hour } = new Music.Chord(name);
         if( hasValue ) {
@@ -112,10 +112,27 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
           }
         }
         return weights;
-      }, []).sort((a, b) => b.duration - a.duration).filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => a - b);
-      if( subDominant + 1 === tonic && tonic + 1 === dominant ) {
-        return Music.majorMinorTextOf(tonic);
+      }, []).sort((a, b) => b.duration - a.duration);
+      const diatonicHours = durationRanking.filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => b - a);
+      switch( diatonicHours.length ) {
+        case 0: break;
+        case 1: return Music.majorMinorTextOf(diatonicHours[0]);
+        case 2: {
+            const [dominant, tonic] = diatonicHours;
+            if( dominant === tonic + 1 ) {
+              return Music.majorMinorTextOf(tonic);
+            }
+            break;
+        }
+        default: {
+          const [dominant, tonic, subDominant] = diatonicHours;
+          if( dominant === tonic + 1 && subDominant === tonic - 1 ) {
+            return Music.majorMinorTextOf(tonic);
+          }
+          break;
+        }
       }
+      console.warn('Songle player: Could not infer song key from chord duration ranking', durationRanking);
     } catch (error) {
       console.error(error);
       return;
