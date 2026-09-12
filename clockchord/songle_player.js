@@ -146,9 +146,11 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     201: "Music map loading failed",
     300: "Sound file (mp3) download failed",
   };
-  /** @param {number} status */
-  const showSongleError = (status) => {
-    showError(`Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`);
+  /** @param {string} apiKey @param {number} status */
+  const showSongleError = (apiKey, status) => {
+    const message = `Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`;
+    console.error(`${message} in Widget API key = "${apiKey}"`);
+    showError(message);
   };
   let widgetElement, widget;
   songleVolume?.addEventListener("input", () => {
@@ -176,6 +178,8 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     PianoKeyboard.setSongTitleToDocument(undefined);
     urlInput.required = true; // Re-add the previously removed "required" attribute
   };
+  let apiKeySequence = 0;
+  const newApiKey = () => `clockchord-songle-player-${++apiKeySequence}`;
   const loadSongle = async (params) => {
     const {songKeyTimelineText, ...otherParams} = params ?? {};
     if (widget) {
@@ -216,6 +220,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     const songKeyTimeline = toSongKeyTimeline(songKeyInput.value);
     keyTimelineElement.setSongKeyTimeline(songKeyTimeline);
     widgetElement = SongleWidgetAPI.createSongleWidgetElement({
+      api: newApiKey(),
       videoPlayerSizeW: "auto",
       videoPlayerSizeH: "auto",
       songleWidgetSizeW: "auto",
@@ -229,6 +234,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     urlInput.removeAttribute("required");
     //
     window.onSongleWidgetReady = (apiKey, songleWidget) => {
+      console.info(`Songle Widget API ${apiKey} ready`);
       const { song } = widget = songleWidget;
       PianoKeyboard.setSongTitleToDocument(`${song.title} by ${song.artist.name}`);
       const duration = widget.duration.milliseconds;
@@ -280,11 +286,10 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     };
     window.onSongleWidgetError = (apiKey, songleWidget) => {
       const { status } = widget = songleWidget;
-      showSongleError(status);
+      showSongleError(apiKey, status);
     };
   };
   const params = {
-    api: "clockchord-songle-player",
     url: undefined,
     songKeyTimelineText: searchParams.get("keysig") ?? searchParams.get("key") ?? "",
     songStartAt: searchParams.get("at"),
