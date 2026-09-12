@@ -100,7 +100,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         return;
       }
       const { chords } = await response.json();
-      const durationRanking = chords.reduce((weights, chord) => {
+      const chordDurations = chords.reduce((weights, chord) => {
         const { name, duration } = chord;
         const { hasValue, hour } = new Music.Chord(name);
         if( hasValue ) {
@@ -112,29 +112,37 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
           }
         }
         return weights;
-      }, []).sort((a, b) => b.duration - a.duration);
-      const diatonicHours = durationRanking.filter((_, i) => i < 3).map((w) => w.hour).sort((a, b) => b - a);
-      switch( diatonicHours.length ) {
-        case 0: break;
-        case 1: return Music.majorMinorTextOf(diatonicHours[0]);
-        case 2: {
-            const [dominant, tonic] = diatonicHours;
-            if( dominant === tonic + 1 ) {
-              return Music.majorMinorTextOf(tonic);
-            }
-            break;
-        }
+      }, []).sort((a, b) => a.hour - b.hour);
+      switch( chordDurations.length ) {
+        case 0: 
+          console.warn(`Songle player warning: Could not infer song keys: No chord found in ${chordJsonUrl}`);
+          return;
+        case 1:
+        case 2:
+          return Music.majorMinorTextOf(chordDurations[0].hour);
         default: {
-          const [dominant, tonic, subDominant] = diatonicHours;
-          if( dominant === tonic + 1 && subDominant === tonic - 1 ) {
-            return Music.majorMinorTextOf(tonic);
-          }
-          break;
+          let currentHour = chordDurations[0].hour;
+          const durations = chordDurations.reduce((durations, { hour, duration }) => {
+            do {
+              durations.push(currentHour++ === hour ? duration : 0);
+            } while( currentHour <= hour );
+            return durations;
+          }, []);
+          let [maxDurationSum, inferredIndex] = [0, 0];
+          durations.forEach((_, index) => {
+            const durationSum = [-1, 0, 1]
+              .map((offset) => durations[index + offset] || 0)
+              .reduce((a, b) => a + b, 0);
+            if( durationSum > maxDurationSum ) {
+              maxDurationSum = durationSum;
+              inferredIndex = index;
+            }
+          });
+          return Music.majorMinorTextOf(inferredIndex + chordDurations[0].hour);
         }
       }
-      console.warn('Songle player: Could not infer song key from chord duration ranking', durationRanking);
     } catch (error) {
-      console.error(error);
+      console.error('Songle player error: Could not infer song keys', error);
       return;
     }
   };
