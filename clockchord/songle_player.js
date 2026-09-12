@@ -113,13 +113,18 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         }
         return weights;
       }, []).sort((a, b) => a.hour - b.hour);
+      console.info('Inferring song keys from chords:', chordDurations);
       switch( chordDurations.length ) {
         case 0: 
           console.warn(`Songle player warning: Could not infer song keys: No chord found in ${chordJsonUrl}`);
           return;
         case 1:
-        case 2:
           return Music.majorMinorTextOf(chordDurations[0].hour);
+        case 2: {
+          const [first, second] = chordDurations;
+          const longer = second.duration > first.duration ? second : first;
+          return Music.majorMinorTextOf(longer.hour);
+        }
         default: {
           let currentHour = chordDurations[0].hour;
           const durations = chordDurations.reduce((durations, { hour, duration }) => {
