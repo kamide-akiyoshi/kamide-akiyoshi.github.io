@@ -865,10 +865,9 @@ MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pie�
 >からキーを特定 - ClockChord側で独自に用意した、調に関する音楽地図です。これはClockChordの作者がメンテナンスしており、<a
  href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに保存しています。</li>
 <li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank">コード進行からキーを推論</a
-> - 転調地図になかった場合、<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">Songle Widget の API</a
-> で和音の音楽地図を取得し、そこに書かれたコードごとに持続時間を集計、上位3つのコードを抽出し、五度圏時計上の時刻が連続しているかどうかを確認します。
-連続していれば、それらを主要三和音とみなしてキーを推論します。連続していなかった場合は推論に失敗します。転調があっても、そのタイミングまでは推論できません。</li>
-<li>推論に失敗してキーを特定できなかった場合、キー表示の自動更新は働きません。曲が終わったように聞こえるコードを自分で探し、それをキーとして指定してみてください。</li>
+> - 転調地図になかった場合、和音の音楽地図を<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">Songle Widget の API</a
+> で取得し、各キーのダイアトニックコードが鳴っている持続時間の合計を計算し、持続時間が最大だったキーを推論結果として設定します
+（転調があってもそのタイミングまでは推論できません）。</li>
 </ol>
 <h4>Songle登録曲の検索</h4>
 <p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="http://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
