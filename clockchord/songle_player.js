@@ -104,14 +104,18 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         const { name, duration } = chord;
         const { hasValue, hour, isMinor } = new Music.Chord(name);
         if( hasValue ) {
-          let target = chordDurations.find((w) => w.hour === hour);
-          if( ! target ) {
-            chordDurations.push(target = { hour, durations: { major: 0, minor: 0 } });
+          let hourEntry = chordDurations.find((w) => w.hour === hour);
+          if( ! hourEntry ) {
+            chordDurations.push(hourEntry = {
+              hour,
+              durations: { major: 0, minor: 0 }
+            });
           }
+          const { durations } = hourEntry;
           if( isMinor ) {
-            target.durations.minor += duration;
+            durations.minor += duration;
           } else {
-            target.durations.major += duration;
+            durations.major += duration;
           }
         }
         return chordDurations;
@@ -122,36 +126,35 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
           console.warn(`Songle player warning: Could not infer song keys: No chord found in ${chordJsonUrl}`);
           return;
         case 1: {
-          const cd = chordDurations[0];
-          return Music.majorMinorTextOf(cd.hour, cd.durations.minor > cd.durations.major);
+          const { hour, durations : { minor, major } } = chordDurations[0];
+          return Music.majorMinorTextOf(hour, minor > major);
         }
         case 2: {
-          const [first, second] = chordDurations;
-          const longer = second.durations > first.durations ? second : first;
-          return Music.majorMinorTextOf(longer.hour, longer.durations.minor > longer.durations.major);
+          const dmm = chordDurations.map(({ durations }) => durations.major + durations.minor);
+          const { hour, durations : { minor, major } } = chordDurations[dmm[1] > dmm[0] ? 1 : 0];
+          return Music.majorMinorTextOf(hour, minor > major);
         }
         default: {
-          let currentHour = chordDurations[0].hour;
-          const durations = chordDurations.reduce((durations, { hour, durations : { major, minor } }) => {
+          const originHour = chordDurations[0].hour;
+          let currentHour = originHour;
+          const hourLine = chordDurations.reduce((hourLine, { hour, durations : { major, minor } }) => {
             do {
-              durations.push(currentHour++ === hour ? { major, minor } : 0);
+              hourLine.push(currentHour++ === hour ? { major, minor } : { major: 0, minor: 0 });
             } while( currentHour <= hour );
-            return durations;
+            return hourLine;
           }, []);
-          let [maxDurationSum, inferredIndex] = [0, 0];
           const diatonicOffsets = [-1, 0, 1];
-          durations.forEach((_, index) => {
-            const durationSum = diatonicOffsets.map((offset) => {
-              const d = durations[index + offset];
-              return d ? d.major + d.minor : 0;
-            }
-            ).reduce((a, b) => a + b, 0);
-            if( durationSum > maxDurationSum ) {
-              [maxDurationSum, inferredIndex] = [durationSum, index];
-            }
-          });
-          const { major, minor } = durations[inferredIndex];
-          return Music.majorMinorTextOf(inferredIndex + chordDurations[0].hour, minor > major);
+          let maxDuration = 0;
+          const maxDurationIndex = hourLine.reduce((maxDurationIndex, _, index) => {
+            const duration = diatonicOffsets.map((offset) => {
+              const h = hourLine[index + offset];
+              return h ? h.major + h.minor : 0;
+            }).reduce((sum, mm) => sum + mm, 0);
+            duration > maxDuration && (maxDuration = duration, maxDurationIndex = index);
+            return maxDurationIndex;
+          }, 0);
+          const { major, minor } = hourLine[maxDurationIndex];
+          return Music.majorMinorTextOf(originHour + maxDurationIndex, minor > major);
         }
       }
     } catch (error) {
