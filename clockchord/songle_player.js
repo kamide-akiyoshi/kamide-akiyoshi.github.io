@@ -100,50 +100,58 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         return;
       }
       const { chords } = await response.json();
-      const chordDurations = chords.reduce((weights, chord) => {
+      const chordDurations = chords.reduce((chordDurations, chord) => {
         const { name, duration } = chord;
-        const { hasValue, hour } = new Music.Chord(name);
+        const { hasValue, hour, isMinor } = new Music.Chord(name);
         if( hasValue ) {
-          const weight = weights.find((w) => w.hour === hour);
-          if( weight ) {
-            weight.duration += duration;
+          let target = chordDurations.find((w) => w.hour === hour);
+          if( ! target ) {
+            chordDurations.push(target = { hour, durations: { major: 0, minor: 0 } });
+          }
+          if( isMinor ) {
+            target.durations.minor += duration;
           } else {
-            weights.push({ hour, duration });
+            target.durations.major += duration;
           }
         }
-        return weights;
+        return chordDurations;
       }, []).sort((a, b) => a.hour - b.hour);
       console.info('Inferring song keys from chords:', chordDurations);
       switch( chordDurations.length ) {
         case 0: 
           console.warn(`Songle player warning: Could not infer song keys: No chord found in ${chordJsonUrl}`);
           return;
-        case 1:
-          return Music.majorMinorTextOf(chordDurations[0].hour);
+        case 1: {
+          const cd = chordDurations[0];
+          return Music.majorMinorTextOf(cd.hour, cd.durations.minor > cd.durations.major);
+        }
         case 2: {
           const [first, second] = chordDurations;
-          const longer = second.duration > first.duration ? second : first;
-          return Music.majorMinorTextOf(longer.hour);
+          const longer = second.durations > first.durations ? second : first;
+          return Music.majorMinorTextOf(longer.hour, longer.durations.minor > longer.durations.major);
         }
         default: {
           let currentHour = chordDurations[0].hour;
-          const durations = chordDurations.reduce((durations, { hour, duration }) => {
+          const durations = chordDurations.reduce((durations, { hour, durations : { major, minor } }) => {
             do {
-              durations.push(currentHour++ === hour ? duration : 0);
+              durations.push(currentHour++ === hour ? { major, minor } : 0);
             } while( currentHour <= hour );
             return durations;
           }, []);
           let [maxDurationSum, inferredIndex] = [0, 0];
+          const diatonicOffsets = [-1, 0, 1];
           durations.forEach((_, index) => {
-            const durationSum = [-1, 0, 1]
-              .map((offset) => durations[index + offset] || 0)
-              .reduce((a, b) => a + b, 0);
+            const durationSum = diatonicOffsets.map((offset) => {
+              const d = durations[index + offset];
+              return d ? d.major + d.minor : 0;
+            }
+            ).reduce((a, b) => a + b, 0);
             if( durationSum > maxDurationSum ) {
-              maxDurationSum = durationSum;
-              inferredIndex = index;
+              [maxDurationSum, inferredIndex] = [durationSum, index];
             }
           });
-          return Music.majorMinorTextOf(inferredIndex + chordDurations[0].hour);
+          const { major, minor } = durations[inferredIndex];
+          return Music.majorMinorTextOf(inferredIndex + chordDurations[0].hour, minor > major);
         }
       }
     } catch (error) {
