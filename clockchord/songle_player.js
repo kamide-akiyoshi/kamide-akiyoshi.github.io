@@ -88,83 +88,87 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
     });
   });
   /**
-   * @param {string} url
-   * @returns {Promise<string | undefined>}
+   * @typedef {{
+   *  index: number,
+   *  start: number,
+   *  duration: number,
+   *  name: string,
+   * }} ChordProgressionEntry
    */
-  const inferSongKeysByChords = async (url) => {
+  /**
+   * @param {string} url
+   * @returns {Promise<ChordProgressionEntry[] | undefined>}
+   */
+  const fetchChordProgression = async (url) => {
     const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${url}`;
     try {
       const response = await fetch(chordJsonUrl);
       if (!response.ok) {
-        console.error(`Failed to fetch chord data from ${chordJsonUrl}: ${response.status} ${response.statusText}`);
+        console.error(`Failed to fetch chord progression from ${chordJsonUrl}: ${response.status} ${response.statusText}`);
         return;
       }
+      /** @type {{ chords: ChordProgressionEntry[] }} */
       const { chords } = await response.json();
-      const hourEntries = chords.reduce((hourEntries, chord) => {
-        const { name, duration } = chord;
-        const { hasValue, hour, isMinor } = new Music.Chord(name);
-        if( hasValue ) {
-          let entry = hourEntries.find((w) => w.hour === hour);
-          if( ! entry ) {
-            hourEntries.push(entry = {
-              hour,
-              durations: { major: 0, minor: 0 }
-            });
-          }
-          const { durations } = entry;
-          if( isMinor ) {
-            durations.minor += duration;
-          } else {
-            durations.major += duration;
-          }
-        }
-        return hourEntries;
-      }, []).sort((a, b) => a.hour - b.hour);
-      console.info('Inferring song keys from chords:', hourEntries);
-      switch( hourEntries.length ) {
-        case 0: 
-          console.warn(`Songle player warning: Could not infer song keys: No chord found in ${chordJsonUrl}`);
-          return;
-        case 1: {
-          const { hour, durations : { minor, major } } = hourEntries[0];
-          return Music.majorMinorTextOf(hour, minor > major);
-        }
-        case 2: {
-          const dmm = hourEntries.map(({ durations: d }) => d.major + d.minor);
-          const { hour, durations : { minor, major } } = hourEntries[dmm[1] > dmm[0] ? 1 : 0];
-          return Music.majorMinorTextOf(hour, minor > major);
-        }
-        default: {
-          const originHour = hourEntries[0].hour;
-          let currentHour = originHour;
-          const hourLine = hourEntries.reduce((hourLine, { hour, durations : { major, minor } }) => {
-            do {
-              hourLine.push(currentHour++ === hour ? { major, minor } : { major: 0, minor: 0 });
-            } while( currentHour <= hour );
-            return hourLine;
-          }, []);
-          const diatonicOffsets = [-1, 0, 1];
-          let maxDuration = 0;
-          const maxDurationIndex = hourLine.reduce((maxDurationIndex, _, index) => {
-            const duration = diatonicOffsets.reduce((duration, offset) => {
-              const entry = hourLine[index + offset];
-              if( entry ) return duration + entry.major + entry.minor;
-              return duration;
-            }, 0);
-            if( duration > maxDuration ) {
-              maxDuration = duration;
-              return index;
-            }
-            return maxDurationIndex;
-          }, 0);
-          const { major, minor } = hourLine[maxDurationIndex];
-          return Music.majorMinorTextOf(originHour + maxDurationIndex, minor > major);
-        }
-      }
+      return chords;
     } catch (error) {
-      console.error('Songle player error: Could not infer song keys', error);
+      console.error('Could not fetch chord progression', error);
       return;
     }
+  };
+  /**
+   * @param {ChordProgressionEntry[]} chordProgression
+   * @returns {string | undefined}
+   */
+  const inferSongKeyByChordProgression = (chordProgression) => {
+    const hourEntries = chordProgression?.reduce((out, chord) => {
+      const { name, duration } = chord;
+      const { hasValue, hour, isMinor } = new Music.Chord(name);
+      if( hasValue ) {
+        let entry = out.find((w) => w.hour === hour);
+        if( ! entry ) {
+          out.push(entry = {
+            hour,
+            durations: { major: 0, minor: 0 }
+          });
+        }
+        const { durations } = entry;
+        if( isMinor ) {
+          durations.minor += duration;
+        } else {
+          durations.major += duration;
+        }
+      }
+      return out;
+    }, []).sort((a, b) => a.hour - b.hour);
+    if( ! hourEntries?.length ) {
+      console.warn(`Songle player warning: Could not infer song keys: No chord found`);
+      return;
+    }
+    console.info('Inferring song keys from chords:', hourEntries);
+    const originHour = hourEntries[0].hour;
+    let currentHour = originHour;
+    const histogram = hourEntries.reduce((out, { hour, durations : { major, minor } }) => {
+      do {
+        out.push(currentHour++ === hour ? { major, minor } : { major: 0, minor: 0 });
+      } while( currentHour <= hour );
+      return out;
+    }, []);
+    const diatonicOffsets = [-1, 0, 1];
+    let maxDuration = 0;
+    const maxDurationIndex = histogram.reduce((maxDurationIndex, _, currentIndex) => {
+      const duration = diatonicOffsets.reduce((out, offset) => {
+        const entry = histogram[currentIndex + offset];
+        if( entry ) return out + entry.major + entry.minor;
+        return out;
+      }, 0);
+      if( duration > maxDuration ) {
+        maxDuration = duration;
+        return currentIndex;
+      }
+      return maxDurationIndex;
+    }, 0);
+    const { major, minor } = histogram[maxDurationIndex];
+    return Music.majorMinorTextOf(originHour + maxDurationIndex, minor > major);
   };
   /** @type {Record<number, string>} */
   const songleErrorMessages = {
@@ -236,7 +240,8 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       if (registeredKeys) {
         songKeyInput.value = registeredKeys;
       } else {
-        const inferredKeys = await inferSongKeysByChords(params.url);
+        const chordProgression = await fetchChordProgression(params.url);
+        const inferredKeys = inferSongKeyByChordProgression(chordProgression);
         if (inferredKeys) {
           songKeyInput.value = inferredKeys;
           keyTimelineElement.style.fontStyle = "italic";
