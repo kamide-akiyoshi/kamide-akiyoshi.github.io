@@ -96,22 +96,23 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
    * }} ChordProgressionEntry
    */
   /**
-   * @param {string} url
+   * @param {string} songUrl
    * @returns {Promise<ChordProgressionEntry[] | undefined>}
    */
-  const fetchChordProgression = async (url) => {
-    const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${url}`;
+  const fetchChordProgression = async (songUrl) => {
+    const chordJsonUrl = `https://widget.songle.jp/api/v1/song/chord.json?url=${songUrl}`;
     try {
       const response = await fetch(chordJsonUrl);
       if (!response.ok) {
-        console.error(`Failed to fetch chord progression from ${chordJsonUrl}: ${response.status} ${response.statusText}`);
+        const httpErrorMessage = `${response.status} ${response.statusText}`;
+        console.error(`Failed to fetch chord progression from ${chordJsonUrl}: ${httpErrorMessage}`);
         return;
       }
       /** @type {{ chords: ChordProgressionEntry[] }} */
       const { chords } = await response.json();
       return chords;
     } catch (error) {
-      console.error('Could not fetch chord progression', error);
+      console.error(`Failed to fetch chord progression from ${chordJsonUrl}:`, error);
       return;
     }
   };
@@ -145,30 +146,27 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       return;
     }
     console.info('Inferring song keys from chords:', hourEntries);
-    const originHour = hourEntries[0].hour;
-    let currentHour = originHour;
+    let currentHour = hourEntries[0].hour;
     const histogram = hourEntries.reduce((out, { hour, durations : { major, minor } }) => {
       do {
         out.push(currentHour++ === hour ? { major, minor } : { major: 0, minor: 0 });
       } while( currentHour <= hour );
       return out;
     }, []);
-    const diatonicOffsets = [-1, 0, 1];
-    let maxDuration = 0;
-    const maxDurationIndex = histogram.reduce((maxDurationIndex, _, currentIndex) => {
-      const duration = diatonicOffsets.reduce((out, offset) => {
-        const entry = histogram[currentIndex + offset];
-        if( entry ) return out + entry.major + entry.minor;
-        return out;
+    const diatonicOffsets = [-1, 0, 1]; // [Subdominant, Tonic, Dominant]
+    const peak = histogram.reduce((peak, _, index) => {
+      const duration = diatonicOffsets.reduce((out, diatonicOffset) => {
+        const bar = histogram[index + diatonicOffset];
+        return bar ? out + bar.major + bar.minor : out;
       }, 0);
-      if( duration > maxDuration ) {
-        maxDuration = duration;
-        return currentIndex;
+      if( duration > peak.duration ) {
+        peak.duration = duration;
+        peak.index = index;
       }
-      return maxDurationIndex;
-    }, 0);
-    const { major, minor } = histogram[maxDurationIndex];
-    return Music.majorMinorTextOf(originHour + maxDurationIndex, minor > major);
+      return peak;
+    }, { index: 0, duration: 0 });
+    const { major, minor } = histogram[peak.index];
+    return Music.majorMinorTextOf(hourEntries[0].hour + peak.index, minor > major);
   };
   /** @type {Record<number, string>} */
   const songleErrorMessages = {
