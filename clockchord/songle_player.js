@@ -125,36 +125,31 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       const { name, duration } = chord;
       const { hasValue, hour, isMinor } = new Music.Chord(name);
       if( hasValue ) {
-        let entry = out.find((e) => e.hour === hour);
-        if( ! entry ) out.push(entry = { hour, durationPair: [0, 0] });
-        entry.durationPair[isMinor ? 1 : 0] += duration;
+        let pair = out.get(hour);
+        if( ! pair ) out.set(hour, pair = [0, 0]);
+        pair[isMinor ? 1 : 0] += duration;
       }
       return out;
-    }, []);
-    if( ! durations?.length ) {
+    }, new Map());
+    if( ! durations?.size ) {
       console.warn(`Songle player warning: Could not infer song keys: No chord found`);
       return;
     }
-    const sorted = durations.sort((a, b) => a.hour - b.hour);
-    const originHour = sorted[0].hour;
-    const { histogram } = sorted.reduce((out, { hour, durationPair }) => {
-      do {
-        out.histogram.push(out.currentHour++ === hour ? durationPair : [0, 0]);
-      } while( out.currentHour <= hour );
-      return out;
-    }, { histogram: [], currentHour: originHour } );
-    console.info("Inferring song keys from chord duration histogram:", histogram.map((pair, index) => [originHour + index, ...pair]));
+    console.info("Inferring song keys from chord durations:", durations);
     const diatonic = [-1, 0, 1]; // [Subdominant, Tonic, Dominant]
-    const peak = histogram.reduce((peak, _, index) => {
-      const duration = diatonic.reduce((out, offset) => out + (histogram[index + offset]?.reduce((a, b) => a + b) ?? 0), 0);
+    const peak = durations.keys().reduce((peak, hour) => {
+      const duration = diatonic.reduce(
+        (out, offset) => out + (durations.get(hour + offset)?.reduce((a, b) => a + b, 0) ?? 0),
+        0
+      );
       if( duration > peak.duration ) {
         peak.duration = duration;
-        peak.index = index;
+        peak.hour = hour;
       }
       return peak;
-    }, { index: 0, duration: 0 });
-    const [major, minor] = histogram[peak.index];
-    return Music.majorMinorTextOf(originHour + peak.index, minor > major);
+    }, { duration: 0 });
+    const [major, minor] = durations.get(peak.hour);
+    return Music.majorMinorTextOf(peak.hour, minor > major);
   };
   /** @type {Record<number, string>} */
   const songleErrorMessages = {
