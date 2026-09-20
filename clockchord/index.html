@@ -850,24 +850,26 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p><a href="https://songle.jp/" target="_blank">能動的音楽鑑賞サービスSongle（ソングル）</a>に登録されている楽曲を
  <a href="http://widget.songle.jp/" target="_blank">Songle Widget</a> で埋め込み再生できるプレーヤーです。
 </p>
-<p>再生すると、Songleの音楽地図に基づいてビート、コードの情報がClockChordに送信され、自動的にコードが鳴ります。
-MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、トーンインジケーターがイルミネーションのようにが美しく光り輝き、視覚的に「能動的音楽鑑賞」を楽しめます。
+<p>再生すると、Songleの音楽地図に基づいてビート、コードの情報がClockChordに送信され、自動的にコードが鳴ります。</p>
+<p>MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、
+まるでイルミネーションのように時計の文字盤が美しく光り輝き、視覚的に「能動的音楽鑑賞」を楽しめます。
+また、キー（調）についても複数の手段で特定を試み、特定できた場合は表示に反映します。こうすることで、そのキーにおけるコードの役割を色で実感できるようになります。
+人によっては、視覚と聴覚の相乗効果で鳥肌が立つかも知れませんw
 </p>
 <h4>キー（調）の特定</h4>
-<p>調および転調タイミングを把握できた楽曲に限り、所定のタイミングでキーの表示が自動更新され、キーとコードの関係を視覚的に捉えることができるようになります。</p>
-<p>ただ、残念なことに<strong>Songleの音楽地図には曲のキーを登録する機能がありません。</strong>
-この弱点をカバーするため、ClockChord側でいくつかのキー特定手段を用意しており、下記の優先順位でキーおよび転調タイミングを特定します。</p>
+<p>下記の優先順位でキーおよび転調タイミングを特定します。</p>
 <ol>
 <li>画面入力でキーを指定 - 画面上で楽曲URLを指定して開く際、キーも一緒に指定できます（詳細は後述）。</li>
 <li>ClockChordのURLにキーを指定 - 画面入力する代わりに、ClockChordのURLに検索パラメータとしてキーを指定できます。</li>
 <li><a
  href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a
->からキーを特定 - ClockChord側で独自に用意した、調に関する音楽地図です。これはClockChordの作者がメンテナンスしており、<a
- href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに保存しています。</li>
+>からキーを特定 - ClockChord側で独自に用意した、調に関する音楽地図です。これはClockChordの作者が <a
+ href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに登録することによってメンテナンスしています。
+主に、後述のキー推論でうまく対応できなかった曲（転調のある曲、想定通りの推論結果にならなかった曲）を登録しています。</li>
 <li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank">コード進行からキーを推論</a
-> - 転調地図になかった場合、和音の音楽地図を<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">Songle Widget の API</a
-> で取得し、各キーのダイアトニックコードが鳴っている持続時間の合計を計算し、持続時間が最大だったキーを推論結果として設定します
-（転調があってもそのタイミングまでは推論できません）。</li>
+> - 転調地図になかった場合、コード進行からのキー推論を試みます。
+<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">和音の音楽地図を Songle Widget API で取得</a
+>し、各キーのダイアトニックコードが鳴っている持続時間の合計を計算し、持続時間が最大だったキーを推論結果として設定します（転調には対応していません）。</li>
 </ol>
 <h4>Songle登録曲の検索</h4>
 <p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="http://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
@@ -925,7 +927,7 @@ MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pie�
 <dt>url</dt>
 <dd>パラメータsongleと同じです。</dd>
 <dt>keysig</dt>
-<dd>Key欄の入力値を指定します。省略した場合、楽曲URLをもとに <a href="./song_keys.js" target="_blank">song_keys.js</a> から検索し、もし見つかればそれが入力値として使われます。
+<dd>Key欄の入力値を指定します。省略した場合は別の手段でキー特定を試みます。
 <div>※ シャープとして半角の # を直接指定しても、<a
  href="https://developer.mozilla.org/ja/docs/Web/URI/Reference/Fragment/Text_fragments" target="_blank">テキストフラグメント</a
 >として解釈され、無視されてしまいます。その場合はシャープ記号 ♯ で代用するか、または %23 のように<a
