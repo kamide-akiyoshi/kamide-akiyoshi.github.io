@@ -135,7 +135,10 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       console.warn(`Songle player warning: Could not infer song keys: No chord found`);
       return;
     }
-    console.info("Inferring song keys from chord durations:", Array.from(durations.entries()).map(([k, v]) => [k, ...v]));
+    console.info(
+      "Inferring song keys from chord durations:",
+      Array.from(durations.entries()).map(([k, v]) => [k, ...v.map((d, i) => [`${Music.majorMinorTextOf(k, i)}`, d])].flat())
+    );
     const diatonic = [-1, 0, 1]; // [Subdominant, Tonic, Dominant]
     const peak = durations.keys().reduce((peak, hour) => {
       const duration = diatonic.reduce(
