@@ -139,14 +139,13 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       "Inferring song keys from chord durations:",
       Array.from(durations.entries()).map(([k, v]) => [k, ...v.map((d, i) => [`${Music.majorMinorTextOf(k, i)}`, d])].flat())
     );
-    const diatonic = [-1, 0, 1]; // [Subdominant, Tonic, Dominant]
     const peak = durations.keys().reduce((peak, hour) => {
-      const duration = diatonic.reduce(
+      const diatonicChordsDuration = [-1, 0, 1].reduce(
         (out, offset) => out + (durations.get(hour + offset)?.reduce((a, b) => a + b, 0) ?? 0),
         0
       );
-      if( duration > peak.duration ) {
-        peak.duration = duration;
+      if( diatonicChordsDuration > peak.duration ) {
+        peak.duration = diatonicChordsDuration;
         peak.hour = hour;
       }
       return peak;
