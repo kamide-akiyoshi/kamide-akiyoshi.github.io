@@ -153,16 +153,16 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
   };
   /** @type {Record<number, string>} */
   const songleErrorMessages = {
-    100: "Could not embed: Song deleted",
-    101: "Could not embed: Not permitted",
+    100: "Could not embed: Song already deleted",
+    101: "Could not embed: Song not permitted",
     200: "Music map loading aborted",
     201: "Music map loading failed",
-    300: "Sound file (mp3) download failed",
+    300: "Song file (mp3) download failed",
   };
   /** @param {string} apiKey @param {number} status */
   const showSongleError = (apiKey, status) => {
     const message = `Songle error ${status} : ${songleErrorMessages[status] ?? "Unknown error"}`;
-    console.error(`${message} in Widget API key = "${apiKey}"`);
+    console.error(`${message} (Widget API key = "${apiKey}")`);
     showError(message);
   };
   let widgetElement, widget;
