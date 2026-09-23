@@ -854,22 +854,27 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <p>MIDI再生時と同様、背景色が自動的に🌛ダークモード/🪭Pieモードに設定され、
 まるでイルミネーションのように時計の文字盤が美しく光り輝き、視覚的に「能動的音楽鑑賞」を楽しめます。
 また、キー（調）についても複数の手段で特定を試み、特定できた場合は表示に反映します。こうすることで、そのキーにおけるコードの役割を色で実感できるようになります。
-人によっては、視覚と聴覚の相乗効果で鳥肌が立つかも知れませんw
+視覚と聴覚の相乗効果で感動し、鳥肌が立つかも知れませんw
 </p>
-<h4>キー（調）の特定</h4>
-<p>下記の優先順位でキーおよび転調タイミングを特定します。</p>
+<h4>キー（調）の特定手段</h4>
 <ol>
-<li>画面入力でキーを指定 - 画面上で楽曲URLを指定して開く際、キーも一緒に指定できます（詳細は後述）。</li>
-<li>ClockChordのURLにキーを指定 - 画面入力する代わりに、ClockChordのURLに検索パラメータとしてキーを指定できます。</li>
+<li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank">コード進行からキーを推論</a
+> - デフォルトの特定手段です。<ul>
+<li>その曲の<a
+ href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">和音の音楽地図を Songle Widget API で取得</a
+>し、キーごとにダイアトニックコードが鳴っている時間を集計した結果が最長のキーを推論結果として設定します。</li>
+<li>転調には対応していません（転調タイミングの自動判定が難しいため）。</li>
+<li>ダイアトニックコード（五度圏時計上でキーから±1時間以内のコード）を外れたコードを多く使っている曲では、期待通りの推論結果にならない場合があります。</li>
+</ul></li>
 <li><a
  href="https://camidion.wordpress.com/2026/01/24/visualized_song_key_timeline_added_on_clockchord_/" target="_blank">転調地図</a
->からキーを特定 - ClockChord側で独自に用意した、調に関する音楽地図です。これはClockChordの作者が <a
- href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに登録することによってメンテナンスしています。
-主に、後述のキー推論でうまく対応できなかった曲（転調のある曲、想定通りの推論結果にならなかった曲）を登録しています。</li>
-<li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank">コード進行からキーを推論</a
-> - 転調地図になかった場合、コード進行からのキー推論を試みます。
-<a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">和音の音楽地図を Songle Widget API で取得</a
->し、各キーのダイアトニックコードが鳴っている持続時間の合計を計算し、持続時間が最大だったキーを推論結果として設定します（転調には対応していません）。</li>
+>からキーを特定 - ClockChordの作者が独自にメンテナンスしている、調の音楽地図です。<ul>
+<li>キー推論の前にこの転調地図を参照し、見つかれば優先的に採用します。</li>
+<li>コードからのキー推論で、期待通りにキーを特定できなかった曲を発見した際、<a
+ href="./song_keys.js" target="_blank">song_keys.js</a> というファイルに登録しています。</li>
+<li>転調があった場合、そのタイミングも登録しています。これにより、転調のタイミングが来ると自動的に背景色がくるっと回転するようになります。
+</li></ul>
+<li>ClockChordのURLや画面から、song_keys.js と同じパターンでキーを指定した場合、それが最優先されます（詳細は後述）。</li>
 </ol>
 <h4>Songle登録曲の検索</h4>
 <p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="http://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
