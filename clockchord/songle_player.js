@@ -121,27 +121,25 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
    * @returns {string | undefined}
    */
   const inferSongKeyByChordProgression = (chordProgression) => {
-    const durations = chordProgression?.reduce((out, chord) => {
+    const durationPairs = chordProgression?.reduce((pairs, chord) => {
       const { name, duration } = chord;
       const { hasValue, hour, isMinor } = new Music.Chord(name);
       if( hasValue ) {
-        let pair = out.get(hour);
-        if( ! pair ) out.set(hour, pair = [0, 0]);
+        let pair = pairs.get(hour);
+        if( ! pair ) pairs.set(hour, pair = [0, 0]);
         pair[isMinor ? 1 : 0] += duration;
       }
-      return out;
+      return pairs;
     }, new Map());
-    if( ! durations?.size ) {
-      console.warn(`Songle player warning: Could not infer song keys: No chord found`);
+    if( ! durationPairs?.size ) {
       return;
     }
-    console.info(
-      "Inferring song keys from chord durations:",
-      Array.from(durations.entries()).map(([k, v]) => [k, ...v.map((d, i) => [`${Music.majorMinorTextOf(k, i)}`, d])].flat())
+    console.info("Inferring song key from chord durations:",
+      Array.from(durationPairs.entries()).map(([k, v]) => [k, ...v.map((d, i) => [`${Music.majorMinorTextOf(k, i)}`, d])].flat())
     );
-    const peak = durations.keys().reduce((peak, hour) => {
+    const peak = durationPairs.keys().reduce((peak, hour) => {
       const diatonicChordsDuration = [-1, 0, 1].reduce(
-        (out, offset) => out + (durations.get(hour + offset)?.reduce((a, b) => a + b, 0) ?? 0),
+        (total, offset) => total + (durationPairs.get(hour + offset)?.reduce((a, b) => a + b, 0) ?? 0),
         0
       );
       if( diatonicChordsDuration > peak.duration ) {
@@ -150,7 +148,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       }
       return peak;
     }, { duration: 0 });
-    const [major, minor] = durations.get(peak.hour);
+    const [major, minor] = durationPairs.get(peak.hour);
     return Music.majorMinorTextOf(peak.hour, minor > major);
   };
   /** @type {Record<number, string>} */
