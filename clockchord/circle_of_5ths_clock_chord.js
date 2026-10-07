@@ -12,13 +12,14 @@ const Music = class {
     const A = 'A'.charCodeAt(0);
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
-      const fsPatterns = flatSharpPatternTree[Math.trunc((hour + 15) / 7)];
-      if( !fsPatterns ) return [];
-      const fs = fsPatterns[0];
-      const abc = String.fromCharCode(A + (hour + 18) * 4 % 7);
-      return fs ? [abc, fs] : [abc];
+      const h0 = hour + 15; // -15...19 -> 0...34
+      const patterns = flatSharpPatternTree[Math.trunc(h0 / 7)];
+      if( !patterns ) return [];
+      const flatSharp = patterns[0];
+      const ABCDEFG = String.fromCharCode(A + (h0 + 3) * 4 % 7);
+      return flatSharp ? [ABCDEFG, flatSharp] : [ABCDEFG];
     };
-    const fsPatternToHour = flatSharpPatternTree.flatMap((patterns, index) => {
+    const flatSharpToMajorHourF = flatSharpPatternTree.flatMap((patterns, index) => {
       const majorHourF = (index - 2) * 7 - 1;
       return patterns.map(
         /** @returns {[string, number]} */
@@ -28,21 +29,26 @@ const Music = class {
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
-    const abciToHour = Array.from({ length: 7 }, (_, abci) => (abci + 2) * 2 % 7);
+    const ABCDEFGToHour = new Map(
+      Array.from(
+        { length: 7 },
+        (_, i) => [String.fromCharCode(A + i), (i + 2) * 2 % 7]
+      )
+    );
     /**
      * @param {string} text 
      * @returns {[number, string] | undefined}
      */
     this.parsePitchName = (text) => {
-      const abcHour = abciToHour[text.substring(0, 1).toUpperCase().charCodeAt(0) - A] ?? -1;
-      if( abcHour < 0 ) return undefined;
+      const hourOffset = ABCDEFGToHour.get(text.substring(0, 1).toUpperCase()) ?? -1;
+      if( hourOffset < 0 ) return undefined;
       let rest = text.substring(1);
-      const majorHourF = fsPatternToHour.find(([pattern]) => {
+      const majorHourF = flatSharpToMajorHourF.find(([pattern]) => {
         const found = rest.startsWith(pattern);
         if( found ) rest = rest.replace(pattern, "");
         return found;
       })?.[1] ?? -1;
-      return [majorHourF + abcHour, rest];
+      return [majorHourF + hourOffset, rest];
     };
     /** @param {number} hour */
     this.keySignatureTextAt = (hour) => {
