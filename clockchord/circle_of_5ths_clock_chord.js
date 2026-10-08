@@ -9,18 +9,21 @@ const Music = class {
       ["\u{266F}", "#"], // Sharp
       ["\u{1D12A}", "x", "##"], // Double sharp
     ];
-    const A = 'A'.charCodeAt(0);
+    const FCGDAEB = { length: 7 };
+    FCGDAEB.get = (index) => String.fromCharCode('A'.charCodeAt(0) + (index + 3) * 4 % FCGDAEB.length);
+    FCGDAEB.reverseMap = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.get(i), i]));
+    FCGDAEB.indexOf = (text) => FCGDAEB.reverseMap.get(text) ?? -1;
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const h0 = hour + 15; // -15...19 -> 0...34
-      const patterns = flatSharpPatternTree[Math.trunc(h0 / 7)];
+      const patterns = flatSharpPatternTree[Math.trunc(h0 / FCGDAEB.length)];
       if( !patterns ) return [];
+      const ABCDEFG = FCGDAEB.get(h0);
       const flatSharp = patterns[0];
-      const ABCDEFG = String.fromCharCode(A + (h0 + 3) * 4 % 7);
       return flatSharp ? [ABCDEFG, flatSharp] : [ABCDEFG];
     };
     const flatSharpToMajorHourF = flatSharpPatternTree.flatMap((patterns, index) => {
-      const majorHourF = (index - 2) * 7 - 1;
+      const majorHourF = (index - 2) * FCGDAEB.length - 1;
       return patterns.map(
         /** @returns {[string, number]} */
         (pattern) => ([pattern, majorHourF])
@@ -29,18 +32,12 @@ const Music = class {
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
-    const ABCDEFGToHour = new Map(
-      Array.from(
-        { length: 7 },
-        (_, i) => [String.fromCharCode(A + i), (i + 2) * 2 % 7]
-      )
-    );
     /**
      * @param {string} text 
      * @returns {[number, string] | undefined}
      */
     this.parsePitchName = (text) => {
-      const hourOffset = ABCDEFGToHour.get(text.substring(0, 1).toUpperCase()) ?? -1;
+      const hourOffset = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
       if( hourOffset < 0 ) return undefined;
       let rest = text.substring(1);
       const majorHourF = flatSharpToMajorHourF.find(([pattern]) => {
