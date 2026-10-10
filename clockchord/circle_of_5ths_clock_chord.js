@@ -11,8 +11,8 @@ const Music = class {
     ];
     const FCGDAEB = { length: 7 };
     FCGDAEB.get = (index) => String.fromCharCode('A'.charCodeAt(0) + (index + 3) * 4 % FCGDAEB.length);
-    FCGDAEB.reverseMap = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.get(i), i]));
-    FCGDAEB.indexOf = (text) => FCGDAEB.reverseMap.get(text) ?? -1;
+    FCGDAEB.inverse = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.get(i), i]));
+    FCGDAEB.indexOf = (text) => FCGDAEB.inverse.get(text) ?? -1;
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const h0 = hour + 15; // -15...19 -> 0...34
