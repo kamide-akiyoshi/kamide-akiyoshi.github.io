@@ -265,6 +265,14 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
       widget.on("chordPlay", (event) => {
         const chordSymbol = event.chord.name;
         chordElement.textContent = chordSymbol;
+        const cl = chordElement.classList;
+        const ncClass = "nonChord";
+        if( chordSymbol === "N" ) {
+          cl.add(ncClass);
+        } else {
+          cl.remove(ncClass);
+          !cl.length && chordElement.removeAttribute("class");
+        }
         if (autoChordPlayCheckbox.checked) {
           chordView.model.parseText(chordSymbol) || chordView.clear();
           chordView.start();
