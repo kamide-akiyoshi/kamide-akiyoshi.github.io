@@ -9,10 +9,21 @@ const Music = class {
       ["\u{266F}", "#"], // Sharp
       ["\u{1D12A}", "x", "##"], // Double sharp
     ];
-    const FCGDAEB = { length: 7 };
-    FCGDAEB.get = (index) => String.fromCharCode('A'.charCodeAt(0) + (index + 3) * 4 % FCGDAEB.length);
-    FCGDAEB.inverse = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.get(i), i]));
-    FCGDAEB.indexOf = (text) => FCGDAEB.inverse.get(text) ?? -1;
+    const FCGDAEB = {
+      length: 7,
+      /** @param {number} index */
+      get(index) {
+        return String.fromCharCode('A'.charCodeAt(0) + (index + 3) * 4 % this.length);
+      },
+      /**
+       * @param {string} text
+       * @returns {number}
+       */
+      indexOf(text) {
+        this.inverse ??= new Map(Array.from(this, (_, i) => [this.get(i), i]));
+        return this.inverse.get(text) ?? -1;
+      }
+    };
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const h0 = hour + 15; // -15...19 -> 0...34
