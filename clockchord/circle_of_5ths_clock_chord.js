@@ -12,15 +12,16 @@ const Music = class {
     const FCGDAEB = {
       length: 7,
       /** @param {number} index */
-      get(index) {
-        return String.fromCharCode('A'.charCodeAt(0) + (index + 3) * 4 % this.length);
+      at(index) {
+        const abcIndex = (index + 3) * 4 % this.length
+        return String.fromCharCode('A'.charCodeAt(0) + (abcIndex < 0 ? abcIndex + this.length : abcIndex));
       },
       /**
        * @param {string} text
        * @returns {number}
        */
       indexOf(text) {
-        this.inverse ??= new Map(Array.from(this, (_, i) => [this.get(i), i]));
+        this.inverse ??= new Map(Array.from(this, (_, i) => [this.at(i), i]));
         return this.inverse.get(text) ?? -1;
       }
     };
@@ -29,7 +30,7 @@ const Music = class {
       const h0 = hour + 15; // -15...19 -> 0...34
       const patterns = flatSharpPatternTree[Math.trunc(h0 / FCGDAEB.length)];
       if( !patterns ) return [];
-      const ABCDEFG = FCGDAEB.get(h0);
+      const ABCDEFG = FCGDAEB.at(h0);
       const flatSharp = patterns[0];
       return flatSharp ? [ABCDEFG, flatSharp] : [ABCDEFG];
     };
@@ -72,7 +73,7 @@ const Music = class {
    * @param {number} hour1 
    * @param {number} hour2 
    */
-  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2 + 36) % 12 === 0;
+  static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2) % 12 === 0;
   /** @param {number} hour */
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
   /** @param {number} hour */
