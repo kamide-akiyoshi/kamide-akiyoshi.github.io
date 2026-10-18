@@ -2,7 +2,7 @@
 const Music = class {
   static NATURAL = '\u{266E}';
   static {
-    const flatSharpPatternTree = [
+    const FLAT_SHARP = [
       ["\u{1D12B}", "bb"], // Double flat
       ["\u{266D}", "b"], // Flat
       [],
@@ -28,13 +28,13 @@ const Music = class {
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const h0 = hour + 15; // -15...19 -> 0...34
-      const patterns = flatSharpPatternTree[Math.trunc(h0 / FCGDAEB.length)];
+      const patterns = FLAT_SHARP[Math.trunc(h0 / FCGDAEB.length)];
       if( !patterns ) return [];
       const ABCDEFG = FCGDAEB.at(h0);
       const flatSharp = patterns[0];
       return flatSharp ? [ABCDEFG, flatSharp] : [ABCDEFG];
     };
-    const flatSharpToMajorHourF = flatSharpPatternTree.flatMap((patterns, index) => {
+    FLAT_SHARP.toMajorHourF = FLAT_SHARP.flatMap((patterns, index) => {
       const majorHourF = (index - 2) * FCGDAEB.length - 1;
       return patterns.map(
         /** @returns {[string, number]} */
@@ -49,21 +49,21 @@ const Music = class {
      * @returns {[number, string] | undefined}
      */
     this.parsePitchName = (text) => {
-      const hourOffset = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
-      if( hourOffset < 0 ) return undefined;
+      const fcgdaebIndex = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
+      if( fcgdaebIndex < 0 ) return undefined;
       let rest = text.substring(1);
-      const majorHourF = flatSharpToMajorHourF.find(([pattern]) => {
+      const majorHourF = FLAT_SHARP.toMajorHourF.find(([pattern]) => {
         const found = rest.startsWith(pattern);
         if( found ) rest = rest.replace(pattern, "");
         return found;
       })?.[1] ?? -1;
-      return [majorHourF + hourOffset, rest];
+      return [majorHourF + fcgdaebIndex, rest];
     };
     /** @param {number} hour */
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
       const n = Math.abs(hour);
-      const fs = flatSharpPatternTree[2 + Math.sign(hour)][0];
+      const fs = FLAT_SHARP[2 + Math.sign(hour)][0];
       return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
     };
   };
