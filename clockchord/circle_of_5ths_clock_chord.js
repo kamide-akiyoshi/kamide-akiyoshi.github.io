@@ -11,10 +11,11 @@ const Music = class {
     ];
     const FCGDAEB = {
       length: 7,
+      charCodeA: 'A'.charCodeAt(0),
       /** @param {number} index */
       at(index) {
         const abcIndex = (index + 3) * 4 % this.length
-        return String.fromCharCode('A'.charCodeAt(0) + (abcIndex < 0 ? abcIndex + this.length : abcIndex));
+        return String.fromCharCode(this.charCodeA + (abcIndex < 0 ? this.length : 0) + abcIndex);
       },
       /**
        * @param {string} text
@@ -28,15 +29,18 @@ const Music = class {
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
       const h0 = hour + 15; // -15...19 -> 0...34
-      const patterns = FLAT_SHARP[Math.trunc(h0 / FCGDAEB.length)];
-      if( !patterns ) return [];
-      const ABCDEFG = FCGDAEB.at(h0);
-      const flatSharp = patterns[0];
-      return flatSharp ? [ABCDEFG, flatSharp] : [ABCDEFG];
+      const flatSharpPatterns = FLAT_SHARP[Math.trunc(h0 / FCGDAEB.length)];
+      if( !flatSharpPatterns ) {
+        // Out of bounds
+        return [];
+      }
+      const abc = FCGDAEB.at(h0);
+      const flatSharp = flatSharpPatterns[0];
+      return flatSharp ? [abc, flatSharp] : [abc];
     };
-    FLAT_SHARP.toMajorHourF = FLAT_SHARP.flatMap((patterns, index) => {
+    FLAT_SHARP.toMajorHourF = FLAT_SHARP.flatMap((flatSharpPatterns, index) => {
       const majorHourF = (index - 2) * FCGDAEB.length - 1;
-      return patterns.map(
+      return flatSharpPatterns.map(
         /** @returns {[string, number]} */
         (pattern) => ([pattern, majorHourF])
       );
