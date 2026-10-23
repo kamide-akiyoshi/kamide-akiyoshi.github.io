@@ -38,8 +38,9 @@ const Music = class {
       const flatSharp = flatSharpPatterns[0];
       return flatSharp ? [abc, flatSharp] : [abc];
     };
+    FLAT_SHARP.majorHourF = -1;
     FLAT_SHARP.toMajorHourF = FLAT_SHARP.flatMap((flatSharpPatterns, index) => {
-      const majorHourF = (index - 2) * FCGDAEB.length - 1;
+      const majorHourF = FLAT_SHARP.majorHourF + (index - 2) * FCGDAEB.length;
       return flatSharpPatterns.map(
         /** @returns {[string, number]} */
         (pattern) => ([pattern, majorHourF])
@@ -50,18 +51,22 @@ const Music = class {
     );
     /**
      * @param {string} text 
-     * @returns {[number, string] | undefined}
+     * @returns {[hour: number, rest: string] | undefined}
      */
     this.parsePitchName = (text) => {
       const fcgdaebIndex = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
       if( fcgdaebIndex < 0 ) return undefined;
+      let majorHourF;
       let rest = text.substring(1);
-      const majorHourF = FLAT_SHARP.toMajorHourF.find(([pattern]) => {
-        const found = rest.startsWith(pattern);
-        if( found ) rest = rest.replace(pattern, "");
-        return found;
-      })?.[1] ?? -1;
-      return [majorHourF + fcgdaebIndex, rest];
+      if( rest ) {
+        majorHourF = FLAT_SHARP.toMajorHourF.find(([pattern]) => {
+          const found = rest.startsWith(pattern);
+          if( found ) rest = rest.replace(pattern, "");
+          return found;
+        })?.[1]
+      }
+      const majorHour = (majorHourF ?? FLAT_SHARP.majorHourF) + fcgdaebIndex;
+      return [majorHour, rest];
     };
     /** @param {number} hour */
     this.keySignatureTextAt = (hour) => {
