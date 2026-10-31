@@ -19,6 +19,7 @@ const Music = class {
         return this.inverse.get(text) ?? -1;
       }
     };
+    const hourOfFMajor = -1;
     const FLAT_SHARP = {
       patternTree : [
         ["\u{1D12B}", "bb"], // Double flat
@@ -27,26 +28,24 @@ const Music = class {
         ["\u{266F}", "#"], // Sharp
         ["\u{1D12A}", "x", "##"], // Double sharp
       ],
-      hourOfFMajor: -1,
       centerIndex: 2,
-      fcgIndexOfCMajor: 0,
       /** @type {[string, number][]} */
-      toHourOfFXMajor: [["X", 0]],
+      toHourOfFxMajor: [["", hourOfFMajor]],
     };
-    FLAT_SHARP.fcgIndexOfCMajor = FLAT_SHARP.centerIndex * FCGDAEB.length - FLAT_SHARP.hourOfFMajor;
-    FLAT_SHARP.toHourOfFXMajor = FLAT_SHARP.patternTree.flatMap((patterns, index) => {
-      const hourOfFXmajor = (index - FLAT_SHARP.centerIndex) * FCGDAEB.length + FLAT_SHARP.hourOfFMajor;
+    FLAT_SHARP.toHourOfFxMajor = FLAT_SHARP.patternTree.flatMap((patterns, index) => {
+      const hourOfFxMajor = (index - FLAT_SHARP.centerIndex) * FCGDAEB.length + hourOfFMajor;
       return patterns.map(
         /** @returns {[string, number]} */
-        (pattern) => ([pattern, hourOfFXmajor])
+        (pattern) => ([pattern, hourOfFxMajor])
       );
     }).sort(
       // Descending order of pattern length (longer pattern first)
       ([a], [b]) => b.length - a.length
     );
+    const fcgIndexOfCMajor = FLAT_SHARP.centerIndex * FCGDAEB.length - hourOfFMajor;
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
-      const fcgIndex = hour + FLAT_SHARP.fcgIndexOfCMajor;
+      const fcgIndex = hour + fcgIndexOfCMajor;
       const patterns = FLAT_SHARP.patternTree[Math.trunc(fcgIndex / FCGDAEB.length)];
       if( !patterns ) {
         // Hour out of bounds
@@ -63,16 +62,16 @@ const Music = class {
     this.parsePitchName = (text) => {
       const fcgIndex = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
       if( fcgIndex < 0 ) return undefined;
-      let hourOfFXMajor;
+      let hourOfFxMajor;
       let rest = text.substring(1);
       if( rest ) {
-        hourOfFXMajor = FLAT_SHARP.toHourOfFXMajor.find(([pattern]) => {
+        hourOfFxMajor = FLAT_SHARP.toHourOfFxMajor.find(([pattern]) => {
           const found = rest.startsWith(pattern);
           if( found ) rest = rest.replace(pattern, "");
           return found;
         })?.[1]
       }
-      const majorHour = (hourOfFXMajor ?? FLAT_SHARP.hourOfFMajor) + fcgIndex;
+      const majorHour = (hourOfFxMajor ?? hourOfFMajor) + fcgIndex;
       return [majorHour, rest];
     };
     /** @param {number} hour */
