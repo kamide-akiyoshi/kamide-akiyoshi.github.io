@@ -10,15 +10,15 @@ const Music = class {
         const abcIndex = (index + 3) * 4 % this.length
         return String.fromCharCode(this.charCodeA + (abcIndex < 0 ? this.length : 0) + abcIndex);
       },
+      /** @type {Map<string, number>} */
+      inverse: undefined,
       /**
        * @param {string} text
        * @returns {number}
        */
-      indexOf(text) {
-        this.inverse ??= new Map(Array.from(this, (_, i) => [this.at(i), i]));
-        return this.inverse.get(text) ?? -1;
-      }
+      indexOf(text) { return this.inverse.get(text) ?? -1; },
     };
+    FCGDAEB.inverse = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.at(i), i]));
     const hourOfFMajor = -1;
     const FLAT_SHARP = {
       patternTree : [
@@ -38,9 +38,8 @@ const Music = class {
         /** @returns {[string, number]} */
         (pattern) => ([pattern, hourOfFxMajor])
       );
-    }).sort(
-      // Descending order of pattern length (longer pattern first)
-      ([a], [b]) => b.length - a.length
+    }).sort( // Longest pattern first
+      ([a], [b]) => b.length - a.length // Descending order
     );
     const fcgIndexOfCMajor = FLAT_SHARP.centerIndex * FCGDAEB.length - hourOfFMajor;
     /** @param {number} hour */
