@@ -11,15 +11,14 @@ const Music = class {
         return String.fromCharCode(this.charCodeA + (abcIndex < 0 ? this.length : 0) + abcIndex);
       },
       /** @type {Map<string, number>} */
-      inverse: undefined,
+      inverseMap: undefined,
       /**
        * @param {string} text
        * @returns {number}
        */
-      indexOf(text) { return this.inverse.get(text) ?? -1; },
+      indexOf(text) { return this.inverseMap.get(text) ?? -1; },
     };
-    FCGDAEB.inverse = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.at(i), i]));
-    const hourOfFMajor = -1;
+    FCGDAEB.inverseMap = new Map(Array.from(FCGDAEB, (_, i) => [FCGDAEB.at(i), i]));
     const FLAT_SHARP = {
       patternTree : [
         ["\u{1D12B}", "bb"], // Double flat
@@ -28,12 +27,13 @@ const Music = class {
         ["\u{266F}", "#"], // Sharp
         ["\u{1D12A}", "x", "##"], // Double sharp
       ],
-      centerIndex: 2,
+      CENTER_INDEX: 2,
       /** @type {[string, number][]} */
-      toHourOfFxMajor: [["", hourOfFMajor]],
+      toHourOfFxMajor: undefined,
     };
+    const HOUR_OF_F_MAJOR = -1;
     FLAT_SHARP.toHourOfFxMajor = FLAT_SHARP.patternTree.flatMap((patterns, index) => {
-      const hourOfFxMajor = (index - FLAT_SHARP.centerIndex) * FCGDAEB.length + hourOfFMajor;
+      const hourOfFxMajor = HOUR_OF_F_MAJOR + (index - FLAT_SHARP.CENTER_INDEX) * FCGDAEB.length;
       return patterns.map(
         /** @returns {[string, number]} */
         (pattern) => ([pattern, hourOfFxMajor])
@@ -41,10 +41,10 @@ const Music = class {
     }).sort( // Longest pattern first
       ([a], [b]) => b.length - a.length // Descending order
     );
-    const fcgIndexOfCMajor = FLAT_SHARP.centerIndex * FCGDAEB.length - hourOfFMajor;
+    const FCG_INDEX_OF_C_MAJOR = FLAT_SHARP.CENTER_INDEX * FCGDAEB.length - HOUR_OF_F_MAJOR;
     /** @param {number} hour */
     this.majorPitchNameAt = (hour) => {
-      const fcgIndex = hour + fcgIndexOfCMajor;
+      const fcgIndex = hour + FCG_INDEX_OF_C_MAJOR;
       const patterns = FLAT_SHARP.patternTree[Math.trunc(fcgIndex / FCGDAEB.length)];
       if( !patterns ) {
         // Hour out of bounds
@@ -70,14 +70,14 @@ const Music = class {
           return found;
         })?.[1]
       }
-      const majorHour = (hourOfFxMajor ?? hourOfFMajor) + fcgIndex;
+      const majorHour = (hourOfFxMajor ?? HOUR_OF_F_MAJOR) + fcgIndex;
       return [majorHour, rest];
     };
     /** @param {number} hour */
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
       const n = Math.abs(hour);
-      const fs = FLAT_SHARP.patternTree[FLAT_SHARP.centerIndex + Math.sign(hour)][0];
+      const fs = FLAT_SHARP.patternTree[FLAT_SHARP.CENTER_INDEX + Math.sign(hour)][0];
       return n === 1 ? fs : `${n === 2 ? fs : n}${fs}`;
     };
   };
