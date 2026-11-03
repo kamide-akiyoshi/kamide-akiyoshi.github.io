@@ -2,7 +2,7 @@
 const Music = class {
   static NATURAL = '\u{266E}';
   static {
-    const FCGDAEB = {
+    const FCGDAEB = { // The circle-of-fifths ordered pitch names without sharps or flats
       length: 7,
       charCodeA: 'A'.charCodeAt(0),
       /** @param {number} index */
@@ -42,7 +42,10 @@ const Music = class {
       ([a], [b]) => b.length - a.length // Descending order
     );
     const FCG_INDEX_OF_C_MAJOR = FLAT_SHARP.CENTER_INDEX * FCGDAEB.length - HOUR_OF_F_MAJOR;
-    /** @param {number} hour */
+    /**
+     * Returns the major pitch name at the specified hour in circle-of-fifths clock.
+     * @param {number} hour
+     */
     this.majorPitchNameAt = (hour) => {
       const fcgIndex = hour + FCG_INDEX_OF_C_MAJOR;
       const patterns = FLAT_SHARP.patternTree[Math.trunc(fcgIndex / FCGDAEB.length)];
@@ -55,6 +58,7 @@ const Music = class {
       return flatSharp ? [abc, flatSharp] : [abc];
     };
     /**
+     * Parses the pitch name and returns the corresponding major hour in circle-of-fifths clock.
      * @param {string} text 
      * @returns {[hour: number, rest: string] | undefined}
      */
@@ -73,7 +77,10 @@ const Music = class {
       const majorHour = (hourOfFxMajor ?? HOUR_OF_F_MAJOR) + fcgIndex;
       return [majorHour, rest];
     };
-    /** @param {number} hour */
+    /**
+     * Returns the key signature text at the specified hour in circle-of-fifths clock.
+     * @param {number} hour
+     */
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
       const n = Math.abs(hour);
