@@ -102,6 +102,7 @@ const Music = class {
     return minor ? `${textAt(hour + 3)}m` : textAt(hour);
   };
   static Chord = class {
+    /** @param {string} value */
     constructor(value) {
       const hour = parseInt(value);
       if( ! isNaN(hour) ) {
@@ -152,6 +153,7 @@ const Music = class {
     setMajor7() { this.offset7th = 3; };
     set7() { this.offset7th = 2; };
     set6() { this.offset7th = 1; };
+    /** @param {string} rawText */
     parseText(rawText) {
       const chord = this;
       chord.clear();

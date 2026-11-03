@@ -130,7 +130,7 @@ const setupSongle = (chordView, onChangeKey, onChangeBeat, onReady, searchParams
         pair[isMinor ? 1 : 0] += duration;
       }
       return pairs;
-    }, new Map());
+    }, /** @type {Map<number, [number, number]>} */ (new Map()));
     if( ! durationPairs?.size ) {
       return;
     }
