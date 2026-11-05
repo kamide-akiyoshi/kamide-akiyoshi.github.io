@@ -44,13 +44,13 @@ const Music = class {
     const FCG_INDEX_OF_C_MAJOR = FLAT_SHARP.CENTER_INDEX * FCGDAEB.length - HOUR_OF_F_MAJOR;
     /**
      * Returns the major pitch name at the specified hour in circle-of-fifths clock.
-     * @param {number} hour
+     * @param {number} hour - The hour in circle-of-fifths clock (e.g., 0 for C, -2 for Bb, 6 for F#, 13 for Fx (F double sharp) etc.).
+     * @returns {string[]} - An array containing the pitch name and flat/sharp symbol (if exists), or empty array if the hour is out of bounds.
      */
     this.majorPitchNameAt = (hour) => {
       const fcgIndex = hour + FCG_INDEX_OF_C_MAJOR;
       const patterns = FLAT_SHARP.patternTree[Math.trunc(fcgIndex / FCGDAEB.length)];
       if( !patterns ) {
-        // Hour out of bounds
         return [];
       }
       const abc = FCGDAEB.at(fcgIndex);
@@ -59,8 +59,8 @@ const Music = class {
     };
     /**
      * Parses the pitch name and returns the corresponding major hour in circle-of-fifths clock.
-     * @param {string} text 
-     * @returns {[hour: number, rest: string] | undefined}
+     * @param {string} text - The string beginning with a pitch name, even chord symbol such as "C", "Bb", "F#m7b5", "G7", etc.
+     * @returns {[hour: number, rest: string] | undefined} - An array containing the major hour and any remaining text (e.g. "F#m7b5" -> [6, "m7b5"]), or undefined if the pitch name is invalid.
      */
     this.parsePitchName = (text) => {
       const fcgIndex = FCGDAEB.indexOf(text.substring(0, 1).toUpperCase());
@@ -79,7 +79,8 @@ const Music = class {
     };
     /**
      * Returns the key signature text at the specified hour in circle-of-fifths clock.
-     * @param {number} hour
+     * @param {number} hour - The hour in circle-of-fifths clock
+     * @returns {string} - The key signature text (e.g., "b", "##", "3b", etc.), or an empty string if the hour is 0 (C major or A minor).
      */
     this.keySignatureTextAt = (hour) => {
       if( ! hour ) return '';
