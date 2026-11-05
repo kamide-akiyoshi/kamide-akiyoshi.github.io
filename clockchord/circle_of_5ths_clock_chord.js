@@ -43,7 +43,7 @@ const Music = class {
     );
     const FCG_INDEX_OF_C_MAJOR = FLAT_SHARP.CENTER_INDEX * FCGDAEB.length - HOUR_OF_F_MAJOR;
     /**
-     * Returns the major pitch name at the specified hour in circle-of-fifths clock.
+     * Returns the major key's root pitch name at the specified hour in circle-of-fifths clock.
      * @param {number} hour - The hour in circle-of-fifths clock (e.g., 0 for C, -2 for Bb, 6 for F#, 13 for Fx (F double sharp) etc.).
      * @returns {string[]} - An array containing the pitch name and flat/sharp symbol (if exists), or empty array if the hour is out of bounds.
      */
