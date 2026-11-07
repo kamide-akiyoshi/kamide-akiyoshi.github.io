@@ -12,8 +12,13 @@ const Music = class {
        * @param {number} index
        */
       at(index) {
-        const abcIndex = (index + 3) * 4;
-        return String.fromCharCode(this.CHAR_CODE_A + abcIndex % this.length + (abcIndex < 0 ? this.length : 0));
+        let abcIndex = ((index + 3) * 4) % this.length;
+        if( abcIndex < 0 ) {
+          // When the value is negative, (value % this.length) will be negative (-6 ... 0),
+          // so add this.length to keep the value positive
+          abcIndex += this.length;
+        }
+        return String.fromCharCode(this.CHAR_CODE_A + abcIndex);
       },
       /** @type {Map<string, number>} */
       inverseMap: undefined,
