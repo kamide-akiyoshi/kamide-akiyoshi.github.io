@@ -2,19 +2,25 @@
 const Music = class {
   static NATURAL = '\u{266E}';
   static {
-    const FCGDAEB = { // The circle-of-fifths ordered pitch names without sharps or flats
+    /** The circle-of-fifths ordered pitch names without sharp or flat */
+    const FCGDAEB = {
       length: 7,
-      charCodeA: 'A'.charCodeAt(0),
-      /** @param {number} index */
+      CHAR_CODE_A: 'A'.charCodeAt(0),
+      /**
+       * Returns the pitch name at the specified index in circle-of-fifths order (0 -> "F" ... 6 -> "B").
+       * The index can be negative or greater than 6, and it will wrap around the circle.
+       * @param {number} index
+       */
       at(index) {
-        const abcIndex = (index + 3) * 4 % this.length
-        return String.fromCharCode(this.charCodeA + (abcIndex < 0 ? this.length : 0) + abcIndex);
+        const abcIndex = (index + 3) * 4 % this.length + (index < 0 ? this.length : 0);
+        return String.fromCharCode(this.CHAR_CODE_A + abcIndex);
       },
       /** @type {Map<string, number>} */
       inverseMap: undefined,
       /**
+       * Returns the index of the specified pitch name in circle-of-fifths order ("F" -> 0 ... "B" -> 6).
+       * If the pitch name is not found, returns -1.
        * @param {string} text
-       * @returns {number}
        */
       indexOf(text) { return this.inverseMap.get(text) ?? -1; },
     };
@@ -44,7 +50,7 @@ const Music = class {
     const FCG_INDEX_OF_C_MAJOR = FLAT_SHARP.CENTER_INDEX * FCGDAEB.length - HOUR_OF_F_MAJOR;
     /**
      * Returns the major key's root pitch name at the specified hour in circle-of-fifths clock.
-     * @param {number} hour - The hour in circle-of-fifths clock (e.g., 0 for C, -2 for Bb, 6 for F#, -9 for Bbb (B double flat), 13 for Fx (F double sharp) etc.).
+     * @param {number} hour - The hour in circle-of-fifths clock. Valid range: -15(Fbb = F double flat) ... 19(Bx = B double sharp) e.g., 0(C), 1(G), 5(B), -2(Bb), -9(Bbb), -1(F), 6(F#), 13(Fx) etc.
      * @returns {string[]} - An array containing the pitch name and flat/sharp symbol (if exists), or empty array if the hour is out of bounds.
      */
     this.majorPitchNameAt = (hour) => {
