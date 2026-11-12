@@ -107,13 +107,26 @@ const Music = class {
    * @param {number} hour2 
    */
   static enharmonicallyEquals = (hour1, hour2) => (hour1 - hour2) % 12 === 0;
-  /** @param {number} hour */
+  /**
+   * Returns the enharmonic key of the specified hour in circle-of-fifths clock.
+   * (e.g., 6(F#/D#m) -> -6(Gb/Ebm), -7(Cb/Abm) -> 5(B/G#m), etc.)
+   * @param {number} hour The hour in circle-of-fifths clock
+   * @returns {number} The enharmonic key's hour in circle-of-fifths clock, or returns false if the hour is -4(Ab/Fm) ... 4(E/C#m) which has no enharmonic equivalent.
+   */
   static enharmonicKeyOf = (hour) => Math.abs(hour) > 4 && hour - 12 * Math.sign(hour);
-  /** @param {number} hour */
+  /**
+   * Returns the normalized song key's hour in circle-of-fifths clock.
+   * The normalized hour's range will be: -7(Cb/Abm) ... 7(C#/A#m)
+   * @param {number} hour The hour in circle-of-fifths clock
+   * @returns {number} The normalized song key's hour in circle-of-fifths clock (e.g., -8(Fb/Dbm) -> 4(E/C#m), 8(G#/E#m) -> -4(Ab/Fm), etc.).
+   *     if the argument "hour" already normalized, returns same value.
+   */
   static normalizeHourAsKey = (hour) => hour - 12 * Math.sign(hour) * Math.trunc((Math.abs(hour) + 4) / 12);
   /**
-   * @param {number} hour
-   * @param {boolean} [minor]
+   * Returns the song key/chord name at the specified hour in circle-of-fifths clock.
+   * @param {number} hour The hour in circle-of-fifths clock (Default: 0)
+   * @param {boolean} [minor] If true, returns the relative minor key/chord name (e.g., "Am" at hour=0); otherwise, returns the major key/chord name (e.g., "C" at hour=0).
+   * @returns {string} The song key/chord name (e.g., "C", "Am", "G", "F#m", "Bb", etc.)
    */
   static majorMinorTextOf = (hour = 0, minor) => {
     /** @param {number} hour */
