@@ -330,7 +330,7 @@ const CircleOfFifthsClock = class {
       const { width, height } = canvas;
       const context = canvas.getContext("2d");
       const selectedKeyHour = keySignatureSelector?.numberOfSharps;
-      const isMinorKey = keySignatureSelector?.minor;
+      const isMinorKeySelected = keySignatureSelector?.minor;
       // Background
       const arcRadius = borderRadius.map(r => r * width);
       const addCirclePath = (r, ccw) => context.arc(center.x, center.y, r, 0, 2 * Math.PI, ccw);
@@ -368,11 +368,14 @@ const CircleOfFifthsClock = class {
         context.stroke();
       });
       // Foreground
-      const isKeyOf = (h, minor) => h === 0 && (minor === undefined || isMinorKey === undefined || minor === isMinorKey);
-      const textColorAt = (h, minor) =>
-        isKeyOf(h, minor) ? themeColor.indicator[1] : h < -5 || h > 6 ? themeColor.grayoutForeground : themeColor.foreground;
+      const isSelectedAsKey = (relativeHour, isMinor) =>
+        relativeHour === 0 && (isMinor === undefined || isMinorKeySelected === undefined || isMinor === isMinorKeySelected);
+      const textColorAt = (relativeHour, isMinor) =>
+        isSelectedAsKey(relativeHour, isMinor) ? themeColor.indicator[1] :
+        relativeHour < -5 || relativeHour > 6 ? themeColor.grayoutForeground :
+        themeColor.foreground;
       const sizeToFont = (sz, weight) => (weight||'normal')+' '+(sz * Math.min(width, height)/400)+'px san-serif';
-      const fontWeightAt = (h, minor) => isKeyOf(h, minor) ? 'bold' : 'normal';
+      const fontWeightAt = (relativeHour, isMinor) => isSelectedAsKey(relativeHour, isMinor) ? 'bold' : 'normal';
       context.textAlign = "center";
       context.textBaseline = "middle";
       const rDot = width / 120;
