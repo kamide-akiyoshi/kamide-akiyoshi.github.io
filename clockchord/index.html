@@ -922,7 +922,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <li><a href="https://camidion.wordpress.com/2026/08/16/song_key_inference_in_clockchord_songle_player/" target="_blank"
 	>コード進行からキーを自動推論</a> - デフォルトの特定手段です。<ul>
 <li>推論の流れ<ol>
-	<li><a href="http://widget.songle.jp/docs/v1#/api/v1/song/chord" target="_blank">和音の音楽地図をAPIで取得</a
+	<li><a href="https://widget.songle.jp/docs/rest-api/api/get-song-chord" target="_blank">和音の音楽地図をAPIで取得</a
 		>し、各コードを五度圏時計上の位置ごとに分類しながら、duration（鳴っている時間）を集計します。</li>
 	<li>ダイアトニックコード（五度圏時計でキーから±1時間以内に位置するコード）のdurationの合計が最大となるキーの調号を探します。</li>
 	<li>同じ調号のメジャーとマイナー（平行調）のうち、対応するコードのdurationが長いほうのキーを推論結果として返します。</li>
@@ -945,7 +945,7 @@ MIDI Chord Helperと同様、選んだ調号に応じて背景色が動き、時
 <li>ClockChordのURL検索パラメータ、または画面からキーを指定した場合、それが最優先されます（詳細は後述）。</li>
 </ol>
 <h4>Songle登録曲の検索</h4>
-<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="http://widget.songle.jp/docs/v1#/api/v1/songs/search" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
+<p>Search欄にキーワードを入力して検索ボタン [🔍Search] を押すと、<a href="https://widget.songle.jp/docs/rest-api/api/search-songs" target="_blank">Songle Widget の楽曲検索 API</a> で検索した結果が表示され、曲名からリンクをたどるだけで直接ClockChordが開きます。</p>
 <ul><li>鍵マーク🔑のついた楽曲は、ClockChord側で転調地図が登録されています。</li>
 <li>検索結果の下にある [🔍Search by Songle] のリンクをクリックすると、同じキーワードによるSongleの検索結果が表示されます。<ul>
 	<li>再生数、編集数、YouTubeに絞った検索結果など、Songle上でしか参照できない情報をチェックしたいときに活用してください。</li>
